@@ -1,0 +1,43 @@
+{
+  "name": "Stride — Fitness Tracker",
+  "short_name": "Stride",
+  "description": "Track macros, log activity, and plan meals with smart restaurant recommendations.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#2E7D52",
+  "categories": ["health", "fitness"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Log Food",
+      "short_name": "Log",
+      "description": "Quickly log a meal",
+      "url": "/?screen=food",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Meal Plan",
+      "short_name": "Plan",
+      "description": "View today's meal plan",
+      "url": "/?screen=plan",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
