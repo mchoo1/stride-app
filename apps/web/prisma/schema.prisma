@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile     Profile?
+  foodLogs    FoodLog[]
+  workoutLogs WorkoutLog[]
+}
+
+model Profile {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  age           Int?
+  heightCm      Float?
+  weightKg      Float?
+  goalWeightKg  Float?
+  activityLevel String?
+  goal          String?
+  calorieGoal   Int?
+  proteinGoal   Int?
+  carbsGoal     Int?
+  fatGoal       Int?
+  updatedAt     DateTime @updatedAt
+}
+
+model FoodLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime @default(now())
+  name      String
+  emoji     String?
+  calories  Int
+  protein   Float
+  carbs     Float
+  fat       Float
+  weightG   Float?
+  mealType  String?
+  createdAt DateTime @default(now())
+}
+
+model WorkoutLog {
+  id             String     @id @default(cuid())
+  userId         String
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date           DateTime   @default(now())
+  name           String
+  durationMin    Int?
+  caloriesBurned Int?
+  exercises      Exercise[]
+  createdAt      DateTime   @default(now())
+}
+
+model Exercise {
+  id          String     @id @default(cuid())
+  workoutId   String
+  workout     WorkoutLog @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  name        String
+  sets        Int?
+  reps        Int?
+  weightKg    Float?
+  durationSec Int?
+}
