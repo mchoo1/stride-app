@@ -108,41 +108,37 @@ export async function POST(req: NextRequest) {
     /* Step 1 — Claude Haiku identifies the food (vision-only model, locked to haiku) */
     const aiResponse = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 256,
-      messages: [{
-        role: 'user',
-        content: [
-          {
-            type: 'image',
-            source: { type: 'base64', media_type: mediaType, data: base64Data },
-          },
-          {
-            type: 'text',
-            text: `Identify the food in this image.
+      max_tokens: 512,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: { type: 'base64', media_type: mediaType, data: base64Data },
+            },
+            {
+              type: 'text',
+              text: `You are a nutrition expert. Look at this food image carefully and identify exactly what food is shown.
 
-Respond ONLY with a JSON object — no markdown, no extra text:
-{
-  "name": "specific food name for USDA database lookup, e.g. 'Banana raw', 'Chicken breast grilled', 'Greek yogurt plain'",
-  "displayName": "short human-friendly name, e.g. 'Banana', 'Grilled Chicken Breast'",
-  "servingSize": "visual estimate of serving, e.g. '1 medium (118g)' or '150g portion'",
-  "estimatedGrams": <number — best guess weight in grams>,
-  "confidence": <0.0 to 1.0>,
-  "fallbackCalories": <rough kcal estimate for the full serving>,
-  "fallbackProtein": <grams>,
-  "fallbackCarbs": <grams>,
-  "fallbackFat": <grams>
-}
+Return ONLY a raw JSON object with no markdown, no code fences, no explanation:
+{"name":"<USDA-style search name e.g. Banana raw, Chicken breast grilled, White rice cooked>","displayName":"<short friendly name e.g. Banana, Grilled Chicken>","servingSize":"<visual estimate e.g. 1 medium (118g)>","estimatedGrams":<integer grams>,"confidence":<0.0-1.0>,"fallbackCalories":<kcal integer>,"fallbackProtein":<grams float>,"fallbackCarbs":<grams float>,"fallbackFat":<grams float>}
 
-If no food is visible, return: {"error": "No food detected"}`,
-          },
-        ],
-      }],
+If no food is visible: {"error":"No food detected"}
+Be specific. Do not guess if unclear — lower confidence instead.`,
+            },
+          ],
+        },
+      ],
     });
 
     const rawText = (aiResponse.content[0] as { type: string; text: string }).text.trim();
-    // Strip markdown code fences if Haiku wraps the JSON in ```json ... ```
-    const aiText  = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
-    const aiParsed = JSON.parse(aiText);
+    // Robustly extract JSON — handles code fences, leading/trailing text
+    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      return NextResponse.json({ error: 'Could not parse food recognition response' }, { status: 422 });
+    }
+    const aiParsed = JSON.parse(jsonMatch[0]);
 
     if (aiParsed.error) {
       return NextResponse.json({ error: aiParsed.error }, { status: 422 });
