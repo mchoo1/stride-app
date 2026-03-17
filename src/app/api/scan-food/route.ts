@@ -139,7 +139,9 @@ If no food is visible, return: {"error": "No food detected"}`,
       }],
     });
 
-    const aiText   = (aiResponse.content[0] as { type: string; text: string }).text.trim();
+    const rawText = (aiResponse.content[0] as { type: string; text: string }).text.trim();
+    // Strip markdown code fences if Haiku wraps the JSON in ```json ... ```
+    const aiText  = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
     const aiParsed = JSON.parse(aiText);
 
     if (aiParsed.error) {
