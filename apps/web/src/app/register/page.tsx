@@ -9,8 +9,8 @@ import { auth, db } from '@/lib/firebase';
 import { useStrideStore } from '@/lib/store';
 import type { GoalType, DietaryFlag, UserProfile } from '@/types';
 
-// ─── Step definitions ────────────────────────────────────────────────────────
-const STEPS = ['Account', 'Goal', 'Body', 'Diet', 'Done'];
+// ─── Step definitions — Goal first, account last ─────────────────────────────
+const STEPS = ['Goal', 'Body', 'Diet', 'Account', 'Done'];
 
 const GOALS: { key: GoalType; emoji: string; title: string; desc: string; color: string }[] = [
   { key: 'weight_loss', emoji: '📉', title: 'Lose Weight',  desc: 'Burn more than I eat through a calorie deficit', color: '#FF6B6B' },
@@ -40,25 +40,25 @@ export default function RegisterPage() {
   const router = useRouter();
   const { completeOnboarding } = useStrideStore();
 
-  const [step, setStep] = useState(0);
+  const [step,    setStep]    = useState(0);
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState('');
 
   const [data, setData] = useState({
-    // Account
-    name:     '',
-    email:    '',
-    password: '',
-    // Goal
+    // Goal (step 0)
     goalType:      'weight_loss' as GoalType,
-    // Body
+    // Body (step 1)
     age:           27,
     heightCm:      170,
     currentWeight: 75,
     targetWeight:  65,
     activityLevel: 'moderate' as UserProfile['activityLevel'],
-    // Diet
-    dietaryFlags: [] as DietaryFlag[],
+    // Diet (step 2)
+    dietaryFlags:  [] as DietaryFlag[],
+    // Account (step 3)
+    name:     '',
+    email:    '',
+    password: '',
   });
 
   const update     = (key: string, value: unknown) => setData(d => ({ ...d, [key]: value }));
@@ -69,11 +69,10 @@ export default function RegisterPage() {
       : [...d.dietaryFlags, flag],
   }));
 
-  // ── Validate before advancing steps ──
   function canAdvance(): { ok: boolean; msg?: string } {
-    if (step === 0) {
-      if (!data.name.trim())    return { ok: false, msg: 'Please enter your name' };
-      if (!data.email.trim())   return { ok: false, msg: 'Please enter your email' };
+    if (step === 3) { // Account step validation
+      if (!data.name.trim())        return { ok: false, msg: 'Please enter your name' };
+      if (!data.email.trim())       return { ok: false, msg: 'Please enter your email' };
       if (data.password.length < 6) return { ok: false, msg: 'Password must be at least 6 characters' };
     }
     return { ok: true };
@@ -96,11 +95,9 @@ export default function RegisterPage() {
     setError('');
     setLoading(true);
     try {
-      // Create Firebase auth user
       const { user } = await createUserWithEmailAndPassword(auth, data.email, data.password);
       await updateProfile(user, { displayName: data.name });
 
-      // Save to Firestore
       await setDoc(doc(db, 'users', user.uid), {
         name:      data.name,
         email:     data.email.toLowerCase(),
@@ -132,13 +129,16 @@ export default function RegisterPage() {
 
       router.push('/dashboard');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '';
-      if (msg.includes('email-already-in-use')) setError('This email is already registered. Sign in instead.');
-      else if (msg.includes('invalid-email'))   setError('Please enter a valid email address.');
-      else if (msg.includes('weak-password'))   setError('Password must be at least 6 characters.');
-      else if (msg.includes('network'))         setError('Network error. Check your connection.');
-      else if (msg.includes('configuration-not'))  setError('App not configured yet. Please try again shortly.');
-      else setError('Could not create account. Please try again.');
+      const code = (err as { code?: string })?.code ?? '';
+      const msg  = err instanceof Error ? err.message : '';
+
+      if (code === 'auth/email-already-in-use')  setError('This email is already registered — sign in instead.');
+      else if (code === 'auth/invalid-email')     setError('Please enter a valid email address.');
+      else if (code === 'auth/weak-password')     setError('Password must be at least 6 characters.');
+      else if (code === 'auth/invalid-api-key' || code === 'auth/app-not-initialized' || msg.includes('configuration-not'))
+        setError('Firebase is not connected yet. Add your Firebase env vars in Vercel → Settings → Environment Variables, then redeploy.');
+      else if (code === 'auth/network-request-failed') setError('Network error. Check your connection and try again.');
+      else setError(`Could not create account (${code || 'unknown'}). Please try again.`);
     } finally {
       setLoading(false);
     }
@@ -151,84 +151,34 @@ export default function RegisterPage() {
 
       {/* Progress bar */}
       <div style={{ height: 4, background: '#e8eaed' }}>
-        <div style={{
-          height: '100%', background: '#4CAF82',
-          width: `${progress}%`,
-          transition: 'width .4s ease',
-        }}/>
+        <div style={{ height: '100%', background: '#4CAF82', width: `${progress}%`, transition: 'width .4s ease' }}/>
       </div>
 
       {/* Top bar */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '12px 20px',
-        background: '#fff', borderBottom: '1px solid #eee',
+        padding: '12px 20px', background: '#fff', borderBottom: '1px solid #eee',
       }}>
         <button onClick={() => step === 0 ? router.push('/') : back()} style={{
-          background: 'none', border: 'none', fontSize: 14, fontWeight: 600,
-          color: '#888', cursor: 'pointer',
+          background: 'none', border: 'none', fontSize: 14, fontWeight: 600, color: '#888', cursor: 'pointer',
         }}>
-          {step === 0 ? '← Back' : '← Back'}
+          ← Back
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ fontSize: 20 }}>⚡</span>
           <span style={{ fontWeight: 800, color: '#1a1a2e', fontSize: 16 }}>Stride</span>
         </div>
-        <span style={{ fontSize: 12, fontWeight: 600, color: '#bbb' }}>
-          {step + 1} / {STEPS.length}
-        </span>
+        <span style={{ fontSize: 12, fontWeight: 600, color: '#bbb' }}>{step + 1} / {STEPS.length}</span>
       </div>
 
       <div style={{ flex: 1, maxWidth: 440, width: '100%', margin: '0 auto', padding: '24px 20px 40px' }}>
 
-        {/* ── Step 0: Account ── */}
+        {/* ── Step 0: Goal ── */}
         {step === 0 && (
-          <div>
-            <h2 style={{ fontSize: 24, fontWeight: 800, color: '#1a1a2e', marginBottom: 6 }}>Create your account</h2>
-            <p style={{ fontSize: 14, color: '#888', marginBottom: 24 }}>Free forever. No credit card needed.</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#666', marginBottom: 6 }}>Your name</label>
-                <input
-                  className="form-input" placeholder="e.g. Ming"
-                  value={data.name} onChange={e => update('name', e.target.value)}
-                  autoFocus
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#666', marginBottom: 6 }}>Email</label>
-                <input
-                  type="email" className="form-input" placeholder="you@example.com"
-                  value={data.email} onChange={e => update('email', e.target.value)}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#666', marginBottom: 6 }}>Password</label>
-                <input
-                  type="password" className="form-input" placeholder="Min 6 characters"
-                  value={data.password} onChange={e => update('password', e.target.value)}
-                />
-              </div>
-            </div>
-            {error && <p style={{ color: '#e53e3e', fontSize: 13, marginTop: 12, textAlign: 'center' }}>{error}</p>}
-            <div style={{ marginTop: 24 }}>
-              <button onClick={next} className="btn-primary" style={{ width: '100%', padding: '14px 0', fontSize: 16 }}>
-                Continue →
-              </button>
-            </div>
-            <p style={{ textAlign: 'center', color: '#aaa', fontSize: 13, marginTop: 16 }}>
-              Already have an account?{' '}
-              <Link href="/login" style={{ color: '#4A90D9', fontWeight: 600 }}>Sign in</Link>
-            </p>
-          </div>
-        )}
-
-        {/* ── Step 1: Goal ── */}
-        {step === 1 && (
           <div>
             <h2 style={{ fontSize: 24, fontWeight: 800, color: '#1a1a2e', marginBottom: 6 }}>What&apos;s your goal?</h2>
             <p style={{ fontSize: 14, color: '#888', marginBottom: 24 }}>
-              We&apos;ll calculate your personalised calorie and macro targets.
+              We&apos;ll personalise your calorie and macro targets around this.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
               {GOALS.map(g => {
@@ -253,11 +203,15 @@ export default function RegisterPage() {
                 );
               })}
             </div>
+            <p style={{ textAlign: 'center', color: '#aaa', fontSize: 13, marginTop: 8 }}>
+              Already have an account?{' '}
+              <Link href="/login" style={{ color: '#4A90D9', fontWeight: 600 }}>Sign in</Link>
+            </p>
           </div>
         )}
 
-        {/* ── Step 2: Body ── */}
-        {step === 2 && (
+        {/* ── Step 1: Body ── */}
+        {step === 1 && (
           <div>
             <h2 style={{ fontSize: 24, fontWeight: 800, color: '#1a1a2e', marginBottom: 6 }}>Tell us about you</h2>
             <p style={{ fontSize: 14, color: '#888', marginBottom: 24 }}>Used to calculate your calorie needs accurately.</p>
@@ -292,8 +246,7 @@ export default function RegisterPage() {
                   {ACTIVITY_LEVELS.map(a => {
                     const sel = data.activityLevel === a.key;
                     return (
-                      <button key={a.key}
-                        onClick={() => update('activityLevel', a.key as UserProfile['activityLevel'])}
+                      <button key={a.key} onClick={() => update('activityLevel', a.key as UserProfile['activityLevel'])}
                         style={{
                           borderRadius: 12, padding: '12px 14px', textAlign: 'left',
                           background: sel ? 'rgba(76,175,130,.10)' : '#fff',
@@ -316,12 +269,12 @@ export default function RegisterPage() {
           </div>
         )}
 
-        {/* ── Step 3: Diet ── */}
-        {step === 3 && (
+        {/* ── Step 2: Diet ── */}
+        {step === 2 && (
           <div>
             <h2 style={{ fontSize: 24, fontWeight: 800, color: '#1a1a2e', marginBottom: 6 }}>Dietary preferences</h2>
             <p style={{ fontSize: 14, color: '#888', marginBottom: 24 }}>
-              Select any that apply — skip if none. You can change these later.
+              Select any that apply — or skip. You can change these later.
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
               {DIETARY_OPTIONS.map(d => {
@@ -340,6 +293,36 @@ export default function RegisterPage() {
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {/* ── Step 3: Account ── */}
+        {step === 3 && (
+          <div>
+            <h2 style={{ fontSize: 24, fontWeight: 800, color: '#1a1a2e', marginBottom: 6 }}>Create your account</h2>
+            <p style={{ fontSize: 14, color: '#888', marginBottom: 24 }}>Free forever. Your data stays yours.</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#666', marginBottom: 6 }}>Your name</label>
+                <input className="form-input" placeholder="e.g. Ming"
+                  value={data.name} onChange={e => update('name', e.target.value)} autoFocus/>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#666', marginBottom: 6 }}>Email</label>
+                <input type="email" className="form-input" placeholder="you@example.com"
+                  value={data.email} onChange={e => update('email', e.target.value)}/>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#666', marginBottom: 6 }}>Password</label>
+                <input type="password" className="form-input" placeholder="Min 6 characters"
+                  value={data.password} onChange={e => update('password', e.target.value)}/>
+              </div>
+            </div>
+            {error && <p style={{ color: '#e53e3e', fontSize: 13, marginTop: 12, textAlign: 'center' }}>{error}</p>}
+            <p style={{ textAlign: 'center', color: '#aaa', fontSize: 13, marginTop: 16 }}>
+              Already have an account?{' '}
+              <Link href="/login" style={{ color: '#4A90D9', fontWeight: 600 }}>Sign in</Link>
+            </p>
           </div>
         )}
 
@@ -365,8 +348,8 @@ export default function RegisterPage() {
               <div style={{ fontSize: 11, fontWeight: 700, color: '#aaa', letterSpacing: 1, marginBottom: 12 }}>YOUR SETUP</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 {[
-                  { l: 'Goal', v: GOALS.find(g => g.key === data.goalType)?.title ?? '', c: '#4CAF82' },
-                  { l: 'Activity', v: data.activityLevel.replace('_', ' '), c: '#4A90D9' },
+                  { l: 'Goal',     v: GOALS.find(g => g.key === data.goalType)?.title ?? '', c: '#4CAF82' },
+                  { l: 'Activity', v: data.activityLevel.replace('_', ' '),                  c: '#4A90D9' },
                 ].map(i => (
                   <div key={i.l} style={{ borderRadius: 12, padding: 12, background: '#f5f7fa' }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: i.c, textTransform: 'capitalize' }}>{i.v}</div>
@@ -375,7 +358,14 @@ export default function RegisterPage() {
                 ))}
               </div>
             </div>
-            {error && <p style={{ color: '#e53e3e', fontSize: 13, marginBottom: 12 }}>{error}</p>}
+            {error && (
+              <div style={{
+                width: '100%', borderRadius: 12, padding: '12px 14px', marginBottom: 16,
+                background: '#fff5f5', border: '1px solid #fed7d7',
+              }}>
+                <p style={{ color: '#c53030', fontSize: 13, lineHeight: 1.5, margin: 0 }}>{error}</p>
+              </div>
+            )}
             <button onClick={finish} disabled={loading} className="btn-primary"
               style={{ width: '100%', padding: '14px 0', fontSize: 16, opacity: loading ? 0.7 : 1 }}>
               {loading ? 'Creating your account…' : '🚀 Start Tracking'}
@@ -383,8 +373,8 @@ export default function RegisterPage() {
           </div>
         )}
 
-        {/* Continue button (steps 1–3) */}
-        {step >= 1 && step < 4 && (
+        {/* Continue button (steps 0–3 except step 3 which uses the same next()) */}
+        {step < 4 && (
           <div style={{ marginTop: 28 }}>
             <button onClick={next} className="btn-primary" style={{ width: '100%', padding: '14px 0', fontSize: 16 }}>
               Continue →
