@@ -130,15 +130,13 @@ export default function RegisterPage() {
       router.push('/dashboard');
     } catch (err: unknown) {
       const code = (err as { code?: string })?.code ?? '';
-      const msg  = err instanceof Error ? err.message : '';
 
-      if (code === 'auth/email-already-in-use')  setError('This email is already registered — sign in instead.');
-      else if (code === 'auth/invalid-email')     setError('Please enter a valid email address.');
-      else if (code === 'auth/weak-password')     setError('Password must be at least 6 characters.');
-      else if (code === 'auth/invalid-api-key' || code === 'auth/app-not-initialized' || msg.includes('configuration-not'))
-        setError('Firebase is not connected yet. Add your Firebase env vars in Vercel → Settings → Environment Variables, then redeploy.');
+      if (code === 'auth/email-already-in-use')     setError('This email is already registered — sign in instead.');
+      else if (code === 'auth/invalid-email')        setError('Please enter a valid email address.');
+      else if (code === 'auth/weak-password')        setError('Password must be at least 6 characters.');
+      else if (code === 'auth/operation-not-allowed') setError('Email/Password sign-in is not enabled. Go to Firebase Console → Authentication → Sign-in method → Email/Password and enable it.');
       else if (code === 'auth/network-request-failed') setError('Network error. Check your connection and try again.');
-      else setError(`Could not create account (${code || 'unknown'}). Please try again.`);
+      else setError(`Error: ${code || String(err)}`);
     } finally {
       setLoading(false);
     }
