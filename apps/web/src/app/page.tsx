@@ -1,6 +1,8 @@
 'use client';
+import { useEffect } from 'react';
 import Link from 'next/link';
-import { useStrideStore } from '@/lib/store';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth-context';
 
 const FEATURES = [
   { emoji: '📷', title: 'AI Photo Scan',           desc: 'Snap a meal, get instant calorie and macro estimates from Vision AI.' },
@@ -18,7 +20,21 @@ const GOALS = [
 ];
 
 export default function LandingPage() {
-  const { profile } = useStrideStore();
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  // Existing users skip the landing page entirely → go straight to dashboard
+  useEffect(() => {
+    if (!loading && user) router.replace('/dashboard');
+  }, [user, loading, router]);
+
+  if (loading || user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#080810' }}>
+        <div className="w-8 h-8 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen" style={{ background: '#080810' }}>
@@ -30,10 +46,16 @@ export default function LandingPage() {
             <span className="text-2xl">⚡</span>
             <span className="text-xl font-black tracking-tight" style={{ color: '#EEEEF8' }}>Stride</span>
           </div>
-          <Link href={profile.onboardingComplete ? '/dashboard' : '/onboarding'}
-            className="btn-primary py-2 px-5 text-sm">
-            {profile.onboardingComplete ? 'Open App →' : 'Get Started Free'}
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/login"
+              className="text-sm font-semibold px-4 py-2 rounded-xl transition"
+              style={{ color: '#8888A8' }}>
+              Sign in
+            </Link>
+            <Link href="/register" className="btn-primary py-2 px-5 text-sm">
+              Get Started Free
+            </Link>
+          </div>
         </div>
       </nav>
 
@@ -55,16 +77,14 @@ export default function LandingPage() {
             Track calories, log workouts, sync wearables, and get smart meal recommendations — all in one dark, beautiful app.
           </p>
           <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-            <Link href="/onboarding" className="btn-primary px-8 py-4 text-base w-full sm:w-auto">
+            <Link href="/register" className="btn-primary px-8 py-4 text-base w-full sm:w-auto">
               Start for Free →
             </Link>
-            {profile.onboardingComplete && (
-              <Link href="/dashboard"
-                className="px-8 py-4 text-base font-semibold w-full sm:w-auto rounded-xl transition-all"
-                style={{ background: '#1E1E30', color: '#EEEEF8', border: '1px solid #252538' }}>
-                Go to Dashboard
-              </Link>
-            )}
+            <Link href="/login"
+              className="px-8 py-4 text-base font-semibold w-full sm:w-auto rounded-xl transition-all"
+              style={{ background: '#1E1E30', color: '#EEEEF8', border: '1px solid #252538' }}>
+              Sign in
+            </Link>
           </div>
         </div>
 
@@ -165,9 +185,16 @@ export default function LandingPage() {
           <div className="mb-4 text-5xl">🚀</div>
           <h2 className="mb-4 text-3xl font-black" style={{ color: '#EEEEF8' }}>Ready to start?</h2>
           <p className="mb-8" style={{ color: '#55556A' }}>Set up your profile in under 2 minutes. No payment required.</p>
-          <Link href="/onboarding" className="btn-primary px-8 py-4 text-base inline-flex">
-            Get Started Free →
-          </Link>
+          <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+            <Link href="/register" className="btn-primary px-8 py-4 text-base inline-flex">
+              Get Started Free →
+            </Link>
+            <Link href="/login"
+              className="px-8 py-4 text-base font-semibold rounded-xl transition-all inline-flex"
+              style={{ background: '#1E1E30', color: '#EEEEF8', border: '1px solid #252538' }}>
+              Sign in
+            </Link>
+          </div>
         </div>
       </section>
 
