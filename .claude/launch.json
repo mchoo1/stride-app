@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "stride-web",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["apps/web/node_modules/next/dist/bin/next", "dev", "apps/web"],
+      "port": 3000
+    },
+    {
+      "name": "stride-mobile",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["apps/mobile/node_modules/.bin/expo", "start"],
+      "port": 8081
+    }
+  ]
+}

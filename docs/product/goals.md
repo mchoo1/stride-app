@@ -1,0 +1,15 @@
+# Fitness App Goals
+
+## Primary Goal
+
+Build a fitness app to track calories.
+
+### Key Features
+
+1. **Fitness Tracker Integration** — Connect with fitness trackers (e.g., Fitbit, Apple Watch, Garmin) to pull activity data such as steps, heart rate, and calories burned. Use this data to give users a complete picture of their daily energy balance.
+
+2. **Image-Based Calorie Estimation** — Allow users to snap a photo of their meal and automatically estimate calorie intake using image recognition. This removes the friction of manual food logging and makes tracking effortless.
+
+3. **Community Macro Database** — Let users crowdsource and share macro information (calories, protein, carbs, fat) for restaurant dishes and grocery food items. Community-submitted entries are verified through upvotes and cross-referencing, building a rich, real-world nutrition database that goes beyond standard food labels.
+
+4. **Smart Food Recommendations** — Based on a user's health goals (e.g., weight loss, muscle gain, maintenance), the app recommends specific menu items at nearby restaurants and grocery store products that fit their daily macro targets. Recommendations draw from both the community database and verified nutrition sources, making it easy to eat on-plan whether dining out or shopping.

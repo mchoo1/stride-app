@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls /c/Users/mchoo/OneDrive/Desktop/\"Fitness App\"/stride-web/src/app/\"\\(dashboard\\)\")",
+      "mcp__Claude_Preview__preview_start"
+    ]
+  }
+}

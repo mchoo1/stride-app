@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Stride — User Process Flows</title>
+<style>
+  :root {
+    --green: #22c55e;
+    --green-light: #4ade80;
+    --green-pale: #f0fdf4;
+    --dark: #0f172a;
+    --slate: #1e293b;
+    --gray-50: #f8fafc;
+    --gray-100: #f1f5f9;
+    --gray-200: #e2e8f0;
+    --gray-400: #94a3b8;
+    --gray-500: #64748b;
+    --gray-700: #334155;
+    --blue: #3b82f6;
+    --blue-pale: #eff6ff;
+    --amber: #f59e0b;
+    --amber-pale: #fffbeb;
+    --purple: #8b5cf6;
+    --purple-pale: #f5f3ff;
+    --red: #ef4444;
+    --red-pale: #fef2f2;
+    --teal: #14b8a6;
+    --teal-pale: #f0fdfa;
+    --orange: #f97316;
+    --orange-pale: #fff7ed;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--gray-50);
+    color: var(--dark);
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  .page-header {
+    background: linear-gradient(135deg, var(--dark) 0%, #1e293b 100%);
+    color: white;
+    padding: 40px 48px 36px;
+    position: relative;
+    overflow: hidden;
+  }
+  .page-header::after {
+    content: '';
+    position: absolute;
+    right: -60px; top: -60px;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(34,197,94,0.15) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .header-logo { font-size: 28px; font-weight: 900; color: var(--green-light); letter-spacing: -1px; margin-bottom: 6px; }
+  .header-title { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .header-sub { font-size: 14px; color: rgba(255,255,255,0.55); font-weight: 400; }
+
+  /* ── Navigation pills ── */
+  .flow-nav {
+    display: flex;
+    gap: 8px;
+    padding: 20px 48px 0;
+    flex-wrap: wrap;
+    background: white;
+    border-bottom: 1px solid var(--gray-200);
+  }
+  .flow-pill {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all .15s;
+    white-space: nowrap;
+    margin-bottom: 12px;
+  }
+  .flow-pill.active { color: white; }
+  .flow-pill:not(.active) { background: var(--gray-100); color: var(--gray-500); border-color: var(--gray-200); }
+
+  /* ── Main canvas ── */
+  .main { padding: 36px 48px 60px; max-width: 1200px; margin: 0 auto; }
+
+  /* ── Flow section ── */
+  .flow-section { display: none; animation: fadeIn .25s ease; }
+  .flow-section.visible { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  .flow-title {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 28px;
+  }
+  .flow-icon-badge {
+    width: 48px; height: 48px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+  }
+  .flow-heading { font-size: 20px; font-weight: 800; color: var(--dark); }
+  .flow-desc { font-size: 13px; color: var(--gray-500); margin-top: 3px; font-weight: 400; }
+
+  /* ── Step track ── */
+  .step-track {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+  }
+
+  .step-row {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 0 20px;
+    align-items: stretch;
+    min-height: 80px;
+  }
+
+  /* Left column: circle + line */
+  .step-left {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+  }
+  .step-circle {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 800;
+    color: white;
+    flex-shrink: 0;
+    z-index: 1;
+    margin-top: 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  }
+  .step-line {
+    width: 2px;
+    flex: 1;
+    margin-top: 4px;
+    min-height: 24px;
+    background: var(--gray-200);
+  }
+  .step-row:last-child .step-line { display: none; }
+
+  /* Right column: card */
+  .step-card {
+    background: white;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin: 10px 0;
+    transition: box-shadow .15s;
+  }
+  .step-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.07); }
+
+  .step-name {
+    font-size: 15px; font-weight: 700; color: var(--dark);
+    display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+  }
+  .step-name-icon { font-size: 16px; }
+  .step-body { font-size: 13px; color: var(--gray-500); line-height: 1.55; }
+
+  /* Sub-steps / bullets */
+  .sub-steps {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;
+  }
+  .sub-chip {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px; font-weight: 600;
+    background: var(--gray-100);
+    color: var(--gray-700);
+    border: 1.5px solid var(--gray-200);
+  }
+
+  /* Decision node */
+  .decision-row {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 0 20px;
+    min-height: 60px;
+    align-items: stretch;
+  }
+  .decision-card {
+    background: var(--amber-pale);
+    border: 1.5px dashed var(--amber);
+    border-radius: 14px;
+    padding: 12px 18px;
+    margin: 8px 0;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; font-weight: 600; color: #92400e;
+  }
+  .decision-card .diamond { font-size: 18px; flex-shrink: 0; }
+
+  /* Branch rows */
+  .branch-wrap {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 0 20px;
+    margin-bottom: 4px;
+  }
+  .branch-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 0 0 8px;
+  }
+  .branch-card {
+    background: white;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 12px; color: var(--gray-700); font-weight: 500;
+    line-height: 1.5;
+  }
+  .branch-label {
+    font-size: 10px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: .5px; margin-bottom: 4px; opacity: .7;
+  }
+
+  /* Outcome / end node */
+  .outcome-row {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 0 20px;
+    min-height: 60px;
+    align-items: center;
+  }
+  .outcome-card {
+    border-radius: 14px;
+    padding: 14px 20px;
+    margin: 8px 0;
+    display: flex; align-items: center; gap: 12px;
+    font-size: 14px; font-weight: 700;
+  }
+
+  /* ── Color themes per flow ── */
+  /* Flow 1 — Profile (green) */
+  .f1 .step-circle { background: var(--green); }
+  .f1 .flow-icon-badge { background: var(--green-pale); }
+  .f1 .step-card { border-left: 3px solid var(--green); }
+  .f1 .outcome-card { background: var(--green-pale); color: #166534; border: 1.5px solid #bbf7d0; }
+
+  /* Flow 2 — Calories (blue) */
+  .f2 .step-circle { background: var(--blue); }
+  .f2 .flow-icon-badge { background: var(--blue-pale); }
+  .f2 .step-card { border-left: 3px solid var(--blue); }
+  .f2 .outcome-card { background: var(--blue-pale); color: #1e40af; border: 1.5px solid #bfdbfe; }
+
+  /* Flow 3 — Activities (orange) */
+  .f3 .step-circle { background: var(--orange); }
+  .f3 .flow-icon-badge { background: var(--orange-pale); }
+  .f3 .step-card { border-left: 3px solid var(--orange); }
+  .f3 .outcome-card { background: var(--orange-pale); color: #9a3412; border: 1.5px solid #fed7aa; }
+
+  /* Flow 4 — Edit Tracker (purple) */
+  .f4 .step-circle { background: var(--purple); }
+  .f4 .flow-icon-badge { background: var(--purple-pale); }
+  .f4 .step-card { border-left: 3px solid var(--purple); }
+  .f4 .outcome-card { background: var(--purple-pale); color: #5b21b6; border: 1.5px solid #ddd6fe; }
+
+  /* Flow 5 — Plan ideas (teal) */
+  .f5 .step-circle { background: var(--teal); }
+  .f5 .flow-icon-badge { background: var(--teal-pale); }
+  .f5 .step-card { border-left: 3px solid var(--teal); }
+  .f5 .outcome-card { background: var(--teal-pale); color: #134e4a; border: 1.5px solid #99f6e4; }
+
+  /* Flow 6 — Custom food macros (red) */
+  .f6 .step-circle { background: var(--red); }
+  .f6 .flow-icon-badge { background: var(--red-pale); }
+  .f6 .step-card { border-left: 3px solid var(--red); }
+  .f6 .outcome-card { background: var(--red-pale); color: #991b1b; border: 1.5px solid #fecaca; }
+
+  /* ── Legend key ── */
+  .legend {
+    display: flex; gap: 20px; flex-wrap: wrap;
+    padding: 14px 20px;
+    background: white;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 12px;
+    margin-bottom: 28px;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--gray-500); font-weight: 500; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
+  /* ── "All flows" overview grid ── */
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .overview-card {
+    background: white;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 16px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .overview-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.08); transform: translateY(-2px); }
+  .ov-icon { font-size: 28px; margin-bottom: 10px; }
+  .ov-num { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; opacity: .5; margin-bottom: 4px; }
+  .ov-name { font-size: 15px; font-weight: 800; color: var(--dark); margin-bottom: 6px; }
+  .ov-steps { font-size: 12px; color: var(--gray-500); line-height: 1.5; }
+  .ov-count { font-size: 11px; font-weight: 700; margin-top: 10px; padding: 3px 10px; border-radius: 20px; display: inline-block; }
+
+  @media (max-width: 768px) {
+    .page-header, .flow-nav { padding-left: 20px; padding-right: 20px; }
+    .main { padding: 24px 20px 48px; }
+    .overview-grid { grid-template-columns: 1fr 1fr; }
+    .branch-cards { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 480px) {
+    .overview-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<div class="page-header">
+  <div class="header-logo">Stride</div>
+  <div class="header-title">User Process Flows</div>
+  <div class="header-sub">Step-by-step flows for all core user journeys in the Stride fitness tracker</div>
+</div>
+
+<!-- ── Navigation ── -->
+<div class="flow-nav">
+  <button class="flow-pill active" id="pill-0" style="background:var(--dark);border-color:var(--dark)" onclick="showFlow(0)">All Flows</button>
+  <button class="flow-pill" id="pill-1" onclick="showFlow(1)" style="--fc:var(--green)">① Profile &amp; Goals</button>
+  <button class="flow-pill" id="pill-2" onclick="showFlow(2)">② Track Calories</button>
+  <button class="flow-pill" id="pill-3" onclick="showFlow(3)">③ Add Activities</button>
+  <button class="flow-pill" id="pill-4" onclick="showFlow(4)">④ Edit Tracker</button>
+  <button class="flow-pill" id="pill-5" onclick="showFlow(5)">⑤ Plan Ideas</button>
+  <button class="flow-pill" id="pill-6" onclick="showFlow(6)">⑥ Log Custom Macros</button>
+</div>
+
+<div class="main">
+
+  <!-- ════════════════════════════════════════
+       FLOW 0 — Overview
+  ════════════════════════════════════════ -->
+  <div class="flow-section visible" id="flow-0">
+    <div style="margin-bottom:24px">
+      <div style="font-size:20px;font-weight:800;color:var(--dark);margin-bottom:6px">All User Flows</div>
+      <div style="font-size:13px;color:var(--gray-500)">Click any card to explore a detailed step-by-step flow.</div>
+    </div>
+    <div class="overview-grid">
+      <div class="overview-card" onclick="showFlow(1)" style="border-top:3px solid var(--green)">
+        <div class="ov-icon">👤</div>
+        <div class="ov-num">Flow 1</div>
+        <div class="ov-name">Setting Up Profile &amp; Goals</div>
+        <div class="ov-steps">Onboarding → personal stats → goal selection → diet preference → calorie targets calculated</div>
+        <div class="ov-count" style="background:var(--green-pale);color:#166534">7 steps</div>
+      </div>
+      <div class="overview-card" onclick="showFlow(2)" style="border-top:3px solid var(--blue)">
+        <div class="ov-icon">🍎</div>
+        <div class="ov-num">Flow 2</div>
+        <div class="ov-name">Tracking &amp; Updating Calories</div>
+        <div class="ov-steps">Open food log → choose method → search / scan / manual → confirm → macros updated on dashboard</div>
+        <div class="ov-count" style="background:var(--blue-pale);color:#1e40af">8 steps</div>
+      </div>
+      <div class="overview-card" onclick="showFlow(3)" style="border-top:3px solid var(--orange)">
+        <div class="ov-icon">🏃</div>
+        <div class="ov-num">Flow 3</div>
+        <div class="ov-name">Adding Activities</div>
+        <div class="ov-steps">Activity log → browse/search exercises → set duration → calories burned logged → net calories updated</div>
+        <div class="ov-count" style="background:var(--orange-pale);color:#9a3412">6 steps</div>
+      </div>
+      <div class="overview-card" onclick="showFlow(4)" style="border-top:3px solid var(--purple)">
+        <div class="ov-icon">✏️</div>
+        <div class="ov-num">Flow 4</div>
+        <div class="ov-name">Editing Food &amp; Activities</div>
+        <div class="ov-steps">Find logged entry → tap edit → adjust quantity / serving / duration → recalculate → save changes</div>
+        <div class="ov-count" style="background:var(--purple-pale);color:#5b21b6">6 steps</div>
+      </div>
+      <div class="overview-card" onclick="showFlow(5)" style="border-top:3px solid var(--teal)">
+        <div class="ov-icon">💡</div>
+        <div class="ov-num">Flow 5</div>
+        <div class="ov-name">Getting Ideas from Plan</div>
+        <div class="ov-steps">Open Plan tab → detect location → select meal slot → browse restaurant suggestions → log to food diary</div>
+        <div class="ov-count" style="background:var(--teal-pale);color:#134e4a">7 steps</div>
+      </div>
+      <div class="overview-card" onclick="showFlow(6)" style="border-top:3px solid var(--red)">
+        <div class="ov-icon">🔬</div>
+        <div class="ov-num">Flow 6</div>
+        <div class="ov-name">Logging Personal Food Macros</div>
+        <div class="ov-steps">Manual entry or AI scan → enter / confirm protein, carbs, fat → calorie formula applied → saved to diary</div>
+        <div class="ov-count" style="background:var(--red-pale);color:#991b1b">8 steps</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ════════════════════════════════════════
+       FLOW 1 — Profile & Goals
+  ════════════════════════════════════════ -->
+  <div class="flow-section f1" id="flow-1">
+    <div class="flow-title">
+      <div class="flow-icon-badge">👤</div>
+      <div>
+        <div class="flow-heading">Flow 1 — Setting Up Profile &amp; Goals</div>
+        <div class="flow-desc">First-time onboarding through to personalised calorie &amp; macro targets being calculated</div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Action step</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--amber);border-radius:2px;transform:rotate(45deg)"></div>Decision point</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--green-pale);border:1.5px solid #bbf7d0"></div>Outcome</div>
+    </div>
+
+    <div class="step-track">
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">1</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">🚀</span>Open Stride &amp; reach Landing screen</div>
+          <div class="step-body">User launches the app for the first time. The Landing screen shows the Stride logo, feature highlights (Smart Tracking, Macro Goals, Activity Log, Meal Planning), and a "Get Started" CTA.</div>
+          <div class="sub-steps">
+            <span class="sub-chip">Tap "Get Started"</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">2</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">🎯</span>Select a Goal</div>
+          <div class="step-body">Onboarding Step 1 asks "What's your goal?" The user picks from four options, each with an icon and description.</div>
+          <div class="sub-steps">
+            <span class="sub-chip">⬇️ Lose Weight</span>
+            <span class="sub-chip">💪 Build Muscle</span>
+            <span class="sub-chip">⚖️ Maintain Weight</span>
+            <span class="sub-chip">🏃 Improve Fitness</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">3</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">🥗</span>Choose Diet Preference</div>
+          <div class="step-body">Onboarding Step 2 shows diet style chips. Selection personalises macro ratios and restaurant filter defaults.</div>
+          <div class="sub-steps">
+            <span class="sub-chip">Standard</span>
+            <span class="sub-chip">High Protein</span>
+            <span class="sub-chip">Low Carb</span>
+            <span class="sub-chip">Keto</span>
+            <span class="sub-chip">Vegan</span>
+            <span class="sub-chip">Vegetarian</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">4</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">📋</span>Enter Personal Stats</div>
+          <div class="step-body">Onboarding Step 3 collects body data needed to calculate BMR and TDEE. All fields are required before proceeding.</div>
+          <div class="sub-steps">
+            <span class="sub-chip">Age</span>
+            <span class="sub-chip">Sex</span>
+            <span class="sub-chip">Height (cm / ft)</span>
+            <span class="sub-chip">Current weight (kg / lb)</span>
+            <span class="sub-chip">Target weight</span>
+            <span class="sub-chip">Activity level</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="decision-row">
+        <div class="step-left"><div style="width:2px;flex:1;background:var(--gray-200);margin:0 auto"></div></div>
+        <div class="decision-card">
+          <span class="diamond">◆</span>
+          <span>All required fields filled in?</span>
+        </div>
+      </div>
+
+      <div class="branch-wrap">
+        <div></div>
+        <div class="branch-cards">
+          <div class="branch-card">
+            <div class="branch-label" style="color:var(--red)">✗ No</div>
+            Inline validation highlights empty fields. "Next" button stays disabled until complete.
+          </div>
+          <div class="branch-card">
+            <div class="branch-label" style="color:var(--green)">✓ Yes</div>
+            Tap "Create Profile" → BMR calculated (Mifflin-St Jeor or Katch-McArdle if body fat % provided).
+          </div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">5</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">🔢</span>Calorie &amp; Macro Targets Calculated</div>
+          <div class="step-body">App computes TDEE from BMR × activity multiplier, then applies a deficit (lose) or surplus (gain) to set a daily calorie target. Macro targets (protein, carbs, fat) are split according to the chosen diet preference.</div>
+          <div class="sub-steps">
+            <span class="sub-chip">BMR (kcal)</span>
+            <span class="sub-chip">TDEE (kcal)</span>
+            <span class="sub-chip">Daily target (kcal)</span>
+            <span class="sub-chip">Protein (g)</span>
+            <span class="sub-chip">Carbs (g)</span>
+            <span class="sub-chip">Fat (g)</span>
+            <span class="sub-chip">Est. weeks to goal</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">6</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">🏠</span>Arrive at Dashboard</div>
+          <div class="step-body">User lands on the Home dashboard showing today's calorie ring, macro progress bars, water intake, and a quick-log button. Profile data is saved to localStorage.</div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">7</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">✏️</span>Edit Profile Later (optional)</div>
+          <div class="step-body">User taps Profile tab → "Edit" button → updates any stat → taps "Save". All downstream targets (TDEE, macros) are recalculated immediately.</div>
+          <div class="sub-steps">
+            <span class="sub-chip">Profile → Edit</span>
+            <span class="sub-chip">Change weight / goal</span>
+            <span class="sub-chip">Save → targets refresh</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="outcome-row">
+        <div></div>
+        <div class="outcome-card">
+          ✅ &nbsp; Profile saved. Daily calorie target &amp; macro goals visible on Dashboard and Profile screens.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ════════════════════════════════════════
+       FLOW 2 — Track Calories
+  ════════════════════════════════════════ -->
+  <div class="flow-section f2" id="flow-2">
+    <div class="flow-title">
+      <div class="flow-icon-badge">🍎</div>
+      <div>
+        <div class="flow-heading">Flow 2 — Tracking &amp; Updating Calories</div>
+        <div class="flow-desc">From opening the food log to seeing updated macro totals on the dashboard</div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>Action step</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div>Decision point</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--blue-pale);border:1.5px solid #bfdbfe"></div>Outcome</div>
+    </div>
+
+    <div class="step-track">
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">1</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">📋</span>Open Food Log</div>
+          <div class="step-body">User taps the "Food" icon in the bottom nav bar (or the + button on Dashboard). The Food Log screen opens showing today's entries grouped by meal (Breakfast, Lunch, Dinner, Snack) plus a macro summary bar.</div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">2</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">➕</span>Tap a Logging Method</div>
+          <div class="step-body">Four quick-access buttons appear at the top of the screen. User selects one entry method.</div>
+          <div class="sub-steps">
+            <span class="sub-chip">🔍 Search database</span>
+            <span class="sub-chip">📸 AI Photo Scan</span>
+            <span class="sub-chip">✏️ Manual entry</span>
+            <span class="sub-chip">⭐ Favourites</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="decision-row">
+        <div class="step-left"><div style="width:2px;flex:1;background:var(--gray-200);margin:0 auto"></div></div>
+        <div class="decision-card">
+          <span class="diamond">◆</span>
+          <span>Which method did the user choose?</span>
+        </div>
+      </div>
+
+      <div class="branch-wrap">
+        <div></div>
+        <div class="branch-cards" style="grid-template-columns:1fr 1fr 1fr">
+          <div class="branch-card">
+            <div class="branch-label" style="color:var(--blue)">🔍 Search</div>
+            Type food name → results from built-in FOODS database → tap item to select serving size.
+          </div>
+          <div class="branch-card">
+            <div class="branch-label" style="color:var(--blue)">📸 AI Scan</div>
+            Upload or take photo → Clarifai identifies food → USDA macros returned → review card shown.
+          </div>
+          <div class="branch-card">
+            <div class="branch-label" style="color:var(--blue)">✏️ Manual</div>
+            Type name + calories + optional macros (P / C / F) → calories auto-verify formula.
+          </div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">3</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">🍽️</span>Select Meal Slot</div>
+          <div class="step-body">User chooses which meal the food belongs to. The current meal tab is pre-selected based on time of day (morning → Breakfast, etc.).</div>
+          <div class="sub-steps">
+            <span class="sub-chip">🌅 Breakfast</span>
+            <span class="sub-chip">☀️ Lunch</span>
+            <span class="sub-chip">🌙 Dinner</span>
+            <span class="sub-chip">🍎 Snack</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">4</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">⚖️</span>Confirm Serving Size</div>
+          <div class="step-body">A quantity stepper or free-text field lets the user adjust the portion (e.g. ×1.5 servings). Macros scale proportionally in real-time.</div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">5</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">💾</span>Log Food</div>
+          <div class="step-body">Tap "Add to Log" (or "Log Food" in the scan result card). Entry is appended to today's food list under the chosen meal tab.</div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">6</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">📊</span>Macro Summary Bar Updates</div>
+          <div class="step-body">Calories consumed, protein, carbs, and fat totals recalculate instantly. The summary bar at the top of the Food Log and the Dashboard ring both reflect the new totals.</div>
+          <div class="sub-steps">
+            <span class="sub-chip">Calories consumed</span>
+            <span class="sub-chip">Calories remaining</span>
+            <span class="sub-chip">Protein g</span>
+            <span class="sub-chip">Carbs g</span>
+            <span class="sub-chip">Fat g</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">7</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">💧</span>Log Water (optional)</div>
+          <div class="step-body">User taps the "+ Water" button on the Dashboard to track hydration alongside calories.</div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">8</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">🔁</span>Repeat for Each Meal</div>
+          <div class="step-body">User repeats steps 2–6 for additional foods throughout the day. Cumulative totals accumulate across all meal slots.</div>
+        </div>
+      </div>
+
+      <div class="outcome-row">
+        <div></div>
+        <div class="outcome-card">
+          ✅ &nbsp; All logged food shows in the Food Log. Dashboard ring and macro bars reflect the updated daily totals.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ════════════════════════════════════════
+       FLOW 3 — Add Activities
+  ════════════════════════════════════════ -->
+  <div class="flow-section f3" id="flow-3">
+    <div class="flow-title">
+      <div class="flow-icon-badge">🏃</div>
+      <div>
+        <div class="flow-heading">Flow 3 — Adding Activities</div>
+        <div class="flow-desc">From opening the activity log to having calories burned reflected on the dashboard</div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div>Action step</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div>Decision point</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--orange-pale);border:1.5px solid #fed7aa"></div>Outcome</div>
+    </div>
+
+    <div class="step-track">
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">1</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">🏋️</span>Open Activity Log</div>
+          <div class="step-body">User taps the "Activity" icon (barbell) in the bottom nav. The Activity Log screen opens, showing the Exercise / Steps tabs and today's logged activities.</div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">2</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">🔎</span>Choose Entry Method</div>
+          <div class="step-body">Two tabs are available at the top of the screen.</div>
+          <div class="sub-steps">
+            <span class="sub-chip">💪 Exercise — log named workouts</span>
+            <span class="sub-chip">👟 Steps — log step count directly</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="decision-row">
+        <div class="step-left"><div style="width:2px;flex:1;background:var(--gray-200);margin:0 auto"></div></div>
+        <div class="decision-card">
+          <span class="diamond">◆</span>
+          <span>Exercise or Steps?</span>
+        </div>
+      </div>
+
+      <div class="branch-wrap">
+        <div></div>
+        <div class="branch-cards">
+          <div class="branch-card">
+            <div class="branch-label" style="color:var(--orange)">💪 Exercise</div>
+            Browse 8 preset categories (Cardio, Strength, HIIT, Yoga, Swimming, Cycling, Sports, Other) or type to search. Tap an activity to select it.
+          </div>
+          <div class="branch-card">
+            <div class="branch-label" style="color:var(--orange)">👟 Steps</div>
+            Enter step count manually. App estimates calories as steps × 0.04 kcal.
+          </div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">3</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">⏱️</span>Set Duration</div>
+          <div class="step-body">For exercises, user enters duration in minutes. The app multiplies the activity's MET-based calorie rate × duration to estimate calories burned.</div>
+          <div class="sub-steps">
+            <span class="sub-chip">Duration (min)</span>
+            <span class="sub-chip">Est. kcal burned shown live</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">4</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">➕</span>Tap "Add Activity"</div>
+          <div class="step-body">User confirms the entry. The activity is saved to today's activity list with name, duration, and calories burned.</div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">5</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">🔥</span>Activity Appears in Log</div>
+          <div class="step-body">The new activity row appears in the Activity Log list with its emoji, name, duration, and calorie burn badge.</div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">6</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">📊</span>Dashboard Net Calories Update</div>
+          <div class="step-body">The Dashboard recalculates net calories (food consumed − activity burned). The "Calories Burned" card and the calorie ring both update immediately.</div>
+          <div class="sub-steps">
+            <span class="sub-chip">Calories burned today</span>
+            <span class="sub-chip">Net calories remaining</span>
+            <span class="sub-chip">Total steps today</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="outcome-row">
+        <div></div>
+        <div class="outcome-card">
+          ✅ &nbsp; Activity logged. Calories burned added to daily totals. Net calorie budget recalculated on Dashboard.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ════════════════════════════════════════
+       FLOW 4 — Edit Tracker
+  ════════════════════════════════════════ -->
+  <div class="flow-section f4" id="flow-4">
+    <div class="flow-title">
+      <div class="flow-icon-badge">✏️</div>
+      <div>
+        <div class="flow-heading">Flow 4 — Editing Food &amp; Activities Tracker</div>
+        <div class="flow-desc">Updating or deleting already-logged food entries and activity records</div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--purple)"></div>Action step</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div>Decision point</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--purple-pale);border:1.5px solid #ddd6fe"></div>Outcome</div>
+    </div>
+
+    <div class="step-track">
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">1</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">📂</span>Navigate to the Right Log</div>
+          <div class="step-body">User goes to either the Food Log (🍎 tab) or Activity Log (🏋️ tab) depending on what they want to edit.</div>
+          <div class="sub-steps">
+            <span class="sub-chip">Food Log → food entries by meal</span>
+            <span class="sub-chip">Activity Log → exercise / steps list</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">2</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">👆</span>Locate &amp; Tap the Entry</div>
+          <div class="step-body">User scrolls to find the logged item. Each entry row shows the food/exercise name, macros/calories, and an edit (✏️) icon or swipe-to-reveal delete option.</div>
+        </div>
+      </div>
+
+      <div class="decision-row">
+        <div class="step-left"><div style="width:2px;flex:1;background:var(--gray-200);margin:0 auto"></div></div>
+        <div class="decision-card">
+          <span class="diamond">◆</span>
+          <span>Edit or Delete?</span>
+        </div>
+      </div>
+
+      <div class="branch-wrap">
+        <div></div>
+        <div class="branch-cards">
+          <div class="branch-card">
+            <div class="branch-label" style="color:var(--purple)">✏️ Edit</div>
+            An edit modal opens pre-filled with current values. User changes quantity / serving / duration / macros. Taps "Save" to confirm.
+          </div>
+          <div class="branch-card">
+            <div class="branch-label" style="color:var(--red)">🗑️ Delete</div>
+            A confirmation prompt appears. User confirms → entry is removed from the list immediately.
+          </div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">3</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">🔢</span>Adjust Values</div>
+          <div class="step-body">For food: change serving size, quantity multiplier, or individual macro values (P / C / F). Calorie total recalculates using the formula <code>cal = P×4 + C×4 + F×9</code> to stay consistent.</div>
+          <div class="sub-steps">
+            <span class="sub-chip">Serving size ×</span>
+            <span class="sub-chip">Protein (g)</span>
+            <span class="sub-chip">Carbs (g)</span>
+            <span class="sub-chip">Fat (g)</span>
+            <span class="sub-chip">Calories (auto)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">4</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">💾</span>Save Changes</div>
+          <div class="step-body">User taps "Save" (or confirms delete). The list re-renders with the updated entry. A brief toast notification confirms the action.</div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">5</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">🔄</span>Totals Recalculate</div>
+          <div class="step-body">All running totals (calories consumed, macro sums, activity calories burned) are recalculated across the entire day's log. Dashboard and macro summary bar update automatically.</div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">6</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">✅</span>Verify Macro Accuracy (optional)</div>
+          <div class="step-body">The app's "Verify Macro" check can flag entries where the stored calorie value doesn't match the P/C/F formula. User can approve or submit a correction via the verification bar.</div>
+          <div class="sub-steps">
+            <span class="sub-chip">Tap "Looks Right" → approved</span>
+            <span class="sub-chip">Tap "Fix It" → correct macros saved</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="outcome-row">
+        <div></div>
+        <div class="outcome-card">
+          ✅ &nbsp; Entry updated or removed. All daily totals and macro bars refresh instantly across Food Log and Dashboard.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ════════════════════════════════════════
+       FLOW 5 — Plan Ideas
+  ════════════════════════════════════════ -->
+  <div class="flow-section f5" id="flow-5">
+    <div class="flow-title">
+      <div class="flow-icon-badge">💡</div>
+      <div>
+        <div class="flow-heading">Flow 5 — Getting Ideas from Plan</div>
+        <div class="flow-desc">Using the Meal Plan tab to discover macro-friendly meal options and log them</div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--teal)"></div>Action step</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div>Decision point</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--teal-pale);border:1.5px solid #99f6e4"></div>Outcome</div>
+    </div>
+
+    <div class="step-track">
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">1</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">💡</span>Open Plan Tab</div>
+          <div class="step-body">User taps the "Plan" icon (lightbulb) in the bottom nav bar. The Plan screen loads with a location context bar at the top.</div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">2</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">📍</span>Location Detection</div>
+          <div class="step-body">The app requests the user's location (or uses a last-known location) to show relevant nearby restaurant suggestions. A city and neighbourhood label is displayed in the context bar.</div>
+          <div class="sub-steps">
+            <span class="sub-chip">Allow → precise city shown</span>
+            <span class="sub-chip">Deny → generic suggestions shown</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">3</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">🍽️</span>Select Meal Slot</div>
+          <div class="step-body">Four meal tabs across the top (Breakfast / Lunch / Dinner / Snack) allow the user to browse suggestions relevant to each meal time. The budget bar shows remaining calories for that slot.</div>
+          <div class="sub-steps">
+            <span class="sub-chip">🌅 Breakfast</span>
+            <span class="sub-chip">☀️ Lunch</span>
+            <span class="sub-chip">🌙 Dinner</span>
+            <span class="sub-chip">🍎 Snack</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">4</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">🏪</span>Filter by Store / Restaurant</div>
+          <div class="step-body">Horizontal scrollable store chips (Subway, McDonald's, Starbucks, Chipotle, etc.) let users filter suggestions to a preferred chain. "All" shows the full curated list.</div>
+          <div class="sub-steps">
+            <span class="sub-chip">All</span>
+            <span class="sub-chip">Subway</span>
+            <span class="sub-chip">McDonald's</span>
+            <span class="sub-chip">Chipotle</span>
+            <span class="sub-chip">Starbucks</span>
+            <span class="sub-chip">+ more</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">5</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">📋</span>Browse Macro-Matched Suggestions</div>
+          <div class="step-body">Each suggestion card shows the item name, restaurant, a macro-fit badge (✅ On Track / ⚠️ Over / ❌ Exceeds), calorie count, and P/C/F breakdown. A "Shuffle ↻" button regenerates different options.</div>
+          <div class="sub-steps">
+            <span class="sub-chip">Fit badge</span>
+            <span class="sub-chip">kcal</span>
+            <span class="sub-chip">Protein g</span>
+            <span class="sub-chip">Carbs g</span>
+            <span class="sub-chip">Fat g</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="decision-row">
+        <div class="step-left"><div style="width:2px;flex:1;background:var(--gray-200);margin:0 auto"></div></div>
+        <div class="decision-card">
+          <span class="diamond">◆</span>
+          <span>Log suggestion or just browse?</span>
+        </div>
+      </div>
+
+      <div class="branch-wrap">
+        <div></div>
+        <div class="branch-cards">
+          <div class="branch-card">
+            <div class="branch-label" style="color:var(--teal)">Log It</div>
+            Tap the "Log" button on a suggestion row → item added to the Food Log under the selected meal slot → macro totals update.
+          </div>
+          <div class="branch-card">
+            <div class="branch-label" style="color:var(--gray-500)">Just Browsing</div>
+            User takes note of the suggestion for later or refreshes for more ideas. No food log entry is created.
+          </div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">6</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">🔄</span>Refresh or Change Meal Slot</div>
+          <div class="step-body">User taps "↻ Refresh" to load a new set of suggestions, or switches to a different meal tab to plan the rest of the day.</div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">7</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">📊</span>Daily Tips &amp; Summary</div>
+          <div class="step-body">Below the suggestions, a tips section offers context-aware nutrition advice based on the user's current daily log (e.g. "You're low on protein today — consider adding a chicken breast").</div>
+        </div>
+      </div>
+
+      <div class="outcome-row">
+        <div></div>
+        <div class="outcome-card">
+          ✅ &nbsp; Meal ideas discovered. Selected suggestions logged to Food Log. Macro totals and remaining budget updated on Dashboard.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ════════════════════════════════════════
+       FLOW 6 — Log Custom Food Macros
+  ════════════════════════════════════════ -->
+  <div class="flow-section f6" id="flow-6">
+    <div class="flow-title">
+      <div class="flow-icon-badge">🔬</div>
+      <div>
+        <div class="flow-heading">Flow 6 — Logging Personal Food Macro Details</div>
+        <div class="flow-desc">Entering precise macro values for a custom food item — manually or via AI photo scan</div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Action step</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div>Decision point</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--red-pale);border:1.5px solid #fecaca"></div>Outcome</div>
+    </div>
+
+    <div class="step-track">
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">1</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">🔬</span>Choose Entry Path</div>
+          <div class="step-body">From the Food Log, the user decides whether to enter macros manually or use the AI photo scan to auto-populate them from an image.</div>
+          <div class="sub-steps">
+            <span class="sub-chip">✏️ Manual entry modal</span>
+            <span class="sub-chip">📸 AI Food Scan screen</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="decision-row">
+        <div class="step-left"><div style="width:2px;flex:1;background:var(--gray-200);margin:0 auto"></div></div>
+        <div class="decision-card">
+          <span class="diamond">◆</span>
+          <span>Manual or AI Scan?</span>
+        </div>
+      </div>
+
+      <div class="branch-wrap">
+        <div></div>
+        <div class="branch-cards">
+          <div class="branch-card">
+            <div class="branch-label" style="color:var(--red)">✏️ Manual</div>
+            Open Manual Entry modal. Type food name. Enter protein, carbs, fat (g). Calories auto-fill using <code>P×4 + C×4 + F×9</code>.
+          </div>
+          <div class="branch-card">
+            <div class="branch-label" style="color:var(--red)">📸 AI Scan</div>
+            Open AI Food Scan screen. Tap drop-zone or camera button. Upload or capture a photo of the food item.
+          </div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">2</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">📸</span>AI Scan Pipeline (if photo path)</div>
+          <div class="step-body">The image is base64-encoded and sent to <code>/api/scan</code>. The serverless function runs it through Clarifai food-item-recognition → takes the top predicted food name → queries USDA FoodData Central for per-100g macros.</div>
+          <div class="sub-steps">
+            <span class="sub-chip">Image → base64</span>
+            <span class="sub-chip">Clarifai identifies food</span>
+            <span class="sub-chip">USDA macro lookup (P/C/F/kcal)</span>
+            <span class="sub-chip">Confidence % shown</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">3</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">🃏</span>Review Macro Result Card</div>
+          <div class="step-body">A result card displays: food emoji, recognised name, confidence badge, and the four macro values returned by USDA. User can edit any field inline before logging.</div>
+          <div class="sub-steps">
+            <span class="sub-chip">🍎 Food name (editable)</span>
+            <span class="sub-chip">Confidence %</span>
+            <span class="sub-chip">Calories (kcal)</span>
+            <span class="sub-chip">Protein (g)</span>
+            <span class="sub-chip">Carbs (g)</span>
+            <span class="sub-chip">Fat (g)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">4</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">⚙️</span>Adjust Serving Size &amp; Meal Slot</div>
+          <div class="step-body">User tweaks the serving multiplier if the portion differs from 100g. Selects the appropriate meal slot (Breakfast / Lunch / Dinner / Snack). All macros scale proportionally.</div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">5</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">✅</span>Verify Macro Consistency</div>
+          <div class="step-body">The app checks whether the stored calorie value matches <code>P×4 + C×4 + F×9</code>. If there's a discrepancy the Verify bar appears, letting the user approve or fix the values.</div>
+          <div class="sub-steps">
+            <span class="sub-chip">✓ Looks Right → keep as is</span>
+            <span class="sub-chip">✎ Fix It → recalculate from macros</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">6</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">💾</span>Log Food with Macros</div>
+          <div class="step-body">User taps "Log Food". The entry — including all four macro values — is saved to the Food Log under the chosen meal slot.</div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">7</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">📊</span>Macro Totals Update</div>
+          <div class="step-body">The daily protein, carbs, fat, and calorie totals are recalculated. Macro progress bars on the Dashboard and Food Log summary bar reflect the addition.</div>
+          <div class="sub-steps">
+            <span class="sub-chip">Total protein consumed</span>
+            <span class="sub-chip">Total carbs consumed</span>
+            <span class="sub-chip">Total fat consumed</span>
+            <span class="sub-chip">Calories consumed</span>
+            <span class="sub-chip">Remaining budget</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-left"><div class="step-circle">8</div><div class="step-line"></div></div>
+        <div class="step-card">
+          <div class="step-name"><span class="step-name-icon">🔄</span>Scan Again or Add Another (optional)</div>
+          <div class="step-body">If scanning, the result area shows a "Scan Another" button. For manual entry, the modal clears for a new item. User can continue logging until all foods are recorded.</div>
+        </div>
+      </div>
+
+      <div class="outcome-row">
+        <div></div>
+        <div class="outcome-card">
+          ✅ &nbsp; Custom food with precise P/C/F macros saved. Daily macro totals updated. Visible on Food Log summary and Dashboard macro bars.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+  const FLOW_COLORS = ['var(--dark)', 'var(--green)', 'var(--blue)', 'var(--orange)', 'var(--purple)', 'var(--teal)', 'var(--red)'];
+  const FLOW_LABELS = ['All Flows','① Profile & Goals','② Track Calories','③ Add Activities','④ Edit Tracker','⑤ Plan Ideas','⑥ Log Custom Macros'];
+
+  function showFlow(n) {
+    // Hide all sections
+    document.querySelectorAll('.flow-section').forEach(s => s.classList.remove('visible'));
+    document.getElementById('flow-' + n).classList.add('visible');
+
+    // Update pills
+    document.querySelectorAll('.flow-pill').forEach((p, i) => {
+      p.classList.remove('active');
+      p.style.background = '';
+      p.style.borderColor = '';
+      p.style.color = '';
+    });
+    const activePill = document.getElementById('pill-' + n);
+    activePill.classList.add('active');
+    activePill.style.background = FLOW_COLORS[n];
+    activePill.style.borderColor = FLOW_COLORS[n];
+    activePill.style.color = 'white';
+  }
+</script>
+
+</body>
+</html>

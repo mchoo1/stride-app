@@ -105,9 +105,9 @@ export async function POST(req: NextRequest) {
     const mediaType  = (image.match(/^data:(image\/[a-z+]+);base64,/)?.[1] ?? 'image/jpeg') as
       'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
 
-    /* Step 1 — Claude Haiku identifies the food */
+    /* Step 1 — Claude Haiku identifies the food (vision-only model, locked to haiku) */
     const aiResponse = await client.messages.create({
-      model: 'claude-haiku-4-5',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 256,
       messages: [{
         role: 'user',

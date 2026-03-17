@@ -1113,37 +1113,38 @@ function saveState() {
 }
 
 // ============ MOCK DATA ============
+// cal values computed as Math.round(p*4 + c*4 + f*9) for internal consistency
 const FOODS = [
-  {id:'f1',emoji:'🍌',name:'Banana',cal:89,p:1.1,c:23,f:0.3},
-  {id:'f2',emoji:'🍎',name:'Apple',cal:52,p:0.3,c:14,f:0.2},
+  {id:'f1',emoji:'🍌',name:'Banana',cal:99,p:1.1,c:23,f:0.3},
+  {id:'f2',emoji:'🍎',name:'Apple',cal:59,p:0.3,c:14,f:0.2},
   {id:'f3',emoji:'🥚',name:'Egg (boiled)',cal:155,p:13,c:1.1,f:11},
-  {id:'f4',emoji:'🍗',name:'Chicken Breast',cal:165,p:31,c:0,f:3.6},
-  {id:'f5',emoji:'🥦',name:'Broccoli',cal:34,p:2.8,c:7,f:0.4},
-  {id:'f6',emoji:'🍚',name:'White Rice',cal:130,p:2.7,c:28,f:0.3},
-  {id:'f7',emoji:'🥑',name:'Avocado',cal:160,p:2,c:9,f:15},
-  {id:'f8',emoji:'🥛',name:'Milk (whole)',cal:61,p:3.2,c:4.8,f:3.3},
-  {id:'f9',emoji:'🐟',name:'Salmon',cal:208,p:20,c:0,f:13},
-  {id:'f10',emoji:'🥜',name:'Almonds',cal:579,p:21,c:22,f:50},
-  {id:'f11',emoji:'🍞',name:'Whole Wheat Bread',cal:247,p:13,c:41,f:4},
-  {id:'f12',emoji:'🧀',name:'Cheddar Cheese',cal:403,p:25,c:1.3,f:33},
-  {id:'f13',emoji:'🍠',name:'Sweet Potato',cal:86,p:1.6,c:20,f:0.1},
-  {id:'f14',emoji:'🫘',name:'Black Beans',cal:132,p:8.9,c:24,f:0.5},
-  {id:'f15',emoji:'🥗',name:'Greek Yogurt',cal:59,p:10,c:3.6,f:0.4},
-  {id:'f16',emoji:'🍳',name:'Oatmeal',cal:68,p:2.4,c:12,f:1.4},
-  {id:'f17',emoji:'🍝',name:'Spaghetti (cooked)',cal:158,p:6,c:31,f:0.9},
-  {id:'f18',emoji:'🥩',name:'Beef (lean)',cal:250,p:26,c:0,f:15},
-  {id:'f19',emoji:'🍌',name:'Peanut Butter',cal:588,p:25,c:20,f:50},
-  {id:'f20',emoji:'🫐',name:'Blueberries',cal:57,p:0.7,c:14,f:0.3},
-  {id:'f21',emoji:'🥕',name:'Carrots',cal:41,p:0.9,c:10,f:0.2},
-  {id:'f22',emoji:'🧆',name:'Lentils',cal:116,p:9,c:20,f:0.4},
-  {id:'f23',emoji:'🍦',name:'Cottage Cheese',cal:98,p:11,c:3.4,f:4.3},
-  {id:'f24',emoji:'🐠',name:'Tuna (canned)',cal:116,p:26,c:0,f:1},
-  {id:'f25',emoji:'🥬',name:'Spinach',cal:23,p:2.9,c:3.6,f:0.4},
-  {id:'f26',emoji:'🍊',name:'Orange',cal:47,p:0.9,c:12,f:0.1},
-  {id:'f27',emoji:'🫚',name:'Olive Oil',cal:884,p:0,c:0,f:100},
-  {id:'f28',emoji:'🍫',name:'Dark Chocolate',cal:546,p:5,c:60,f:31},
-  {id:'f29',emoji:'🌽',name:'Corn',cal:86,p:3.2,c:19,f:1.2},
-  {id:'f30',emoji:'🍇',name:'Grapes',cal:69,p:0.7,c:18,f:0.2},
+  {id:'f4',emoji:'🍗',name:'Chicken Breast',cal:156,p:31,c:0,f:3.6},
+  {id:'f5',emoji:'🥦',name:'Broccoli',cal:43,p:2.8,c:7,f:0.4},
+  {id:'f6',emoji:'🍚',name:'White Rice',cal:126,p:2.7,c:28,f:0.3},
+  {id:'f7',emoji:'🥑',name:'Avocado',cal:179,p:2,c:9,f:15},
+  {id:'f8',emoji:'🥛',name:'Milk (whole)',cal:62,p:3.2,c:4.8,f:3.3},
+  {id:'f9',emoji:'🐟',name:'Salmon',cal:197,p:20,c:0,f:13},
+  {id:'f10',emoji:'🥜',name:'Almonds',cal:622,p:21,c:22,f:50},
+  {id:'f11',emoji:'🍞',name:'Whole Wheat Bread',cal:252,p:13,c:41,f:4},
+  {id:'f12',emoji:'🧀',name:'Cheddar Cheese',cal:402,p:25,c:1.3,f:33},
+  {id:'f13',emoji:'🍠',name:'Sweet Potato',cal:87,p:1.6,c:20,f:0.1},
+  {id:'f14',emoji:'🫘',name:'Black Beans',cal:136,p:8.9,c:24,f:0.5},
+  {id:'f15',emoji:'🥗',name:'Greek Yogurt',cal:58,p:10,c:3.6,f:0.4},
+  {id:'f16',emoji:'🍳',name:'Oatmeal',cal:70,p:2.4,c:12,f:1.4},
+  {id:'f17',emoji:'🍝',name:'Spaghetti (cooked)',cal:156,p:6,c:31,f:0.9},
+  {id:'f18',emoji:'🥩',name:'Beef (lean)',cal:239,p:26,c:0,f:15},
+  {id:'f19',emoji:'🍌',name:'Peanut Butter',cal:630,p:25,c:20,f:50},
+  {id:'f20',emoji:'🫐',name:'Blueberries',cal:62,p:0.7,c:14,f:0.3},
+  {id:'f21',emoji:'🥕',name:'Carrots',cal:45,p:0.9,c:10,f:0.2},
+  {id:'f22',emoji:'🧆',name:'Lentils',cal:120,p:9,c:20,f:0.4},
+  {id:'f23',emoji:'🍦',name:'Cottage Cheese',cal:96,p:11,c:3.4,f:4.3},
+  {id:'f24',emoji:'🐠',name:'Tuna (canned)',cal:113,p:26,c:0,f:1},
+  {id:'f25',emoji:'🥬',name:'Spinach',cal:30,p:2.9,c:3.6,f:0.4},
+  {id:'f26',emoji:'🍊',name:'Orange',cal:53,p:0.9,c:12,f:0.1},
+  {id:'f27',emoji:'🫚',name:'Olive Oil',cal:900,p:0,c:0,f:100},
+  {id:'f28',emoji:'🍫',name:'Dark Chocolate',cal:539,p:5,c:60,f:31},
+  {id:'f29',emoji:'🌽',name:'Corn',cal:100,p:3.2,c:19,f:1.2},
+  {id:'f30',emoji:'🍇',name:'Grapes',cal:77,p:0.7,c:18,f:0.2},
 ];
 
 const ACTIVITIES = [
@@ -1164,15 +1165,16 @@ const ACTIVITIES = [
   {id:'a15',icon:'🤾',name:'Pilates',met:3,intensity:'light'},
 ];
 
+// cal = Math.round(p*4 + c*4 + f*9) for each entry
 const SCAN_RESULTS = [
-  {name:'Caesar Salad',emoji:'🥗',cal:350,p:12,c:20,f:25,conf:0.91},
-  {name:'Grilled Chicken & Rice',emoji:'🍗',cal:520,p:38,c:55,f:12,conf:0.88},
-  {name:'Avocado Toast',emoji:'🥑',cal:290,p:8,c:30,f:15,conf:0.85},
-  {name:'Fruit Bowl',emoji:'🍓',cal:180,p:3,c:42,f:1,conf:0.93},
-  {name:'Pasta Bolognese',emoji:'🍝',cal:620,p:28,c:72,f:18,conf:0.82},
-  {name:'Burrito Bowl',emoji:'🌯',cal:710,p:32,c:85,f:22,conf:0.79},
-  {name:'Smoothie Bowl',emoji:'🥣',cal:380,p:10,c:70,f:8,conf:0.87},
-  {name:'Omelette',emoji:'🍳',cal:310,p:22,c:4,f:22,conf:0.90},
+  {name:'Caesar Salad',emoji:'🥗',cal:353,p:12,c:20,f:25,conf:0.91},
+  {name:'Grilled Chicken & Rice',emoji:'🍗',cal:480,p:38,c:55,f:12,conf:0.88},
+  {name:'Avocado Toast',emoji:'🥑',cal:287,p:8,c:30,f:15,conf:0.85},
+  {name:'Fruit Bowl',emoji:'🍓',cal:189,p:3,c:42,f:1,conf:0.93},
+  {name:'Pasta Bolognese',emoji:'🍝',cal:562,p:28,c:72,f:18,conf:0.82},
+  {name:'Burrito Bowl',emoji:'🌯',cal:666,p:32,c:85,f:22,conf:0.79},
+  {name:'Smoothie Bowl',emoji:'🥣',cal:392,p:10,c:70,f:8,conf:0.87},
+  {name:'Omelette',emoji:'🍳',cal:302,p:22,c:4,f:22,conf:0.90},
 ];
 
 // ============ CALCS ============
@@ -1785,39 +1787,87 @@ function resetScan() {
   document.getElementById('scan-result-area').style.display='none';
   document.getElementById('scan-result-area').innerHTML='';
 }
-function handleScanFile(input) {
-  if (!input.files[0]) return;
-  const url = URL.createObjectURL(input.files[0]);
-  document.getElementById('scan-dropzone-area').style.display='none';
-  document.getElementById('scan-loading').style.display='block';
-  setTimeout(()=>{
-    document.getElementById('scan-loading').style.display='none';
-    const r = SCAN_RESULTS[Math.floor(Math.random()*SCAN_RESULTS.length)];
-    document.getElementById('scan-result-area').style.display='block';
-    const conf = Math.round(r.conf*100);
-    document.getElementById('scan-result-area').innerHTML = `
-      <div style="padding:16px">
-        <img src="${url}" style="width:100%;border-radius:16px;max-height:200px;object-fit:cover;margin-bottom:16px"/>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <div style="font-size:11px;font-weight:600;color:var(--gray-500)">AI CONFIDENCE</div>
-          <span class="badge ${conf>85?'badge-green':'badge-amber'}">${conf}%</span>
-        </div>
-        <div class="confidence-bar" style="margin-bottom:16px"><div style="height:100%;width:${conf}%;background:${conf>85?'var(--green)':'var(--amber)'};border-radius:3px"></div></div>
-        <div class="card" style="margin:0;margin-bottom:14px">
-          <div style="font-size:24px;margin-bottom:4px">${r.emoji}</div>
-          <div style="font-size:18px;font-weight:800;color:var(--dark);margin-bottom:12px">${r.name}</div>
-          <div style="display:flex;justify-content:space-around;text-align:center">
-            <div><div style="font-size:22px;font-weight:800;color:var(--green)">${r.cal}</div><div style="font-size:11px;color:var(--gray-400)">kcal</div></div>
-            <div><div style="font-size:22px;font-weight:800;color:var(--blue)">${r.p}g</div><div style="font-size:11px;color:var(--gray-400)">protein</div></div>
-            <div><div style="font-size:22px;font-weight:800;color:var(--amber)">${r.c}g</div><div style="font-size:11px;color:var(--gray-400)">carbs</div></div>
-            <div><div style="font-size:22px;font-weight:800;color:var(--purple)">${r.f}g</div><div style="font-size:11px;color:var(--gray-400)">fat</div></div>
-          </div>
-        </div>
-        <button class="btn btn-primary" onclick="logScanResult('${r.name}','${r.emoji}',${r.cal},${r.p},${r.c},${r.f})">Log This Meal ✓</button>
-        <button class="btn btn-ghost" style="width:100%;margin-top:10px" onclick="resetScan()">Scan Again</button>
-      </div>`;
-  }, 2500);
+// Convert a File to a bare base64 string (strips the data-URL prefix)
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
+
+// Shared result card renderer used by both scan entry points
+function renderScanCard(container, r, url, onLog, onRescan) {
+  const conf   = Math.round((r.confidence ?? r.conf ?? 0.8) * 100);
+  const srcTag = r.source === 'clarifai+usda'
+    ? `<div style="font-size:11px;color:var(--gray-400);text-align:center;margin-bottom:12px">📊 Clarifai · USDA FoodData Central</div>`
+    : r.source === 'clarifai-only'
+    ? `<div style="font-size:11px;color:var(--amber);text-align:center;margin-bottom:12px">⚠️ Food identified but no USDA data — please enter macros manually</div>`
+    : '';
+  container.innerHTML = `
+    <div style="padding:16px">
+      <img src="${url}" style="width:100%;border-radius:16px;max-height:200px;object-fit:cover;margin-bottom:16px"/>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:11px;font-weight:600;color:var(--gray-500)">AI CONFIDENCE</div>
+        <span class="badge ${conf>85?'badge-green':'badge-amber'}">${conf}%</span>
+      </div>
+      <div class="confidence-bar" style="margin-bottom:16px">
+        <div style="height:100%;width:${conf}%;background:${conf>85?'var(--green)':'var(--amber)'};border-radius:3px"></div>
+      </div>
+      <div class="card" style="margin:0;margin-bottom:14px">
+        <div style="font-size:24px;margin-bottom:4px">${r.emoji}</div>
+        <div style="font-size:18px;font-weight:800;color:var(--dark);margin-bottom:12px">${r.name}</div>
+        <div style="display:flex;justify-content:space-around;text-align:center">
+          <div><div style="font-size:22px;font-weight:800;color:var(--green)">${r.cal}</div><div style="font-size:11px;color:var(--gray-400)">kcal</div></div>
+          <div><div style="font-size:22px;font-weight:800;color:var(--blue)">${r.p}g</div><div style="font-size:11px;color:var(--gray-400)">protein</div></div>
+          <div><div style="font-size:22px;font-weight:800;color:var(--amber)">${r.c}g</div><div style="font-size:11px;color:var(--gray-400)">carbs</div></div>
+          <div><div style="font-size:22px;font-weight:800;color:var(--purple)">${r.f}g</div><div style="font-size:11px;color:var(--gray-400)">fat</div></div>
+        </div>
+      </div>
+      ${srcTag}
+      <button class="btn btn-primary" id="scan-log-btn">Log This Meal ✓</button>
+      <button class="btn btn-ghost" style="width:100%;margin-top:10px" id="scan-again-btn">Scan Again</button>
+    </div>`;
+  container.querySelector('#scan-log-btn').onclick    = onLog;
+  container.querySelector('#scan-again-btn').onclick  = onRescan;
+}
+
+async function handleScanFile(input) {
+  if (!input.files[0]) return;
+  const file = input.files[0];
+  const url  = URL.createObjectURL(file);
+  document.getElementById('scan-dropzone-area').style.display = 'none';
+  document.getElementById('scan-loading').style.display       = 'block';
+
+  let r;
+  try {
+    const base64 = await fileToBase64(file);
+    const res    = await fetch('/api/scan', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ image: base64 }),
+    });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    r = data;
+  } catch (err) {
+    console.warn('[scan] API unavailable, using demo result:', err.message);
+    const fb = SCAN_RESULTS[Math.floor(Math.random() * SCAN_RESULTS.length)];
+    r = { ...fb, confidence: fb.conf, source: 'demo' };
+  }
+
+  document.getElementById('scan-loading').style.display     = 'none';
+  document.getElementById('scan-result-area').style.display = 'block';
+  renderScanCard(
+    document.getElementById('scan-result-area'),
+    r, url,
+    () => logScanResult(r.name, r.emoji, r.cal, r.p, r.c, r.f),
+    () => resetScan()
+  );
+}
+
 function logScanResult(name, emoji, cal, p, c, f) {
   state.foodLog.push({id:'e'+Date.now(),date:today(),mealType:'snack',name,emoji,grams:100,cal,p,c,f});
   saveState();
@@ -3049,7 +3099,8 @@ function verifyMacro(vote) {
     dismissVerify();
     showToast('Thanks! Accuracy vote recorded 👍');
   } else {
-    // Open correction modal
+    // Open correction modal — hide bar visually but preserve _pendingVerifyFood
+    // so submitCorrection() can read it (do NOT call dismissVerify() here).
     const food = FOODS.find(f=>f.id===_pendingVerifyFood.id);
     if (food) {
       document.getElementById('correction-original').innerHTML =
@@ -3059,7 +3110,8 @@ function verifyMacro(vote) {
       document.getElementById('corr-c').value = food.c;
       document.getElementById('corr-f').value = food.f;
     }
-    dismissVerify();
+    document.getElementById('verify-bar').classList.add('hidden');
+    clearTimeout(_verifyTimer);
     openModal('modal-correction');
   }
 }
@@ -3087,7 +3139,7 @@ function submitCorrection() {
   }
   saveState();
   closeModal('modal-correction');
-  _pendingVerifyFood = null;
+  dismissVerify(); // null _pendingVerifyFood only after the correction is saved
   showToast('Correction submitted — under community review 📊');
 }
 
@@ -3397,46 +3449,74 @@ function handlePhotoLog(input) {
   if (!input.files[0]) return;
   processPhotoLog(input.files[0]);
 }
-function processPhotoLog(file) {
+async function processPhotoLog(file) {
   const meal = document.getElementById('photo-log-meal').value;
-  const url = URL.createObjectURL(file);
-  document.getElementById('photo-log-body').style.display = 'none';
+  const url  = URL.createObjectURL(file);
+  document.getElementById('photo-log-body').style.display     = 'none';
   document.getElementById('photo-log-scanning').style.display = 'block';
-  setTimeout(() => {
-    document.getElementById('photo-log-scanning').style.display = 'none';
-    const r = SCAN_RESULTS[Math.floor(Math.random() * SCAN_RESULTS.length)];
-    const conf = Math.round(r.conf * 100);
-    document.getElementById('photo-log-result').style.display = 'block';
-    document.getElementById('photo-log-result').innerHTML = `
-      <img src="${url}" style="width:100%;border-radius:14px;max-height:180px;object-fit:cover;margin-bottom:14px"/>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <span style="font-size:12px;color:var(--gray-500);font-weight:600">AI RESULT</span>
-        <span class="badge ${conf>85?'badge-green':'badge-amber'}">${conf}% confident</span>
+
+  let r;
+  try {
+    const base64 = await fileToBase64(file);
+    const res    = await fetch('/api/scan', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ image: base64 }),
+    });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    r = data;
+  } catch (err) {
+    console.warn('[photo-log] API unavailable, using demo result:', err.message);
+    const fb = SCAN_RESULTS[Math.floor(Math.random() * SCAN_RESULTS.length)];
+    r = { ...fb, confidence: fb.conf, source: 'demo' };
+  }
+
+  document.getElementById('photo-log-scanning').style.display = 'none';
+  const conf   = Math.round((r.confidence ?? r.conf ?? 0.8) * 100);
+  const srcTag = r.source === 'clarifai+usda'
+    ? `<div style="font-size:11px;color:var(--gray-400);text-align:center;margin-bottom:10px">📊 Clarifai · USDA FoodData Central</div>`
+    : r.source === 'clarifai-only'
+    ? `<div style="font-size:11px;color:var(--amber);text-align:center;margin-bottom:10px">⚠️ No USDA data — please enter macros manually</div>`
+    : '';
+
+  const resultEl = document.getElementById('photo-log-result');
+  resultEl.style.display = 'block';
+  resultEl.innerHTML = `
+    <img src="${url}" style="width:100%;border-radius:14px;max-height:180px;object-fit:cover;margin-bottom:14px"/>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+      <span style="font-size:12px;color:var(--gray-500);font-weight:600">AI RESULT</span>
+      <span class="badge ${conf>85?'badge-green':'badge-amber'}">${conf}% confident</span>
+    </div>
+    <div class="card" style="margin:0 0 12px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="font-size:26px">${r.emoji}</div>
+        <div style="font-size:16px;font-weight:800;color:var(--dark)">${r.name}</div>
       </div>
-      <div class="card" style="margin:0 0 12px">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-          <div style="font-size:26px">${r.emoji}</div>
-          <div style="font-size:16px;font-weight:800;color:var(--dark)">${r.name}</div>
-        </div>
-        <div style="display:flex;justify-content:space-around;text-align:center">
-          <div><div style="font-size:18px;font-weight:800;color:var(--green)">${r.cal}</div><div style="font-size:10px;color:var(--gray-400)">kcal</div></div>
-          <div><div style="font-size:18px;font-weight:800;color:var(--blue)">${r.p}g</div><div style="font-size:10px;color:var(--gray-400)">protein</div></div>
-          <div><div style="font-size:18px;font-weight:800;color:var(--amber)">${r.c}g</div><div style="font-size:10px;color:var(--gray-400)">carbs</div></div>
-          <div><div style="font-size:18px;font-weight:800;color:var(--purple)">${r.f}g</div><div style="font-size:10px;color:var(--gray-400)">fat</div></div>
-        </div>
+      <div style="display:flex;justify-content:space-around;text-align:center">
+        <div><div style="font-size:18px;font-weight:800;color:var(--green)">${r.cal}</div><div style="font-size:10px;color:var(--gray-400)">kcal</div></div>
+        <div><div style="font-size:18px;font-weight:800;color:var(--blue)">${r.p}g</div><div style="font-size:10px;color:var(--gray-400)">protein</div></div>
+        <div><div style="font-size:18px;font-weight:800;color:var(--amber)">${r.c}g</div><div style="font-size:10px;color:var(--gray-400)">carbs</div></div>
+        <div><div style="font-size:18px;font-weight:800;color:var(--purple)">${r.f}g</div><div style="font-size:10px;color:var(--gray-400)">fat</div></div>
       </div>
-      <div style="margin-bottom:10px">
-        <label class="input-label">Log as</label>
-        <select class="input" id="photo-log-meal-confirm" style="padding:9px 12px;font-size:14px">
-          <option value="breakfast" ${meal==='breakfast'?'selected':''}>Breakfast</option>
-          <option value="lunch" ${meal==='lunch'?'selected':''}>Lunch</option>
-          <option value="dinner" ${meal==='dinner'?'selected':''}>Dinner</option>
-          <option value="snack" ${meal==='snack'?'selected':''}>Snack</option>
-        </select>
-      </div>
-      <button class="btn btn-primary" onclick="confirmPhotoLog('${r.name}','${r.emoji}',${r.cal},${r.p},${r.c},${r.f})">Log This Meal ✓</button>
-      <button class="btn btn-ghost" style="width:100%;margin-top:10px" onclick="openPhotoLog()">Scan Again</button>`;
-  }, 2200);
+    </div>
+    ${srcTag}
+    <div style="margin-bottom:10px">
+      <label class="input-label">Log as</label>
+      <select class="input" id="photo-log-meal-confirm" style="padding:9px 12px;font-size:14px">
+        <option value="breakfast" ${meal==='breakfast'?'selected':''}>Breakfast</option>
+        <option value="lunch"     ${meal==='lunch'    ?'selected':''}>Lunch</option>
+        <option value="dinner"    ${meal==='dinner'   ?'selected':''}>Dinner</option>
+        <option value="snack"     ${meal==='snack'    ?'selected':''}>Snack</option>
+      </select>
+    </div>
+    <button class="btn btn-primary"  id="photo-confirm-btn">Log This Meal ✓</button>
+    <button class="btn btn-ghost" style="width:100%;margin-top:10px" id="photo-rescan-btn">Scan Again</button>`;
+
+  resultEl.querySelector('#photo-confirm-btn').onclick =
+    () => confirmPhotoLog(r.name, r.emoji, r.cal, r.p, r.c, r.f);
+  resultEl.querySelector('#photo-rescan-btn').onclick  = openPhotoLog;
 }
 function confirmPhotoLog(name, emoji, cal, p, c, f) {
   const meal = document.getElementById('photo-log-meal-confirm')?.value || currentMeal;
