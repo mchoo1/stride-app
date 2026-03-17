@@ -95,26 +95,11 @@ export default function RegisterPage() {
     setError('');
     setLoading(true);
     try {
+      // Step 1: Create the auth account (critical — must succeed)
       const { user } = await createUserWithEmailAndPassword(auth, data.email, data.password);
       await updateProfile(user, { displayName: data.name });
 
-      await setDoc(doc(db, 'users', user.uid), {
-        name:      data.name,
-        email:     data.email.toLowerCase(),
-        createdAt: serverTimestamp(),
-      });
-      await setDoc(doc(db, 'profiles', user.uid), {
-        age:           data.age,
-        heightCm:      data.heightCm,
-        weightKg:      data.currentWeight,
-        goalWeightKg:  data.targetWeight,
-        activityLevel: data.activityLevel,
-        goal:          data.goalType,
-        dietaryFlags:  data.dietaryFlags,
-        updatedAt:     serverTimestamp(),
-      });
-
-      // Also persist to Zustand so the dashboard works immediately
+      // Step 2: Persist to Zustand immediately so dashboard works right away
       completeOnboarding({
         name:          data.name,
         email:         data.email,
@@ -127,14 +112,35 @@ export default function RegisterPage() {
         dietaryFlags:  data.dietaryFlags,
       });
 
+      // Step 3: Write to Firestore in the background — don't block navigation
+      Promise.all([
+        setDoc(doc(db, 'users', user.uid), {
+          name:      data.name,
+          email:     data.email.toLowerCase(),
+          createdAt: serverTimestamp(),
+        }),
+        setDoc(doc(db, 'profiles', user.uid), {
+          age:           data.age,
+          heightCm:      data.heightCm,
+          weightKg:      data.currentWeight,
+          goalWeightKg:  data.targetWeight,
+          activityLevel: data.activityLevel,
+          goal:          data.goalType,
+          dietaryFlags:  data.dietaryFlags,
+          updatedAt:     serverTimestamp(),
+        }),
+      ]).catch(() => {
+        // Firestore write failed silently — profile will sync next time
+      });
+
       router.push('/dashboard');
     } catch (err: unknown) {
       const code = (err as { code?: string })?.code ?? '';
 
-      if (code === 'auth/email-already-in-use')     setError('This email is already registered — sign in instead.');
-      else if (code === 'auth/invalid-email')        setError('Please enter a valid email address.');
-      else if (code === 'auth/weak-password')        setError('Password must be at least 6 characters.');
-      else if (code === 'auth/operation-not-allowed') setError('Email/Password sign-in is not enabled. Go to Firebase Console → Authentication → Sign-in method → Email/Password and enable it.');
+      if (code === 'auth/email-already-in-use')      setError('This email is already registered — sign in instead.');
+      else if (code === 'auth/invalid-email')         setError('Please enter a valid email address.');
+      else if (code === 'auth/weak-password')         setError('Password must be at least 6 characters.');
+      else if (code === 'auth/operation-not-allowed') setError('Email/Password sign-in is not enabled in Firebase Console → Authentication → Sign-in method.');
       else if (code === 'auth/network-request-failed') setError('Network error. Check your connection and try again.');
       else setError(`Error: ${code || String(err)}`);
     } finally {
