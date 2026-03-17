@@ -381,7 +381,15 @@ export default function FoodLogPage() {
                         {aiResult.servingSize && (
                           <div style={{ fontSize: 11, color: '#888' }}>Serving: {aiResult.servingSize}</div>
                         )}
-                        <div style={{ fontSize: 11, color: '#9B59B6', fontWeight: 600 }}>🎯 {Math.round((aiResult.confidence ?? 0.9) * 100)}% confidence</div>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 2 }}>
+                          <span style={{ fontSize: 11, color: '#9B59B6', fontWeight: 600 }}>🎯 {Math.round((aiResult.confidence ?? 0.9) * 100)}% confidence</span>
+                          {aiResult.usdaVerified && (
+                            <span style={{ fontSize: 10, background: '#e8f5e9', color: '#2e7d32', fontWeight: 700, padding: '1px 6px', borderRadius: 8 }}>✓ USDA verified</span>
+                          )}
+                        </div>
+                        {aiResult.dataSource && (
+                          <div style={{ fontSize: 10, color: '#bbb', marginTop: 2 }}>{aiResult.dataSource}</div>
+                        )}
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
