@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "FitnessApp",
+    "slug": "fitness-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#4CAF82"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.fitnessapp.tracker",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Used to scan food photos for calorie estimation.",
+        "NSPhotoLibraryUsageDescription": "Used to select food photos for calorie estimation."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#4CAF82"
+      },
+      "package": "com.fitnessapp.tracker",
+      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE"]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow FitnessApp to access your camera to scan food."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow FitnessApp to access your photos to log meals."
+        }
+      ]
+    ]
+  }
+}

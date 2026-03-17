@@ -1,16 +1,9 @@
 {
-  "rewrites": [
-    { "source": "/", "destination": "/Stride-Demo.html" },
-    { "source": "/index.html", "destination": "/Stride-Demo.html" }
-  ],
+  "buildCommand": "cd apps/web && npm install && npm run build",
+  "outputDirectory": "apps/web/.next",
+  "installCommand": "echo 'skip root install'",
+  "framework": "nextjs",
   "headers": [
-    {
-      "source": "/sw.js",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-cache" },
-        { "key": "Service-Worker-Allowed", "value": "/" }
-      ]
-    },
     {
       "source": "/(.*)",
       "headers": [
