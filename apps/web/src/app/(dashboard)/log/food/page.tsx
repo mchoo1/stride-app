@@ -72,17 +72,35 @@ export default function FoodLogPage() {
     closeModal();
   };
 
+  const [aiError, setAiError] = useState<string | null>(null);
+
   const handleAiPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = ev => {
-      setAiPhoto(ev.target?.result as string);
-      setAiLoading(true); setAiResult(null);
-      setTimeout(() => {
-        setAiResult(MOCK_SCAN_RESULTS[Math.floor(Math.random() * MOCK_SCAN_RESULTS.length)]);
+    reader.onload = async ev => {
+      const dataUrl = ev.target?.result as string;
+      setAiPhoto(dataUrl);
+      setAiLoading(true);
+      setAiResult(null);
+      setAiError(null);
+      try {
+        const res = await fetch('/api/scan-food', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: dataUrl }),
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          setAiError(data.error ?? 'Could not identify food. Try a clearer photo.');
+        } else {
+          setAiResult(data);
+        }
+      } catch {
+        setAiError('Network error. Please try again.');
+      } finally {
         setAiLoading(false);
-      }, 1800);
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -348,13 +366,22 @@ export default function FoodLogPage() {
                     </div>
                   )}
                 </div>
+                {aiError && !aiLoading && (
+                  <div style={{ background: '#fff5f5', border: '2px solid #FF6B6B', borderRadius: 14, padding: 14, marginBottom: 10 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#c0392b', marginBottom: 8 }}>⚠️ {aiError}</div>
+                    <button onClick={() => { setAiPhoto(null); setAiError(null); }} className="btn-secondary">Try again</button>
+                  </div>
+                )}
                 {aiResult && !aiLoading && (
                   <div style={{ background: '#f5f0ff', border: '2px solid #9B59B6', borderRadius: 16, padding: 14 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                       <span style={{ fontSize: 28 }}>{aiResult.emoji}</span>
                       <div>
                         <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e' }}>{aiResult.name}</div>
-                        <div style={{ fontSize: 11, color: '#9B59B6', fontWeight: 600 }}>🎯 {Math.round(aiResult.confidence * 100)}% confidence</div>
+                        {aiResult.servingSize && (
+                          <div style={{ fontSize: 11, color: '#888' }}>Serving: {aiResult.servingSize}</div>
+                        )}
+                        <div style={{ fontSize: 11, color: '#9B59B6', fontWeight: 600 }}>🎯 {Math.round((aiResult.confidence ?? 0.9) * 100)}% confidence</div>
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
