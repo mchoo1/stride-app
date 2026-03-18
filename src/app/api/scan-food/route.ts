@@ -105,9 +105,9 @@ export async function POST(req: NextRequest) {
     const mediaType  = (image.match(/^data:(image\/[a-z+]+);base64,/)?.[1] ?? 'image/jpeg') as
       'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
 
-    /* Step 1 — Claude Haiku identifies the food (vision-only model, locked to haiku) */
+    /* Step 1 — Claude Haiku identifies the food (vision model: claude-3-5-haiku for best vision accuracy) */
     const aiResponse = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+      model: 'claude-3-5-haiku-20241022',
       max_tokens: 512,
       messages: [
         {
@@ -119,13 +119,18 @@ export async function POST(req: NextRequest) {
             },
             {
               type: 'text',
-              text: `You are a nutrition expert. Look at this food image carefully and identify exactly what food is shown.
+              text: `Look at this image carefully. What specific food item do you see?
 
-Return ONLY a raw JSON object with no markdown, no code fences, no explanation:
-{"name":"<USDA-style search name e.g. Banana raw, Chicken breast grilled, White rice cooked>","displayName":"<short friendly name e.g. Banana, Grilled Chicken>","servingSize":"<visual estimate e.g. 1 medium (118g)>","estimatedGrams":<integer grams>,"confidence":<0.0-1.0>,"fallbackCalories":<kcal integer>,"fallbackProtein":<grams float>,"fallbackCarbs":<grams float>,"fallbackFat":<grams float>}
+Focus only on what is ACTUALLY visible in the image. Do not guess or assume.
+
+Respond with ONLY a raw JSON object — no markdown, no code fences, no extra text:
+{"name":"<USDA search term e.g. 'Banana raw' or 'Chicken breast grilled'>","displayName":"<short name e.g. 'Banana' or 'Grilled Chicken'>","servingSize":"<visual estimate e.g. '1 medium (118g)'>","estimatedGrams":<integer>,"confidence":<0.0-1.0>,"fallbackCalories":<kcal integer>,"fallbackProtein":<grams float>,"fallbackCarbs":<grams float>,"fallbackFat":<grams float>}
 
 If no food is visible: {"error":"No food detected"}
-Be specific. Do not guess if unclear — lower confidence instead.`,
+
+Examples of correct responses:
+- Banana image → {"name":"Banana raw","displayName":"Banana","servingSize":"1 medium (118g)","estimatedGrams":118,"confidence":0.97,...}
+- Chicken image → {"name":"Chicken breast grilled","displayName":"Grilled Chicken","servingSize":"1 breast (150g)","estimatedGrams":150,"confidence":0.92,...}`,
             },
           ],
         },
