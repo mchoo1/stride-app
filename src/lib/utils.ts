@@ -6,6 +6,12 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/** Mifflin-St Jeor BMR (kcal/day at complete rest) */
+export function calculateBMR(profile: Partial<UserProfile>): number {
+  const { currentWeight = 70, heightCm = 170, age = 25 } = profile;
+  return Math.round(10 * currentWeight + 6.25 * heightCm - 5 * age + 5);
+}
+
 /** Mifflin-St Jeor equation for BMR, then multiply by activity factor */
 export function calculateTargetCalories(profile: Partial<UserProfile>): number {
   const { currentWeight = 70, heightCm = 170, age = 25, activityLevel = 'moderate', goalType = 'maintenance' } = profile;

@@ -7,6 +7,13 @@ import type {
   MealType, IntensityLevel, ActivitySource, GoalType,
 } from '@/types';
 
+export interface WeightEntry {
+  id: string;
+  date: string;       // YYYY-MM-DD
+  weight: number;     // kg
+  bodyFat?: number;   // %
+}
+
 // ── Default profile ───────────────────────────────────────────────────────────
 const DEFAULT_PROFILE: UserProfile = {
   name:               '',
@@ -33,6 +40,7 @@ interface StrideStore {
   foodLog:      FoodLogEntry[];
   activityLog:  ActivityLogEntry[];
   waterMl:      Record<string, number>; // date → ml
+  weightLog:    WeightEntry[];
 
   // Profile actions
   updateProfile:          (updates: Partial<UserProfile>) => void;
@@ -50,6 +58,10 @@ interface StrideStore {
   addWater:               (ml: number) => void;
   resetWater:             () => void;
 
+  // Body metrics actions
+  addWeightEntry:         (weight: number, bodyFat?: number) => void;
+  getWeightTrend:         (days?: number) => WeightEntry[];
+
   // Computed
   getTodayFoodLog:        () => FoodLogEntry[];
   getTodayActivityLog:    () => ActivityLogEntry[];
@@ -57,6 +69,7 @@ interface StrideStore {
   getTodayCaloriesBurned: () => number;
   getTodayWater:          () => number;
   getCaloriesRemaining:   () => number;
+  getNetCalories:         () => number;
 }
 
 export const useStrideStore = create<StrideStore>()(
@@ -66,6 +79,7 @@ export const useStrideStore = create<StrideStore>()(
       foodLog:     [],
       activityLog: [],
       waterMl:     {},
+      weightLog:   [],
 
       // ── Profile ──────────────────────────────────────────────────────────────
       updateProfile: (updates) =>
@@ -122,6 +136,27 @@ export const useStrideStore = create<StrideStore>()(
       resetWater: () =>
         set((s) => ({ waterMl: { ...s.waterMl, [todayKey()]: 0 } })),
 
+      // ── Body Metrics ──────────────────────────────────────────────────────────
+      addWeightEntry: (weight, bodyFat) => {
+        const today = new Date().toISOString().slice(0, 10);
+        set((s) => {
+          // replace today's entry if it exists
+          const filtered = s.weightLog.filter((e) => e.date !== today);
+          return {
+            weightLog: [...filtered, { id: uid(), date: today, weight, bodyFat }],
+            profile: { ...s.profile, currentWeight: weight },
+          };
+        });
+      },
+
+      getWeightTrend: (days = 30) => {
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - days);
+        return get().weightLog
+          .filter((e) => new Date(e.date) >= cutoff)
+          .sort((a, b) => a.date.localeCompare(b.date));
+      },
+
       // ── Computed ──────────────────────────────────────────────────────────────
       getTodayFoodLog: () => {
         const today = todayKey();
@@ -166,6 +201,12 @@ export const useStrideStore = create<StrideStore>()(
         const { calories }       = get().getTodayTotals();
         const burned             = get().getTodayCaloriesBurned();
         return Math.max(0, targetCalories - calories + burned);
+      },
+
+      getNetCalories: () => {
+        const { calories } = get().getTodayTotals();
+        const burned       = get().getTodayCaloriesBurned();
+        return Math.max(0, calories - burned);
       },
     }),
     { name: 'stride-store' }

@@ -3,10 +3,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const NAV_ITEMS = [
-  { href: '/dashboard', activePrefix: '/dashboard', emoji: '🏠', label: 'Home'    },
-  { href: '/log/food',  activePrefix: '/log',        emoji: '📋', label: 'Log'     },
-  { href: '/scan',      activePrefix: '/scan',       emoji: '📷', label: 'Scan'    },
-  { href: '/profile',   activePrefix: '/profile',    emoji: '👤', label: 'Profile' },
+  { href: '/dashboard', activePrefix: '/dashboard', emoji: '🏠', label: 'Home'  },
+  { href: '/scan',      activePrefix: '/scan',       emoji: '📷', label: 'Scan'  },
+  { href: '/eat',       activePrefix: '/eat',        emoji: '🍜', label: 'Eat'   },
+  { href: '/move',      activePrefix: '/move',       emoji: '🏃', label: 'Move'  },
+  { href: '/me',        activePrefix: '/me',         emoji: '👤', label: 'Me'    },
 ];
 
 export default function BottomNav() {
@@ -39,8 +40,8 @@ export default function BottomNav() {
               }}
             >
               <span style={{
-                fontSize: 22, lineHeight: 1,
-                filter: active ? 'none' : 'grayscale(1) opacity(0.45)',
+                fontSize: 20, lineHeight: 1,
+                filter: active ? 'none' : 'grayscale(1) opacity(0.40)',
                 transition: 'filter .2s',
               }}>
                 {item.emoji}
