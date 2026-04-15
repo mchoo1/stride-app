@@ -3,6 +3,73 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useStrideStore } from '@/lib/store';
 
+const R = 72;
+const CIRC = 2 * Math.PI * R;
+
+function CalorieRing({
+  net, goal, consumed, burned,
+}: { net: number; goal: number; consumed: number; burned: number }) {
+  const pct    = Math.min(net / Math.max(goal, 1), 1);
+  const over   = net > goal + 50;
+  const color  = over ? '#FF5A5A' : '#00E676';
+  const offset = CIRC * (1 - pct);
+  const remaining = Math.max(goal - net, 0);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+      <div style={{ position: 'relative', width: 200, height: 200 }}>
+        <svg width="200" height="200" viewBox="0 0 200 200" style={{ animation: 'ringPop .5s ease' }}>
+          {/* Track */}
+          <circle cx="100" cy="100" r={R}
+            fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="12"/>
+          {/* Progress */}
+          <circle cx="100" cy="100" r={R}
+            fill="none" stroke={color} strokeWidth="12"
+            strokeDasharray={CIRC}
+            strokeDashoffset={offset}
+            strokeLinecap="round"
+            transform="rotate(-90 100 100)"
+            style={{
+              transition: 'stroke-dashoffset 1s cubic-bezier(.4,0,.2,1), stroke .4s',
+              filter: `drop-shadow(0 0 8px ${color}80)`,
+            }}
+          />
+          {/* Center: net kcal */}
+          <text x="100" y="85" textAnchor="middle"
+            fill="#F0F0F8" fontSize="38" fontWeight="900"
+            fontFamily="Inter, sans-serif">{net}</text>
+          <text x="100" y="104" textAnchor="middle"
+            fill="#44445A" fontSize="11" fontWeight="600"
+            fontFamily="Inter, sans-serif">NET KCAL</text>
+          <text x="100" y="126" textAnchor="middle"
+            fill={over ? '#FF5A5A' : '#00E676'} fontSize="14" fontWeight="800"
+            fontFamily="Inter, sans-serif">
+            {over ? `${net - goal} over` : `${remaining} left`}
+          </text>
+        </svg>
+      </div>
+
+      {/* Eaten / Burned row */}
+      <div style={{ display: 'flex', gap: 32 }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 11, color: '#44445A', fontWeight: 600, marginBottom: 2 }}>EATEN</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: '#F0F0F8' }}>{consumed}</div>
+        </div>
+        <div style={{ width: 1, background: 'rgba(255,255,255,0.06)' }}/>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 11, color: '#44445A', fontWeight: 600, marginBottom: 2 }}>BURNED</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: '#FF6B35' }}>{burned}</div>
+        </div>
+        <div style={{ width: 1, background: 'rgba(255,255,255,0.06)' }}/>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 11, color: '#44445A', fontWeight: 600, marginBottom: 2 }}>GOAL</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: '#9090B0' }}>{goal}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const store      = useStrideStore();
   const profile    = store.profile;
@@ -10,168 +77,145 @@ export default function DashboardPage() {
   const burned     = store.getTodayCaloriesBurned();
   const todayFood  = store.getTodayFoodLog();
   const todayAct   = store.getTodayActivityLog();
+  const challenges = store.getDailyChallenges();
+  const streak     = store.streak;
 
-  const [macrosOpen, setMacrosOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const consumed  = totals.calories;
-  const net       = Math.max(0, consumed - burned);
-  const remaining = Math.max(profile.targetCalories - net, 0);
-  const over      = net > profile.targetCalories + 50;
-  const calPct    = Math.min((net / Math.max(profile.targetCalories, 1)) * 100, 100);
+  const consumed = totals.calories;
+  const net      = Math.max(0, consumed - burned);
 
   const h = new Date().getHours();
-  const greet = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  const greet = h < 5 ? 'Night owl' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+
+  const doneCount = challenges.filter(c => c.done).length;
 
   const handleDeleteFood = (id: string) => {
     setDeletingId(id);
-    setTimeout(() => {
-      store.removeFoodEntry(id);
-      setDeletingId(null);
-    }, 300);
+    setTimeout(() => { store.removeFoodEntry(id); setDeletingId(null); }, 280);
   };
 
   return (
-    <div className="animate-fade-in">
+    <div style={{ background: '#0C0C14', minHeight: '100vh' }}>
 
       {/* ── Header ── */}
-      <div style={{
-        background: 'linear-gradient(160deg, #4CAF82 0%, #38a169 100%)',
-        padding: '44px 20px 28px',
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-            <div style={{ color: '#fff', fontSize: 22, fontWeight: 800, lineHeight: 1.2 }}>
-              {greet}, {profile.name || 'Athlete'} 👋
+      <div style={{ padding: '52px 20px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <p style={{ fontSize: 13, color: '#44445A', fontWeight: 600, marginBottom: 2 }}>
+            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+          </p>
+          <h1 style={{ fontSize: 22, fontWeight: 900, color: '#F0F0F8', margin: 0 }}>
+            {greet}{profile.name ? `, ${profile.name.split(' ')[0]}` : ''} 👋
+          </h1>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {streak > 0 && (
+            <div className="streak-badge">
+              🔥 {streak}d
             </div>
-            <div style={{ color: 'rgba(255,255,255,.70)', fontSize: 13, marginTop: 3 }}>
-              {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-            </div>
-          </div>
+          )}
           <Link href="/me" style={{
-            width: 40, height: 40, borderRadius: '50%',
-            background: 'rgba(255,255,255,.22)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
-            textDecoration: 'none',
+            width: 38, height: 38, borderRadius: '50%',
+            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            textDecoration: 'none', fontSize: 18,
           }}>👤</Link>
         </div>
       </div>
 
-      <div style={{ padding: '0 14px 100px' }}>
+      <div style={{ padding: '16px 16px 100px' }}>
 
-        {/* ── Net Calorie Hero Card ── */}
+        {/* ── Calorie Ring ── */}
         <div style={{
-          background: '#fff', borderRadius: 24, marginTop: -14,
-          padding: 18, boxShadow: '0 8px 24px rgba(0,0,0,.10)', marginBottom: 12,
+          background: '#161622', borderRadius: 28, padding: '24px 20px 20px',
+          border: '1px solid rgba(255,255,255,0.06)',
+          marginBottom: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
         }}>
-          {/* Eaten / Burned / Net row */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 22, fontWeight: 800, color: '#1a1a2e' }}>{consumed}</div>
-              <div style={{ fontSize: 11, color: '#aaa', marginTop: 1 }}>eaten</div>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 11, color: '#888', marginBottom: 4 }}>─</div>
-              <div style={{ fontSize: 13, color: '#4CAF82', fontWeight: 700 }}>🔥 {burned}</div>
-              <div style={{ fontSize: 11, color: '#aaa', marginTop: 1 }}>burned</div>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 22, fontWeight: 800, color: '#888' }}>=</div>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 28, fontWeight: 900, color: over ? '#FF6B6B' : '#1a1a2e', lineHeight: 1 }}>{net}</div>
-              <div style={{ fontSize: 11, color: '#aaa', marginTop: 1 }}>net kcal</div>
-            </div>
+          <CalorieRing net={net} goal={profile.targetCalories} consumed={consumed} burned={burned} />
+
+          {/* Quick log buttons */}
+          <div style={{ display: 'flex', gap: 10, width: '100%' }}>
+            <Link href="/log" style={{
+              flex: 1, borderRadius: 16,
+              background: 'rgba(0,230,118,0.10)', border: '1px solid rgba(0,230,118,0.20)',
+              padding: '13px 0', textAlign: 'center', textDecoration: 'none',
+              fontSize: 13, fontWeight: 800, color: '#00E676',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00E676" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
+              Log Food
+            </Link>
+            <Link href="/log?tab=activity" style={{
+              flex: 1, borderRadius: 16,
+              background: 'rgba(255,107,53,0.10)', border: '1px solid rgba(255,107,53,0.20)',
+              padding: '13px 0', textAlign: 'center', textDecoration: 'none',
+              fontSize: 13, fontWeight: 800, color: '#FF6B35',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF6B35" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg>
+              Log Activity
+            </Link>
           </div>
-
-          {/* Progress bar — tappable to show macros */}
-          <button
-            onClick={() => setMacrosOpen(o => !o)}
-            style={{ width: '100%', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}
-          >
-            <div style={{
-              height: 12, borderRadius: 999, background: '#f0f0f0', overflow: 'hidden', position: 'relative',
-            }}>
-              <div style={{
-                position: 'absolute', left: 0, top: 0, bottom: 0,
-                width: `${calPct}%`,
-                background: over ? 'linear-gradient(90deg,#FF6B6B,#ff4444)' : 'linear-gradient(90deg,#4CAF82,#38a169)',
-                borderRadius: 999, transition: 'width .6s cubic-bezier(.4,0,.2,1)',
-              }}/>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-              <span style={{ fontSize: 11, color: '#aaa' }}>Goal: {profile.targetCalories} kcal</span>
-              <span style={{ fontSize: 11, color: over ? '#FF6B6B' : '#4CAF82', fontWeight: 700 }}>
-                {over ? `${net - profile.targetCalories} over` : `${remaining} left`}
-                {' '}{macrosOpen ? '▲' : '▼'}
-              </span>
-            </div>
-          </button>
-
-          {/* Collapsible Macros */}
-          {macrosOpen && (
-            <div style={{
-              marginTop: 14, paddingTop: 14, borderTop: '1px solid #f5f5f5',
-              display: 'flex', justifyContent: 'space-around',
-              animation: 'fadeIn .2s ease',
-            }}>
-              {[
-                { label: 'Protein', val: totals.protein, goal: profile.targetProtein, color: '#4A90D9' },
-                { label: 'Carbs',   val: totals.carbs,   goal: profile.targetCarbs,   color: '#F5A623' },
-                { label: 'Fat',     val: totals.fat,     goal: profile.targetFat,     color: '#4CAF82' },
-              ].map(m => {
-                const pct = Math.min(m.val / Math.max(m.goal, 1), 1);
-                const r = 24, circ = 2 * Math.PI * r;
-                return (
-                  <div key={m.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                    <div style={{ position: 'relative', width: 60, height: 60 }}>
-                      <svg width="60" height="60" viewBox="0 0 60 60" style={{ transform: 'rotate(-90deg)' }}>
-                        <circle cx="30" cy="30" r={r} fill="none" stroke="#f0f0f0" strokeWidth="5"/>
-                        <circle cx="30" cy="30" r={r} fill="none" stroke={m.color} strokeWidth="5"
-                          strokeDasharray={`${pct * circ} ${circ}`} strokeLinecap="round"/>
-                      </svg>
-                      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <span style={{ fontSize: 13, fontWeight: 800, color: m.color }}>{m.val}g</span>
-                      </div>
-                    </div>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: '#555' }}>{m.label}</span>
-                    <span style={{ fontSize: 10, color: '#bbb' }}>{Math.max(m.goal - m.val, 0)}g left</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
         </div>
 
-        {/* ── Quick Actions ── */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
-          <Link href="/log/food" className="qa-card qa-green" style={{ textDecoration: 'none' }}>
-            <div className="qa-icon">🍽️</div>
-            <div className="qa-label">Log Food</div>
-          </Link>
-          <Link href="/scan" className="qa-card qa-blue" style={{ textDecoration: 'none' }}>
-            <div className="qa-icon">📷</div>
-            <div className="qa-label">Scan Food</div>
-          </Link>
-          <Link href="/move" className="qa-card qa-purple" style={{ textDecoration: 'none' }}>
-            <div className="qa-icon">🏃</div>
-            <div className="qa-label">Log Activity</div>
-          </Link>
+        {/* ── Daily Challenges ── */}
+        <div style={{
+          background: '#161622', borderRadius: 22, padding: 16,
+          border: '1px solid rgba(255,255,255,0.06)', marginBottom: 12,
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <span style={{ fontSize: 14, fontWeight: 800, color: '#F0F0F8' }}>Daily Challenges</span>
+            <span style={{
+              fontSize: 12, fontWeight: 700, color: doneCount === 3 ? '#00E676' : '#9090B0',
+              background: doneCount === 3 ? 'rgba(0,230,118,0.12)' : 'rgba(255,255,255,0.06)',
+              borderRadius: 20, padding: '3px 10px',
+            }}>
+              {doneCount}/3 done
+            </span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {challenges.map(ch => (
+              <div key={ch.id} className={`challenge-card${ch.done ? ' done' : ''}`}>
+                <span style={{ fontSize: 20 }}>{ch.emoji}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: ch.done ? '#00E676' : '#F0F0F8', marginBottom: 4 }}>
+                    {ch.label}
+                  </div>
+                  <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%', borderRadius: 2,
+                      width: `${Math.min((ch.current / ch.target) * 100, 100)}%`,
+                      background: ch.done ? '#00E676' : '#9090B0',
+                      transition: 'width .5s',
+                    }}/>
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  {ch.done
+                    ? <span style={{ fontSize: 18 }}>✅</span>
+                    : <span style={{ fontSize: 11, color: '#44445A', fontWeight: 700 }}>+{ch.xp} XP</span>
+                  }
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* ── Today's Food ── */}
-        <div className="app-card" style={{ marginBottom: 12 }}>
+        <div style={{
+          background: '#161622', borderRadius: 22, padding: 16,
+          border: '1px solid rgba(255,255,255,0.06)', marginBottom: 12,
+        }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e' }}>Today&apos;s Food</div>
-            <Link href="/log/food" style={{ fontSize: 13, color: '#4CAF82', fontWeight: 600, textDecoration: 'none' }}>
-              See all →
+            <span style={{ fontSize: 14, fontWeight: 800, color: '#F0F0F8' }}>Today&apos;s Food</span>
+            <Link href="/log" style={{ fontSize: 12, color: '#00E676', fontWeight: 700, textDecoration: 'none' }}>
+              + Add
             </Link>
           </div>
           {todayFood.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '24px 0' }}>
-              <div style={{ fontSize: 36, marginBottom: 8 }}>🍴</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#bbb' }}>No meals logged yet</div>
-              <div style={{ fontSize: 12, color: '#ccc', marginTop: 4 }}>Tap &quot;Log Food&quot; or &quot;Scan Food&quot; to start</div>
+            <div style={{ textAlign: 'center', padding: '20px 0' }}>
+              <div style={{ fontSize: 32, marginBottom: 8 }}>🍽️</div>
+              <div style={{ fontSize: 13, color: '#44445A', fontWeight: 600 }}>Nothing logged yet</div>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -179,73 +223,79 @@ export default function DashboardPage() {
                 <div key={e.id} style={{
                   display: 'flex', alignItems: 'center', gap: 10,
                   padding: '8px 6px', borderRadius: 10,
-                  background: deletingId === e.id ? '#fff0f0' : 'transparent',
-                  transition: 'background .3s, opacity .3s',
-                  opacity: deletingId === e.id ? 0.4 : 1,
+                  opacity: deletingId === e.id ? 0.3 : 1,
+                  transform: deletingId === e.id ? 'translateX(-10px)' : 'none',
+                  transition: 'opacity .28s, transform .28s',
                 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#4CAF82', flexShrink: 0 }}/>
-                  <span style={{ flex: 1, fontSize: 14, color: '#333', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#00E676', flexShrink: 0 }}/>
+                  <span style={{ flex: 1, fontSize: 14, color: '#F0F0F8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {e.name}
                   </span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#888', marginRight: 6 }}>{e.calories} kcal</span>
-                  <button
-                    onClick={() => handleDeleteFood(e.id)}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#ddd', padding: '0 4px', lineHeight: 1 }}
-                  >✕</button>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#9090B0' }}>{e.calories} kcal</span>
+                  <button onClick={() => handleDeleteFood(e.id)} style={{
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    color: '#44445A', fontSize: 15, padding: '0 4px', lineHeight: 1,
+                  }}>✕</button>
                 </div>
               ))}
+              {todayFood.length > 5 && (
+                <Link href="/log" style={{ fontSize: 12, color: '#44445A', textDecoration: 'none', textAlign: 'center', paddingTop: 6 }}>
+                  +{todayFood.length - 5} more entries
+                </Link>
+              )}
             </div>
           )}
         </div>
 
         {/* ── Today's Activity ── */}
         {todayAct.length > 0 && (
-          <div className="app-card" style={{ marginBottom: 12 }}>
+          <div style={{
+            background: '#161622', borderRadius: 22, padding: 16,
+            border: '1px solid rgba(255,255,255,0.06)', marginBottom: 12,
+          }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e' }}>Today&apos;s Activity</div>
-              <Link href="/move" style={{ fontSize: 13, color: '#4CAF82', fontWeight: 600, textDecoration: 'none' }}>
-                Add more →
+              <span style={{ fontSize: 14, fontWeight: 800, color: '#F0F0F8' }}>Activity</span>
+              <Link href="/log?tab=activity" style={{ fontSize: 12, color: '#FF6B35', fontWeight: 700, textDecoration: 'none' }}>
+                + Add
               </Link>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {todayAct.map(e => (
                 <div key={e.id} style={{
                   display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '8px 0', borderTop: '1px solid #f5f5f5',
+                  padding: '6px 4px',
                 }}>
                   <span style={{ fontSize: 18 }}>{e.emoji}</span>
-                  <span style={{ flex: 1, fontSize: 14, color: '#333' }}>{e.name}</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#4CAF82' }}>-{e.caloriesBurned} kcal</span>
+                  <span style={{ flex: 1, fontSize: 13, color: '#F0F0F8' }}>{e.name}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#FF6B35' }}>-{e.caloriesBurned} kcal</span>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* ── Discover more row ── */}
+        {/* ── Discover row ── */}
         <div style={{ display: 'flex', gap: 10 }}>
           <Link href="/eat" style={{
-            flex: 1, borderRadius: 18, padding: '14px 12px',
-            background: 'linear-gradient(135deg, #fff8f0, #ffe8d6)',
-            border: '1px solid rgba(231,111,81,.15)',
+            flex: 1, borderRadius: 20, padding: '16px 14px',
+            background: '#161622', border: '1px solid rgba(255,107,53,0.15)',
             textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10,
           }}>
-            <span style={{ fontSize: 26 }}>🍜</span>
+            <span style={{ fontSize: 22 }}>🍜</span>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a2e' }}>What to Eat</div>
-              <div style={{ fontSize: 11, color: '#bbb', marginTop: 1 }}>Nearby + fits your budget</div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#F0F0F8' }}>What to Eat</div>
+              <div style={{ fontSize: 11, color: '#44445A', marginTop: 2 }}>Fits your budget</div>
             </div>
           </Link>
           <Link href="/move" style={{
-            flex: 1, borderRadius: 18, padding: '14px 12px',
-            background: 'linear-gradient(135deg, #f0f4ff, #e8eeff)',
-            border: '1px solid rgba(107,81,231,.15)',
+            flex: 1, borderRadius: 20, padding: '16px 14px',
+            background: '#161622', border: '1px solid rgba(167,139,250,0.15)',
             textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10,
           }}>
-            <span style={{ fontSize: 26 }}>🏃</span>
+            <span style={{ fontSize: 22 }}>⚡</span>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a2e' }}>Move</div>
-              <div style={{ fontSize: 11, color: '#bbb', marginTop: 1 }}>Activities nearby</div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#F0F0F8' }}>Move</div>
+              <div style={{ fontSize: 11, color: '#44445A', marginTop: 2 }}>Nearby activities</div>
             </div>
           </Link>
         </div>

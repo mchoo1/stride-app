@@ -1,8 +1,9 @@
 'use client';
 import { useState } from 'react';
+import Link from 'next/link';
 import { useStrideStore } from '@/lib/store';
 import { calculateBMR, calculateTargetCalories, calculateMacros } from '@/lib/utils';
-import type { GoalType, DietaryFlag } from '@/types';
+import type { GoalType } from '@/types';
 
 const GOAL_OPTS: { key: GoalType; emoji: string; label: string }[] = [
   { key: 'weight_loss', emoji: '📉', label: 'Lose Weight'  },
@@ -12,46 +13,41 @@ const GOAL_OPTS: { key: GoalType; emoji: string; label: string }[] = [
 
 const ACTIVITY_LABELS: Record<string, string> = {
   sedentary:   'Sedentary (desk job)',
-  light:       'Lightly active (1-3x/wk)',
-  moderate:    'Moderately active (3-5x/wk)',
-  active:      'Very active (6-7x/wk)',
+  light:       'Lightly active (1–3x/wk)',
+  moderate:    'Moderately active (3–5x/wk)',
+  active:      'Very active (6–7x/wk)',
   very_active: 'Athlete (2x/day)',
 };
 
-/** Mini SVG sparkline for weight trend */
+/** SVG sparkline for weight trend */
 function WeightChart({ entries }: { entries: { date: string; weight: number }[] }) {
   if (entries.length < 2) return null;
   const W = 280, H = 80, PAD = 8;
-  const weights = entries.map(e => e.weight);
-  const min = Math.min(...weights) - 0.5;
-  const max = Math.max(...weights) + 0.5;
-  const xStep = (W - PAD * 2) / (entries.length - 1);
-  const yScale = (H - PAD * 2) / (max - min || 1);
-  const points = entries.map((e, i) => [
-    PAD + i * xStep,
-    H - PAD - (e.weight - min) * yScale,
-  ]);
-  const d = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
-  // area fill
-  const area = d + ` L${points[points.length-1][0]},${H} L${points[0][0]},${H} Z`;
-
-  const first = weights[0], last = weights[weights.length - 1];
-  const trending = last <= first; // green if going down (weight loss is positive direction)
+  const weights  = entries.map(e => e.weight);
+  const min      = Math.min(...weights) - 0.5;
+  const max      = Math.max(...weights) + 0.5;
+  const xStep    = (W - PAD * 2) / (entries.length - 1);
+  const yScale   = (H - PAD * 2) / (max - min || 1);
+  const points   = entries.map((e, i) => [PAD + i * xStep, H - PAD - (e.weight - min) * yScale]);
+  const d        = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+  const area     = d + ` L${points[points.length - 1][0]},${H} L${points[0][0]},${H} Z`;
+  const trending = weights[weights.length - 1] <= weights[0];
+  const color    = trending ? '#00E676' : '#FF5A5A';
 
   return (
     <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ overflow: 'visible' }}>
       <defs>
         <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={trending ? '#4CAF82' : '#FF6B6B'} stopOpacity="0.2"/>
-          <stop offset="100%" stopColor={trending ? '#4CAF82' : '#FF6B6B'} stopOpacity="0.0"/>
+          <stop offset="0%"   stopColor={color} stopOpacity="0.2"/>
+          <stop offset="100%" stopColor={color} stopOpacity="0.0"/>
         </linearGradient>
       </defs>
       <path d={area} fill="url(#chartFill)"/>
-      <path d={d} fill="none" stroke={trending ? '#4CAF82' : '#FF6B6B'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d={d} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
       {points.map((p, i) => (
-        <circle key={i} cx={p[0]} cy={p[1]} r={i === points.length - 1 ? 4 : 2.5}
-          fill={trending ? '#4CAF82' : '#FF6B6B'}
-          stroke="#fff" strokeWidth="1.5"/>
+        <circle key={i} cx={p[0]} cy={p[1]}
+          r={i === points.length - 1 ? 4 : 2.5}
+          fill={color} stroke="#161622" strokeWidth="1.5"/>
       ))}
     </svg>
   );
@@ -61,15 +57,16 @@ export default function MePage() {
   const store   = useStrideStore();
   const profile = store.profile;
   const trend   = store.getWeightTrend(30);
+  const streak  = store.streak;
 
   const bmr  = calculateBMR(profile);
   const tdee = calculateTargetCalories(profile);
 
-  const [tab, setTab]             = useState<'body' | 'goals' | 'settings'>('body');
+  const [tab,         setTab        ] = useState<'body' | 'goals' | 'settings'>('body');
   const [weightInput, setWeightInput] = useState('');
-  const [bfInput, setBfInput]     = useState('');
-  const [saved, setSaved]         = useState(false);
-  const [form, setForm]           = useState({ ...profile });
+  const [bfInput,     setBfInput    ] = useState('');
+  const [saved,       setSaved      ] = useState(false);
+  const [form,        setForm       ] = useState({ ...profile });
 
   const latestWeight = trend.length ? trend[trend.length - 1].weight : profile.currentWeight;
   const latestBf     = trend.length ? trend[trend.length - 1].bodyFat : undefined;
@@ -77,158 +74,182 @@ export default function MePage() {
   const logWeight = () => {
     const w = parseFloat(weightInput);
     if (isNaN(w) || w < 20 || w > 300) return;
-    const bf = bfInput ? parseFloat(bfInput) : undefined;
-    store.addWeightEntry(w, bf);
-    setWeightInput('');
-    setBfInput('');
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    store.addWeightEntry(w, bfInput ? parseFloat(bfInput) : undefined);
+    setWeightInput(''); setBfInput('');
+    setSaved(true); setTimeout(() => setSaved(false), 2000);
   };
 
   const saveProfile = () => {
     const calories = calculateTargetCalories(form);
     const macros   = calculateMacros(calories, form.goalType);
     store.updateProfile({ ...form, targetCalories: calories, targetProtein: macros.protein, targetCarbs: macros.carbs, targetFat: macros.fat });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setSaved(true); setTimeout(() => setSaved(false), 2000);
   };
 
   const update = (key: string, val: unknown) => setForm(f => ({ ...f, [key]: val }));
 
+  const cardStyle = {
+    background: '#161622', borderRadius: 20, padding: 16,
+    border: '1px solid rgba(255,255,255,0.06)', marginBottom: 12,
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', background: '#1E1E2E',
+    border: '1px solid rgba(255,255,255,0.07)',
+    borderRadius: 12, padding: '11px 14px',
+    fontSize: 15, color: '#F0F0F8', outline: 'none',
+    fontFamily: 'Inter, sans-serif',
+  };
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: 11, fontWeight: 700, color: '#44445A', marginBottom: 5, display: 'block',
+  };
+
   return (
-    <div style={{ background: '#f8f9fa', minHeight: '100vh' }}>
+    <div style={{ background: '#0C0C14', minHeight: '100vh' }}>
 
-      {/* Header */}
-      <div style={{
-        background: 'linear-gradient(160deg, #457B9D 0%, #1d4e6e 100%)',
-        padding: '44px 20px 20px',
-      }}>
-        <h1 style={{ color: '#fff', fontSize: 22, fontWeight: 800, margin: 0, marginBottom: 3 }}>Me</h1>
-        <p style={{ color: 'rgba(255,255,255,.65)', fontSize: 13, margin: 0 }}>Body stats, goals &amp; settings</p>
+      {/* ── Header ── */}
+      <div style={{ padding: '52px 20px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <h1 style={{ fontSize: 22, fontWeight: 900, color: '#F0F0F8', margin: 0, marginBottom: 2 }}>Me</h1>
+          <p style={{ fontSize: 13, color: '#44445A', margin: 0 }}>Body stats, goals &amp; settings</p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {streak > 0 && <div className="streak-badge">🔥 {streak}d</div>}
+          {/* Log shortcut */}
+          <Link href="/log" style={{
+            background: 'rgba(0,230,118,0.12)', border: '1px solid rgba(0,230,118,0.20)',
+            borderRadius: 14, padding: '7px 14px',
+            fontSize: 12, fontWeight: 800, color: '#00E676', textDecoration: 'none',
+          }}>+ Log</Link>
+        </div>
       </div>
 
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: 0, background: '#fff', borderBottom: '1px solid #eee' }}>
-        {(['body', 'goals', 'settings'] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)} style={{
-            flex: 1, padding: '12px 0', fontSize: 13, fontWeight: 600,
-            border: 'none', cursor: 'pointer', background: 'none',
-            color: tab === t ? '#457B9D' : '#aaa',
-            borderBottom: `2px solid ${tab === t ? '#457B9D' : 'transparent'}`,
-            transition: 'all .2s', textTransform: 'capitalize',
-          }}>{t}</button>
-        ))}
+      {/* ── Tab bar ── */}
+      <div style={{ padding: '0 16px', marginBottom: 16 }}>
+        <div style={{
+          background: '#161622', borderRadius: 14, padding: 4,
+          display: 'flex', gap: 4, border: '1px solid rgba(255,255,255,0.06)',
+        }}>
+          {(['body', 'goals', 'settings'] as const).map(t => (
+            <button key={t} onClick={() => setTab(t)} style={{
+              flex: 1, padding: '9px 0', borderRadius: 10, border: 'none',
+              fontSize: 12, fontWeight: 700, cursor: 'pointer', textTransform: 'capitalize',
+              background: tab === t ? 'rgba(74,158,255,0.15)' : 'transparent',
+              color:      tab === t ? '#4A9EFF' : '#44445A',
+              transition: 'all .2s',
+            }}>{t}</button>
+          ))}
+        </div>
       </div>
 
-      <div style={{ padding: '14px 14px 100px' }}>
+      <div style={{ padding: '0 16px 100px' }}>
 
-        {/* ══ BODY TAB ══ */}
+        {/* ══════════ BODY TAB ══════════ */}
         {tab === 'body' && (
           <>
-            {/* Stats summary */}
-            <div style={{
-              display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14,
-            }}>
+            {/* Stats grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
               {[
-                { label: 'Current Weight', val: `${latestWeight} kg`, icon: '⚖️', color: '#457B9D' },
-                { label: 'Body Fat',       val: latestBf ? `${latestBf}%` : '—',  icon: '📊', color: '#E76F51' },
-                { label: 'BMR',            val: `${bmr} kcal`,                     icon: '🔋', color: '#4CAF82' },
-                { label: 'TDEE',           val: `${tdee} kcal`,                    icon: '⚡', color: '#F5A623' },
+                { label: 'Current Weight', val: `${latestWeight} kg`, icon: '⚖️', color: '#4A9EFF'  },
+                { label: 'Body Fat',       val: latestBf ? `${latestBf}%` : '—', icon: '📊', color: '#FF6B35' },
+                { label: 'BMR',            val: `${bmr} kcal`,                   icon: '🔋', color: '#00E676' },
+                { label: 'TDEE',           val: `${tdee} kcal`,                  icon: '⚡', color: '#A78BFA' },
               ].map(s => (
-                <div key={s.label} style={{
-                  background: '#fff', borderRadius: 18, padding: '14px 12px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,.06)',
-                }}>
-                  <div style={{ fontSize: 20, marginBottom: 6 }}>{s.icon}</div>
-                  <div style={{ fontSize: 20, fontWeight: 800, color: s.color }}>{s.val}</div>
-                  <div style={{ fontSize: 11, color: '#aaa', marginTop: 3 }}>{s.label}</div>
+                <div key={s.label} style={{ background: '#161622', borderRadius: 18, padding: '16px 14px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div style={{ fontSize: 22, marginBottom: 8 }}>{s.icon}</div>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: s.color }}>{s.val}</div>
+                  <div style={{ fontSize: 11, color: '#44445A', marginTop: 4 }}>{s.label}</div>
                 </div>
               ))}
             </div>
 
-            {/* BMR / TDEE plain-English */}
+            {/* Info banner */}
             <div style={{
-              background: '#EBF3FD', borderRadius: 16, padding: '14px 16px', marginBottom: 14,
-              display: 'flex', gap: 10, alignItems: 'flex-start',
+              background: 'rgba(74,158,255,0.06)', borderRadius: 16, padding: '14px 16px', marginBottom: 12,
+              display: 'flex', gap: 10, alignItems: 'flex-start', border: '1px solid rgba(74,158,255,0.12)',
             }}>
-              <span style={{ fontSize: 18 }}>ℹ️</span>
-              <span style={{ fontSize: 13, color: '#3a6a8a', lineHeight: 1.6 }}>
-                Your body burns <strong>{bmr} kcal</strong> per day just at rest (BMR). With your activity level, your total daily burn is <strong>{tdee} kcal</strong> (TDEE) — that&apos;s your daily calorie target before adjusting for your goal.
+              <span style={{ fontSize: 16 }}>ℹ️</span>
+              <span style={{ fontSize: 12, color: '#4A9EFF', lineHeight: 1.6 }}>
+                Your body burns <strong>{bmr} kcal</strong> at rest (BMR). With your activity level your total daily burn is <strong>{tdee} kcal</strong> (TDEE) — the baseline before goal adjustments.
               </span>
             </div>
 
-            {/* Weight trend chart */}
+            {/* Weight chart */}
             {trend.length >= 2 ? (
-              <div className="app-card" style={{ marginBottom: 14 }}>
+              <div style={{ ...cardStyle }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e' }}>Weight (30 days)</div>
-                  <div style={{ fontSize: 12, color: '#888' }}>
-                    {trend[0].weight} → <strong style={{ color: '#1a1a2e' }}>{trend[trend.length - 1].weight} kg</strong>
-                  </div>
+                  <span style={{ fontSize: 14, fontWeight: 800, color: '#F0F0F8' }}>Weight (30 days)</span>
+                  <span style={{ fontSize: 12, color: '#44445A' }}>
+                    {trend[0].weight} → <strong style={{ color: '#F0F0F8' }}>{trend[trend.length - 1].weight} kg</strong>
+                  </span>
                 </div>
                 <div style={{ overflowX: 'auto' }}>
                   <WeightChart entries={trend} />
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
-                  <span style={{ fontSize: 11, color: '#ccc' }}>
+                  <span style={{ fontSize: 10, color: '#44445A' }}>
                     {new Date(trend[0].date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </span>
-                  <span style={{ fontSize: 11, color: '#ccc' }}>Today</span>
+                  <span style={{ fontSize: 10, color: '#44445A' }}>Today</span>
                 </div>
               </div>
             ) : (
-              <div className="app-card" style={{ marginBottom: 14, textAlign: 'center', padding: '24px 16px' }}>
-                <div style={{ fontSize: 32, marginBottom: 8 }}>📈</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#bbb' }}>No weight trend yet</div>
-                <div style={{ fontSize: 12, color: '#ccc', marginTop: 4 }}>Log your weight below to start tracking</div>
+              <div style={{ ...cardStyle, textAlign: 'center', padding: '28px 16px' }}>
+                <div style={{ fontSize: 36, marginBottom: 8 }}>📈</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#9090B0' }}>No weight trend yet</div>
+                <div style={{ fontSize: 12, color: '#44445A', marginTop: 4 }}>Log your weight below to start tracking</div>
               </div>
             )}
 
-            {/* Log weight entry */}
-            <div className="app-card" style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e', marginBottom: 12 }}>
+            {/* Log weight */}
+            <div style={cardStyle}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#F0F0F8', marginBottom: 12 }}>
                 Log Today&apos;s Weight
               </div>
-              <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+              <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
                 <div style={{ flex: 2 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#888', marginBottom: 5 }}>Weight (kg)</div>
+                  <label style={labelStyle}>Weight (kg)</label>
                   <input
-                    type="number" step="0.1" placeholder={`e.g. ${latestWeight}`}
+                    type="number" step="0.1" style={{ ...inputStyle, fontSize: 18, fontWeight: 700, textAlign: 'center' }}
+                    placeholder={`e.g. ${latestWeight}`}
                     value={weightInput} onChange={e => setWeightInput(e.target.value)}
-                    className="form-input"
-                    style={{ fontSize: 18, fontWeight: 700, textAlign: 'center' }}
                   />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#888', marginBottom: 5 }}>Body fat % <span style={{ color: '#ccc', fontWeight: 400 }}>(opt.)</span></div>
+                  <label style={labelStyle}>Body fat % <span style={{ color: '#2A2A3A' }}>(opt.)</span></label>
                   <input
-                    type="number" step="0.1" placeholder="e.g. 22"
+                    type="number" step="0.1" style={{ ...inputStyle, textAlign: 'center' }}
+                    placeholder="e.g. 22"
                     value={bfInput} onChange={e => setBfInput(e.target.value)}
-                    className="form-input"
-                    style={{ fontSize: 16, fontWeight: 700, textAlign: 'center' }}
                   />
                 </div>
               </div>
-              <button onClick={logWeight} className="btn-primary" style={{ width: '100%', padding: '12px 0', fontSize: 14 }}>
-                {saved ? '✅ Logged!' : 'Log Weight'}
+              <button onClick={logWeight} style={{
+                width: '100%', background: saved ? 'rgba(0,230,118,0.15)' : '#00E676',
+                color: saved ? '#00E676' : '#000',
+                border: 'none', borderRadius: 14, padding: '13px 0',
+                fontSize: 14, fontWeight: 800, cursor: 'pointer', transition: 'all .2s',
+              }}>
+                {saved ? '✓ Logged!' : 'Log Weight'}
               </button>
             </div>
 
             {/* Recent entries */}
             {trend.length > 0 && (
-              <div className="app-card">
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e', marginBottom: 10 }}>Recent Entries</div>
+              <div style={cardStyle}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: '#F0F0F8', marginBottom: 10 }}>Recent Entries</div>
                 {[...trend].reverse().slice(0, 7).map(e => (
                   <div key={e.id} style={{
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    padding: '8px 0', borderTop: '1px solid #f5f5f5',
+                    padding: '9px 0', borderTop: '1px solid rgba(255,255,255,0.04)',
                   }}>
-                    <span style={{ fontSize: 13, color: '#888' }}>
+                    <span style={{ fontSize: 13, color: '#44445A' }}>
                       {new Date(e.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                     </span>
                     <div style={{ display: 'flex', gap: 12 }}>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: '#457B9D' }}>{e.weight} kg</span>
-                      {e.bodyFat && <span style={{ fontSize: 13, color: '#E76F51' }}>{e.bodyFat}% bf</span>}
+                      <span style={{ fontSize: 14, fontWeight: 700, color: '#4A9EFF' }}>{e.weight} kg</span>
+                      {e.bodyFat && <span style={{ fontSize: 13, color: '#FF6B35' }}>{e.bodyFat}% bf</span>}
                     </div>
                   </div>
                 ))}
@@ -237,22 +258,22 @@ export default function MePage() {
           </>
         )}
 
-        {/* ══ GOALS TAB ══ */}
+        {/* ══════════ GOALS TAB ══════════ */}
         {tab === 'goals' && (
           <>
-            <div className="app-card" style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e', marginBottom: 14 }}>Goal</div>
+            <div style={cardStyle}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#F0F0F8', marginBottom: 14 }}>Goal</div>
               <div style={{ display: 'flex', gap: 8 }}>
                 {GOAL_OPTS.map(g => (
                   <button key={g.key} onClick={() => update('goalType', g.key)} style={{
                     flex: 1, borderRadius: 16, padding: '12px 8px',
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                    border: `2px solid ${form.goalType === g.key ? '#4CAF82' : '#eee'}`,
-                    background: form.goalType === g.key ? 'rgba(76,175,130,.08)' : '#fafafa',
+                    border: `1px solid ${form.goalType === g.key ? 'rgba(0,230,118,0.40)' : 'rgba(255,255,255,0.06)'}`,
+                    background: form.goalType === g.key ? 'rgba(0,230,118,0.08)' : '#1E1E2E',
                     cursor: 'pointer', transition: 'all .2s',
                   }}>
                     <span style={{ fontSize: 24 }}>{g.emoji}</span>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: form.goalType === g.key ? '#4CAF82' : '#bbb' }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: form.goalType === g.key ? '#00E676' : '#44445A' }}>
                       {g.label}
                     </span>
                   </button>
@@ -260,124 +281,143 @@ export default function MePage() {
               </div>
             </div>
 
-            <div className="app-card" style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e', marginBottom: 14 }}>Body Stats</div>
+            <div style={cardStyle}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#F0F0F8', marginBottom: 14 }}>Body Stats</div>
               <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#666', marginBottom: 5 }}>Current weight (kg)</div>
-                  <input type="number" step="0.1" className="form-input" value={form.currentWeight}
+                  <label style={labelStyle}>Current weight (kg)</label>
+                  <input type="number" step="0.1" style={inputStyle} value={form.currentWeight}
                     onChange={e => update('currentWeight', Number(e.target.value))}/>
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#666', marginBottom: 5 }}>Target weight (kg)</div>
-                  <input type="number" step="0.1" className="form-input" value={form.targetWeight}
+                  <label style={labelStyle}>Target weight (kg)</label>
+                  <input type="number" step="0.1" style={inputStyle} value={form.targetWeight}
                     onChange={e => update('targetWeight', Number(e.target.value))}/>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#666', marginBottom: 5 }}>Age</div>
-                  <input type="number" className="form-input" value={form.age}
+                  <label style={labelStyle}>Age</label>
+                  <input type="number" style={inputStyle} value={form.age}
                     onChange={e => update('age', Number(e.target.value))}/>
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#666', marginBottom: 5 }}>Height (cm)</div>
-                  <input type="number" className="form-input" value={form.heightCm}
+                  <label style={labelStyle}>Height (cm)</label>
+                  <input type="number" style={inputStyle} value={form.heightCm}
                     onChange={e => update('heightCm', Number(e.target.value))}/>
                 </div>
               </div>
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#666', marginBottom: 8 }}>Activity Level</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {Object.entries(ACTIVITY_LABELS).map(([key, label]) => (
-                    <button key={key} onClick={() => update('activityLevel', key)} style={{
-                      borderRadius: 12, padding: '10px 14px',
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      border: `1.5px solid ${form.activityLevel === key ? '#4CAF82' : '#eee'}`,
-                      background: form.activityLevel === key ? 'rgba(76,175,130,.08)' : '#fafafa',
-                      cursor: 'pointer', transition: 'all .2s',
-                    }}>
-                      <span style={{ fontSize: 13, color: form.activityLevel === key ? '#1a1a2e' : '#888', fontWeight: form.activityLevel === key ? 700 : 400 }}>{label}</span>
-                      {form.activityLevel === key && <span style={{ color: '#4CAF82', fontSize: 16 }}>✓</span>}
-                    </button>
-                  ))}
-                </div>
+
+              <label style={labelStyle}>Activity Level</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {Object.entries(ACTIVITY_LABELS).map(([key, label]) => (
+                  <button key={key} onClick={() => update('activityLevel', key)} style={{
+                    borderRadius: 12, padding: '10px 14px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    border: `1px solid ${form.activityLevel === key ? 'rgba(0,230,118,0.30)' : 'rgba(255,255,255,0.06)'}`,
+                    background: form.activityLevel === key ? 'rgba(0,230,118,0.08)' : '#1E1E2E',
+                    cursor: 'pointer', transition: 'all .2s',
+                  }}>
+                    <span style={{ fontSize: 13, color: form.activityLevel === key ? '#F0F0F8' : '#44445A', fontWeight: form.activityLevel === key ? 700 : 400 }}>
+                      {label}
+                    </span>
+                    {form.activityLevel === key && <span style={{ color: '#00E676', fontSize: 14 }}>✓</span>}
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* Preview new TDEE */}
+            {/* Preview */}
             <div style={{
-              background: 'rgba(76,175,130,.08)', borderRadius: 16, padding: '14px 16px', marginBottom: 14,
-              border: '1px solid rgba(76,175,130,.20)',
+              background: 'rgba(0,230,118,0.06)', borderRadius: 16, padding: '14px 16px', marginBottom: 12,
+              border: '1px solid rgba(0,230,118,0.15)',
             }}>
-              <div style={{ fontSize: 13, color: '#4CAF82', fontWeight: 700, marginBottom: 4 }}>Preview with these settings</div>
-              <div style={{ fontSize: 13, color: '#555' }}>
-                BMR: <strong>{calculateBMR(form)} kcal</strong> &nbsp;·&nbsp;
-                TDEE: <strong>{calculateTargetCalories(form)} kcal</strong> &nbsp;·&nbsp;
-                Target: <strong>{Math.max(1200, calculateTargetCalories(form) + (form.goalType === 'weight_loss' ? -500 : form.goalType === 'muscle_gain' ? 300 : 0))} kcal</strong>
+              <div style={{ fontSize: 12, color: '#00E676', fontWeight: 700, marginBottom: 6 }}>Preview with these settings</div>
+              <div style={{ fontSize: 13, color: '#9090B0' }}>
+                BMR: <strong style={{ color: '#F0F0F8' }}>{calculateBMR(form)} kcal</strong>
+                {'  ·  '}
+                TDEE: <strong style={{ color: '#F0F0F8' }}>{calculateTargetCalories(form)} kcal</strong>
+                {'  ·  '}
+                Target: <strong style={{ color: '#F0F0F8' }}>
+                  {Math.max(1200, calculateTargetCalories(form) + (form.goalType === 'weight_loss' ? -500 : form.goalType === 'muscle_gain' ? 300 : 0))} kcal
+                </strong>
               </div>
             </div>
 
-            <button onClick={saveProfile} className="btn-primary" style={{ width: '100%', padding: '14px 0', fontSize: 15 }}>
-              {saved ? '✅ Saved!' : 'Save Goals'}
+            <button onClick={saveProfile} style={{
+              width: '100%', background: saved ? 'rgba(0,230,118,0.15)' : '#00E676',
+              color: saved ? '#00E676' : '#000',
+              border: 'none', borderRadius: 16, padding: '15px 0',
+              fontSize: 15, fontWeight: 800, cursor: 'pointer', transition: 'all .2s',
+              boxShadow: saved ? 'none' : '0 0 24px rgba(0,230,118,0.30)',
+            }}>
+              {saved ? '✓ Saved!' : 'Save Goals'}
             </button>
           </>
         )}
 
-        {/* ══ SETTINGS TAB ══ */}
+        {/* ══════════ SETTINGS TAB ══════════ */}
         {tab === 'settings' && (
           <>
-            <div className="app-card" style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e', marginBottom: 14 }}>Personal Info</div>
-              <div style={{ marginBottom: 10 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#666', marginBottom: 5 }}>Name</div>
-                <input className="form-input" value={form.name}
+            <div style={cardStyle}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#F0F0F8', marginBottom: 14 }}>Personal Info</div>
+              <div style={{ marginBottom: 12 }}>
+                <label style={labelStyle}>Name</label>
+                <input style={inputStyle} value={form.name}
                   onChange={e => update('name', e.target.value)} placeholder="Your name"/>
               </div>
               <div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#666', marginBottom: 5 }}>Email</div>
-                <input className="form-input" type="email" value={form.email}
+                <label style={labelStyle}>Email</label>
+                <input style={inputStyle} type="email" value={form.email}
                   onChange={e => update('email', e.target.value)} placeholder="your@email.com"/>
               </div>
             </div>
 
-            <div className="app-card" style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e', marginBottom: 14 }}>Manual Calorie Targets</div>
-              <div style={{ marginBottom: 10 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#666', marginBottom: 5 }}>Daily calories (kcal)</div>
-                <input type="number" className="form-input" value={form.targetCalories}
+            <div style={cardStyle}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#F0F0F8', marginBottom: 14 }}>Manual Calorie Targets</div>
+              <div style={{ marginBottom: 12 }}>
+                <label style={labelStyle}>Daily calories (kcal)</label>
+                <input type="number" style={inputStyle} value={form.targetCalories}
                   onChange={e => update('targetCalories', Number(e.target.value))}/>
               </div>
               <div style={{ display: 'flex', gap: 10 }}>
                 {[
-                  { key: 'targetProtein' as const, label: 'Protein (g)', color: '#4A90D9' },
-                  { key: 'targetCarbs'   as const, label: 'Carbs (g)',   color: '#F5A623' },
-                  { key: 'targetFat'     as const, label: 'Fat (g)',     color: '#4CAF82' },
+                  { key: 'targetProtein' as const, label: 'Protein (g)', color: '#4A9EFF' },
+                  { key: 'targetCarbs'   as const, label: 'Carbs (g)',   color: '#FFD166' },
+                  { key: 'targetFat'     as const, label: 'Fat (g)',     color: '#00E676' },
                 ].map(f => (
                   <div key={f.key} style={{ flex: 1 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: f.color, marginBottom: 5 }}>{f.label}</div>
-                    <input type="number" className="form-input" value={form[f.key]}
+                    <label style={{ ...labelStyle, color: f.color }}>{f.label}</label>
+                    <input type="number" style={inputStyle} value={form[f.key]}
                       onChange={e => update(f.key, Number(e.target.value))}/>
                   </div>
                 ))}
               </div>
             </div>
 
-            <button onClick={saveProfile} className="btn-primary" style={{ width: '100%', padding: '14px 0', fontSize: 15, marginBottom: 14 }}>
-              {saved ? '✅ Saved!' : 'Save Settings'}
+            <button onClick={saveProfile} style={{
+              width: '100%', background: saved ? 'rgba(0,230,118,0.15)' : '#00E676',
+              color: saved ? '#00E676' : '#000',
+              border: 'none', borderRadius: 16, padding: '15px 0',
+              fontSize: 15, fontWeight: 800, cursor: 'pointer', transition: 'all .2s',
+              boxShadow: saved ? 'none' : '0 0 24px rgba(0,230,118,0.30)',
+              marginBottom: 12,
+            }}>
+              {saved ? '✓ Saved!' : 'Save Settings'}
             </button>
 
-            <div className="app-card">
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e', marginBottom: 12 }}>Account</div>
+            <div style={cardStyle}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#F0F0F8', marginBottom: 12 }}>Account</div>
               <button onClick={() => {
                 if (confirm('Reset all app data and start over?')) {
                   store.updateProfile({ onboardingComplete: false });
                   window.location.href = '/onboarding';
                 }
               }} style={{
-                width: '100%', borderRadius: 14, padding: '12px 0', fontSize: 14, fontWeight: 600,
-                background: 'rgba(255,107,107,.08)', color: '#FF6B6B',
-                border: '1px solid rgba(255,107,107,.20)', cursor: 'pointer',
+                width: '100%', borderRadius: 14, padding: '12px 0',
+                fontSize: 14, fontWeight: 600,
+                background: 'rgba(255,90,90,0.08)', color: '#FF5A5A',
+                border: '1px solid rgba(255,90,90,0.20)', cursor: 'pointer',
               }}>
                 🔄 Reset App &amp; Start Over
               </button>

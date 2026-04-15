@@ -2,20 +2,20 @@
 import { useState, useEffect } from 'react';
 import { useStrideStore } from '@/lib/store';
 
-// ── MET calorie burn estimates ────────────────────────────────────────────────
+// ── Activity data ─────────────────────────────────────────────────────────────
 const ACTIVITIES = [
-  { id: 'run',    emoji: '🏃', name: 'Running',        metMin: 10, color: '#E76F51' },
-  { id: 'cycle',  emoji: '🚴', name: 'Cycling',        metMin: 8,  color: '#4A90D9' },
-  { id: 'walk',   emoji: '🚶', name: 'Walking',        metMin: 4,  color: '#4CAF82' },
-  { id: 'swim',   emoji: '🏊', name: 'Swimming',       metMin: 9,  color: '#457B9D' },
-  { id: 'gym',    emoji: '🏋️', name: 'Gym / Weights',  metMin: 6,  color: '#7B5EA7' },
-  { id: 'yoga',   emoji: '🧘', name: 'Yoga',           metMin: 3,  color: '#4CAF82' },
-  { id: 'hiit',   emoji: '⚡', name: 'HIIT',           metMin: 12, color: '#F5A623' },
-  { id: 'hike',   emoji: '🥾', name: 'Hiking',         metMin: 6,  color: '#8B5E3C' },
-  { id: 'tennis', emoji: '🎾', name: 'Tennis',         metMin: 8,  color: '#E76F51' },
-  { id: 'dance',  emoji: '💃', name: 'Dance / Zumba',  metMin: 7,  color: '#FF6B9D' },
-  { id: 'sport',  emoji: '⚽', name: 'Team Sport',     metMin: 8,  color: '#4CAF82' },
-  { id: 'other',  emoji: '🔥', name: 'Other',          metMin: 5,  color: '#888'    },
+  { id: 'run',    emoji: '🏃', name: 'Running',       metMin: 10 },
+  { id: 'cycle',  emoji: '🚴', name: 'Cycling',       metMin: 8  },
+  { id: 'walk',   emoji: '🚶', name: 'Walking',       metMin: 4  },
+  { id: 'swim',   emoji: '🏊', name: 'Swimming',      metMin: 9  },
+  { id: 'gym',    emoji: '🏋️', name: 'Gym / Weights', metMin: 6  },
+  { id: 'yoga',   emoji: '🧘', name: 'Yoga',          metMin: 3  },
+  { id: 'hiit',   emoji: '⚡', name: 'HIIT',          metMin: 12 },
+  { id: 'hike',   emoji: '🥾', name: 'Hiking',        metMin: 6  },
+  { id: 'tennis', emoji: '🎾', name: 'Tennis',        metMin: 8  },
+  { id: 'dance',  emoji: '💃', name: 'Dance',         metMin: 7  },
+  { id: 'sport',  emoji: '⚽', name: 'Team Sport',    metMin: 8  },
+  { id: 'other',  emoji: '🔥', name: 'Other',         metMin: 5  },
 ];
 
 interface NearbyPlace {
@@ -29,40 +29,35 @@ interface NearbyPlace {
 }
 
 const MOCK_PLACES: NearbyPlace[] = [
-  { id: 'p1', name: 'LA Fitness',           type: 'Gym',             distance: '0.4 mi', hours: 'Open 24h',       emoji: '🏋️', mapsUrl: 'https://maps.google.com/?q=LA+Fitness' },
-  { id: 'p2', name: 'Central Park Trail',   type: 'Park / Trail',    distance: '0.2 mi', hours: 'Always open',    emoji: '🌳', mapsUrl: 'https://maps.google.com/?q=central+park' },
-  { id: 'p3', name: 'Orange Theory Fitness',type: 'Fitness Studio',  distance: '0.7 mi', hours: 'Open 6am–9pm',   emoji: '⚡', mapsUrl: 'https://maps.google.com/?q=orangetheory' },
-  { id: 'p4', name: 'Community Pool',       type: 'Swimming Pool',   distance: '1.1 mi', hours: 'Open 7am–8pm',   emoji: '🏊', mapsUrl: 'https://maps.google.com/?q=swimming+pool' },
-  { id: 'p5', name: 'Riverside Bike Path',  type: 'Cycling Trail',   distance: '0.3 mi', hours: 'Always open',    emoji: '🚴', mapsUrl: 'https://maps.google.com/?q=bike+path' },
-  { id: 'p6', name: 'CorePower Yoga',       type: 'Yoga Studio',     distance: '0.9 mi', hours: 'Open 6am–10pm',  emoji: '🧘', mapsUrl: 'https://maps.google.com/?q=corepower+yoga' },
+  { id: 'p1', name: 'LA Fitness',            type: 'Gym',            distance: '0.4 mi', hours: 'Open 24h',      emoji: '🏋️', mapsUrl: 'https://maps.google.com/?q=LA+Fitness'    },
+  { id: 'p2', name: 'Central Park Trail',    type: 'Park / Trail',   distance: '0.2 mi', hours: 'Always open',   emoji: '🌳', mapsUrl: 'https://maps.google.com/?q=central+park'  },
+  { id: 'p3', name: 'Orange Theory Fitness', type: 'Fitness Studio', distance: '0.7 mi', hours: 'Open 6am–9pm',  emoji: '⚡', mapsUrl: 'https://maps.google.com/?q=orangetheory'  },
+  { id: 'p4', name: 'Community Pool',        type: 'Swimming Pool',  distance: '1.1 mi', hours: 'Open 7am–8pm',  emoji: '🏊', mapsUrl: 'https://maps.google.com/?q=swimming+pool' },
+  { id: 'p5', name: 'Riverside Bike Path',   type: 'Cycling Trail',  distance: '0.3 mi', hours: 'Always open',   emoji: '🚴', mapsUrl: 'https://maps.google.com/?q=bike+path'     },
+  { id: 'p6', name: 'CorePower Yoga',        type: 'Yoga Studio',    distance: '0.9 mi', hours: 'Open 6am–10pm', emoji: '🧘', mapsUrl: 'https://maps.google.com/?q=corepower+yoga'},
 ];
+
+const DURATION_PRESETS = [15, 30, 45, 60, 90];
 
 export default function MovePage() {
   const store   = useStrideStore();
   const profile = store.profile;
 
-  // Activity logger state
   const [selected, setSelected] = useState<typeof ACTIVITIES[0] | null>(null);
-  const [minutes, setMinutes]   = useState('30');
-  const [logged, setLogged]     = useState(false);
+  const [minutes,  setMinutes]  = useState('30');
+  const [logged,   setLogged]   = useState(false);
+  const [locMsg,   setLocMsg]   = useState('Finding activities near you…');
 
-  // Calories to burn goal: tdee deficit
   const burned   = store.getTodayCaloriesBurned();
-  const consumed = store.getTodayTotals().calories;
-  const net      = consumed - burned;
-  const target   = profile.targetCalories;
-  const burnGoal = Math.max(0, net - target + 300); // suggest burning to reach a small deficit
+  const burnGoal = Math.max(0, (store.getTodayTotals().calories - burned) - profile.targetCalories + 300);
 
-  const [locMsg, setLocMsg] = useState('Finding activities near you…');
   useEffect(() => {
     const t = setTimeout(() => setLocMsg(''), 1600);
     return () => clearTimeout(t);
   }, []);
 
-  // Estimate kcal burn: MET × weight(kg) × hours
-  const estimateBurn = (activity: typeof ACTIVITIES[0], mins: number) => {
-    return Math.round(activity.metMin * profile.currentWeight * (mins / 60));
-  };
+  const estimateBurn = (act: typeof ACTIVITIES[0], mins: number) =>
+    Math.round(act.metMin * (profile.currentWeight || 70) * (mins / 60));
 
   const handleLog = () => {
     if (!selected) return;
@@ -80,39 +75,45 @@ export default function MovePage() {
     setTimeout(() => { setLogged(false); setSelected(null); setMinutes('30'); }, 2000);
   };
 
-  return (
-    <div style={{ background: '#f8f9fa', minHeight: '100vh' }}>
+  const burnEstimate = selected ? estimateBurn(selected, parseInt(minutes) || 30) : 0;
 
-      {/* Header */}
-      <div style={{
-        background: 'linear-gradient(160deg, #7B5EA7 0%, #4e3a72 100%)',
-        padding: '44px 20px 24px',
-      }}>
-        <h1 style={{ color: '#fff', fontSize: 22, fontWeight: 800, margin: 0, marginBottom: 6 }}>Move 🏃</h1>
-        {/* Burn goal banner */}
+  const cardStyle = {
+    background: '#161622', borderRadius: 20, padding: 16,
+    border: '1px solid rgba(255,255,255,0.06)',
+  };
+
+  return (
+    <div style={{ background: '#0C0C14', minHeight: '100vh' }}>
+
+      {/* ── Header ── */}
+      <div style={{ padding: '52px 20px 20px' }}>
+        <h1 style={{ color: '#F0F0F8', fontSize: 22, fontWeight: 900, margin: 0, marginBottom: 10 }}>
+          Move ⚡
+        </h1>
         <div style={{
-          background: 'rgba(255,255,255,.18)', borderRadius: 14, padding: '10px 14px',
-          display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 4,
+          background: 'rgba(167,139,250,0.12)', borderRadius: 14, padding: '10px 14px',
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          border: '1px solid rgba(167,139,250,0.20)',
         }}>
-          <span style={{ fontSize: 18 }}>🔥</span>
+          <span style={{ fontSize: 16 }}>🔥</span>
           {burned > 0 ? (
-            <span style={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>
-              You&apos;ve burned <strong>{burned} kcal</strong> today
-              {burnGoal > 0 && ` · burn ${burnGoal} more to hit your goal`}
+            <span style={{ color: '#A78BFA', fontSize: 14, fontWeight: 700 }}>
+              {burned} kcal burned today
+              {burnGoal > 0 && ` · ${burnGoal} more to hit goal`}
             </span>
           ) : (
-            <span style={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>
-              Log an activity to start burning calories
+            <span style={{ color: '#A78BFA', fontSize: 14, fontWeight: 700 }}>
+              Log an activity to start burning
             </span>
           )}
         </div>
       </div>
 
-      <div style={{ padding: '14px 14px 100px' }}>
+      <div style={{ padding: '0 16px 100px' }}>
 
         {/* ── Log Activity ── */}
-        <div className="app-card" style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 15, fontWeight: 800, color: '#1a1a2e', marginBottom: 14 }}>
+        <div style={{ ...cardStyle, marginBottom: 16 }}>
+          <div style={{ fontSize: 14, fontWeight: 800, color: '#F0F0F8', marginBottom: 14 }}>
             Log an Activity
           </div>
 
@@ -122,129 +123,132 @@ export default function MovePage() {
               <button key={a.id} onClick={() => setSelected(a)} style={{
                 borderRadius: 14, padding: '10px 4px',
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                border: `2px solid ${selected?.id === a.id ? a.color : '#eee'}`,
-                background: selected?.id === a.id ? a.color + '18' : '#fafafa',
+                border: `1px solid ${selected?.id === a.id ? 'rgba(167,139,250,0.40)' : 'rgba(255,255,255,0.06)'}`,
+                background: selected?.id === a.id ? 'rgba(167,139,250,0.12)' : '#1E1E2E',
                 cursor: 'pointer', transition: 'all .15s',
               }}>
                 <span style={{ fontSize: 20 }}>{a.emoji}</span>
-                <span style={{ fontSize: 9, fontWeight: 700, color: selected?.id === a.id ? a.color : '#aaa', textAlign: 'center' }}>
+                <span style={{ fontSize: 9, fontWeight: 700, color: selected?.id === a.id ? '#A78BFA' : '#44445A', textAlign: 'center' }}>
                   {a.name.split(' ')[0]}
                 </span>
               </button>
             ))}
           </div>
 
-          {/* Duration + preview */}
+          {!selected && (
+            <p style={{ fontSize: 13, color: '#44445A', textAlign: 'center', margin: '4px 0 0' }}>
+              Pick an activity above
+            </p>
+          )}
+
           {selected && (
             <div style={{ animation: 'fadeIn .2s ease' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#666', marginBottom: 5 }}>Duration (minutes)</div>
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
-                    {[15, 30, 45, 60, 90].map(m => (
-                      <button key={m} onClick={() => setMinutes(String(m))} style={{
-                        borderRadius: 10, padding: '6px 12px', fontSize: 12, fontWeight: 700,
-                        border: 'none', cursor: 'pointer',
-                        background: minutes === String(m) ? selected.color : '#eee',
-                        color: minutes === String(m) ? '#fff' : '#888',
-                        transition: 'all .15s',
-                      }}>{m}m</button>
-                    ))}
-                    <input
-                      type="number" min="1" max="300"
-                      value={minutes} onChange={e => setMinutes(e.target.value)}
-                      style={{
-                        width: 60, borderRadius: 10, padding: '6px 10px',
-                        border: '1.5px solid #ddd', fontSize: 12, fontWeight: 700,
-                        textAlign: 'center', outline: 'none',
-                      }}
-                    />
-                  </div>
-                </div>
+              {/* Duration presets */}
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#9090B0', marginBottom: 8 }}>Duration (min)</div>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                {DURATION_PRESETS.map(m => (
+                  <button key={m} onClick={() => setMinutes(String(m))} style={{
+                    flex: 1, padding: '9px 0', borderRadius: 12, border: 'none',
+                    fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                    background: minutes === String(m) ? 'rgba(167,139,250,0.15)' : '#1E1E2E',
+                    color:      minutes === String(m) ? '#A78BFA' : '#44445A',
+                    transition: 'all .15s',
+                  }}>{m}</button>
+                ))}
               </div>
+              <input
+                type="number" min="1" max="300"
+                value={minutes} onChange={e => setMinutes(e.target.value)}
+                style={{
+                  width: '100%', background: '#1E1E2E',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                  borderRadius: 12, padding: '10px 14px',
+                  fontSize: 14, color: '#F0F0F8', outline: 'none',
+                  fontFamily: 'Inter, sans-serif', marginBottom: 12,
+                }}
+                placeholder="Custom minutes…"
+              />
 
-              {/* Burn estimate */}
+              {/* Burn estimate card */}
               <div style={{
-                background: selected.color + '12', borderRadius: 14,
-                padding: '12px 14px', marginBottom: 12,
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.15)',
+                borderRadius: 16, padding: '14px', marginBottom: 12,
+                display: 'flex', alignItems: 'center',
               }}>
-                <div>
-                  <div style={{ fontSize: 12, color: '#888', marginBottom: 2 }}>
-                    {selected.emoji} {selected.name} · {minutes} min
-                  </div>
-                  <div style={{ fontSize: 11, color: '#aaa' }}>
-                    Estimated burn for {profile.currentWeight}kg
+                <span style={{ fontSize: 32, marginRight: 14 }}>{selected.emoji}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: '#F0F0F8' }}>{selected.name}</div>
+                  <div style={{ fontSize: 12, color: '#44445A', marginTop: 2 }}>
+                    {minutes} min · {profile.currentWeight || 70} kg
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 28, fontWeight: 900, color: selected.color, lineHeight: 1 }}>
-                    {estimateBurn(selected, parseInt(minutes) || 30)}
-                  </div>
-                  <div style={{ fontSize: 11, color: '#aaa' }}>kcal</div>
+                  <div style={{ fontSize: 30, fontWeight: 900, color: '#A78BFA', lineHeight: 1 }}>{burnEstimate}</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#44445A' }}>kcal</div>
                 </div>
               </div>
 
-              <button onClick={handleLog} className="btn-primary" style={{
-                width: '100%', padding: '13px 0', fontSize: 14,
-                background: logged ? '#4CAF82' : selected.color,
-                border: 'none',
+              <button onClick={handleLog} style={{
+                width: '100%', padding: '14px 0',
+                background: logged ? 'rgba(0,230,118,0.15)' : '#A78BFA', color: logged ? '#00E676' : '#fff',
+                border: 'none', borderRadius: 16,
+                fontSize: 14, fontWeight: 800, cursor: 'pointer', transition: 'all .2s',
+                boxShadow: logged ? 'none' : '0 0 24px rgba(167,139,250,0.30)',
               }}>
-                {logged ? '✅ Logged!' : `Log ${selected.name}`}
+                {logged ? '✓ Activity Logged!' : `Log ${selected.name}`}
               </button>
             </div>
-          )}
-
-          {!selected && (
-            <p style={{ fontSize: 13, color: '#ccc', textAlign: 'center', margin: '8px 0 0' }}>
-              Pick an activity above to get started
-            </p>
           )}
         </div>
 
         {/* ── Nearby Places ── */}
-        <div style={{ fontSize: 16, fontWeight: 800, color: '#1a1a2e', marginBottom: 4 }}>
+        <div style={{ fontSize: 14, fontWeight: 800, color: '#F0F0F8', marginBottom: 4 }}>
           Active Places Nearby
         </div>
-        <div style={{ fontSize: 12, color: '#aaa', marginBottom: 12 }}>
+        <div style={{ fontSize: 12, color: '#44445A', marginBottom: 12 }}>
           {locMsg || 'Gyms, parks, trails and studios near you'}
         </div>
 
         {locMsg ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 0' }}>
-            <div style={{ width: 20, height: 20, borderRadius: '50%', border: '3px solid #7B5EA7', borderTopColor: 'transparent', animation: 'spin 1s linear infinite' }}/>
-            <span style={{ fontSize: 13, color: '#aaa' }}>Finding places near you…</span>
+            <div style={{
+              width: 18, height: 18, borderRadius: '50%',
+              border: '2.5px solid #A78BFA', borderTopColor: 'transparent',
+              animation: 'spin 1s linear infinite',
+            }}/>
+            <span style={{ fontSize: 13, color: '#44445A' }}>Finding places near you…</span>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
             {MOCK_PLACES.map(p => (
               <div key={p.id} style={{
-                background: '#fff', borderRadius: 18, padding: '14px',
-                boxShadow: '0 2px 8px rgba(0,0,0,.06)',
+                background: '#161622', borderRadius: 18, padding: '14px',
+                border: '1px solid rgba(255,255,255,0.06)',
                 display: 'flex', alignItems: 'center', gap: 12,
               }}>
                 <div style={{
-                  width: 52, height: 52, borderRadius: 16, flexShrink: 0,
-                  background: 'linear-gradient(135deg, #f0ebf8, #e8e0f0)',
+                  width: 50, height: 50, borderRadius: 16, flexShrink: 0,
+                  background: 'rgba(167,139,250,0.10)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 26,
+                  fontSize: 24,
                 }}>
                   {p.emoji}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e', marginBottom: 2 }}>{p.name}</div>
-                  <div style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#F0F0F8', marginBottom: 2 }}>{p.name}</div>
+                  <div style={{ fontSize: 12, color: '#44445A', marginBottom: 5 }}>
                     {p.type} · {p.distance}
                   </div>
                   <div style={{
-                    display: 'inline-block', background: '#f0ebf8', borderRadius: 8,
-                    padding: '2px 8px', fontSize: 11, fontWeight: 700, color: '#7B5EA7',
+                    display: 'inline-block', background: 'rgba(167,139,250,0.12)',
+                    borderRadius: 8, padding: '2px 8px',
+                    fontSize: 11, fontWeight: 700, color: '#A78BFA',
                   }}>
                     {p.hours}
                   </div>
                 </div>
                 <a href={p.mapsUrl} target="_blank" rel="noopener noreferrer" style={{
-                  flexShrink: 0, background: '#7B5EA7', color: '#fff',
+                  flexShrink: 0, background: '#A78BFA', color: '#fff',
                   borderRadius: 12, padding: '8px 12px', fontSize: 12, fontWeight: 700,
                   textDecoration: 'none',
                 }}>
@@ -257,20 +261,15 @@ export default function MovePage() {
 
         {/* Setup note */}
         <div style={{
-          background: '#EBF3FD', borderRadius: 14, padding: '12px 14px',
-          display: 'flex', gap: 8,
+          background: 'rgba(74,158,255,0.06)', borderRadius: 14, padding: '12px 14px',
+          display: 'flex', gap: 8, border: '1px solid rgba(74,158,255,0.12)',
         }}>
-          <span style={{ fontSize: 16 }}>💡</span>
-          <span style={{ fontSize: 12, color: '#5A7FA8', lineHeight: 1.6 }}>
-            Live location-based activity discovery requires a <strong>Google Places API key</strong> added to your Vercel environment variables as <code>GOOGLE_PLACES_API_KEY</code>.
+          <span style={{ fontSize: 14 }}>💡</span>
+          <span style={{ fontSize: 12, color: '#4A9EFF', lineHeight: 1.6 }}>
+            Live location-based activity discovery requires a <strong>Google Places API key</strong> added as <code style={{ background: '#1E1E2E', borderRadius: 4, padding: '1px 4px' }}>GOOGLE_PLACES_API_KEY</code>.
           </span>
         </div>
       </div>
-
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-      `}</style>
     </div>
   );
 }

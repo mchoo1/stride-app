@@ -227,3 +227,6 @@ Every post is structured data, not just a photo. Macro overlay baked into the im
 - Real-time feed: WebSockets or Server-Sent Events for live like/comment counts
 - Offline-first: service worker caches food log and plan for offline access
 - Privacy: GDPR/PDPA compliant, all location data opt-in, data export/delete on request
+
+
+

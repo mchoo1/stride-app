@@ -14,6 +14,16 @@ export interface WeightEntry {
   bodyFat?: number;   // %
 }
 
+export interface DailyChallenge {
+  id:       string;
+  label:    string;
+  emoji:    string;
+  target:   number;
+  current:  number;
+  done:     boolean;
+  xp:       number;
+}
+
 // ── Default profile ───────────────────────────────────────────────────────────
 const DEFAULT_PROFILE: UserProfile = {
   name:               '',
@@ -41,6 +51,8 @@ interface StrideStore {
   activityLog:  ActivityLogEntry[];
   waterMl:      Record<string, number>; // date → ml
   weightLog:    WeightEntry[];
+  streak:       number;
+  lastActiveDate: string; // YYYY-MM-DD
 
   // Profile actions
   updateProfile:          (updates: Partial<UserProfile>) => void;
@@ -62,6 +74,10 @@ interface StrideStore {
   addWeightEntry:         (weight: number, bodyFat?: number) => void;
   getWeightTrend:         (days?: number) => WeightEntry[];
 
+  // Gamification
+  updateStreak:           () => void;
+  getDailyChallenges:     () => DailyChallenge[];
+
   // Computed
   getTodayFoodLog:        () => FoodLogEntry[];
   getTodayActivityLog:    () => ActivityLogEntry[];
@@ -75,11 +91,13 @@ interface StrideStore {
 export const useStrideStore = create<StrideStore>()(
   persist(
     (set, get) => ({
-      profile:     DEFAULT_PROFILE,
-      foodLog:     [],
-      activityLog: [],
-      waterMl:     {},
-      weightLog:   [],
+      profile:        DEFAULT_PROFILE,
+      foodLog:        [],
+      activityLog:    [],
+      waterMl:        {},
+      weightLog:      [],
+      streak:         0,
+      lastActiveDate: '',
 
       // ── Profile ──────────────────────────────────────────────────────────────
       updateProfile: (updates) =>
@@ -102,25 +120,23 @@ export const useStrideStore = create<StrideStore>()(
       },
 
       // ── Food ─────────────────────────────────────────────────────────────────
-      addFoodEntry: (entry) =>
+      addFoodEntry: (entry) => {
         set((s) => ({
-          foodLog: [
-            ...s.foodLog,
-            { ...entry, id: uid(), timestamp: new Date().toISOString() },
-          ],
-        })),
+          foodLog: [...s.foodLog, { ...entry, id: uid(), timestamp: new Date().toISOString() }],
+        }));
+        get().updateStreak();
+      },
 
       removeFoodEntry: (id) =>
         set((s) => ({ foodLog: s.foodLog.filter((e) => e.id !== id) })),
 
       // ── Activity ──────────────────────────────────────────────────────────────
-      addActivityEntry: (entry) =>
+      addActivityEntry: (entry) => {
         set((s) => ({
-          activityLog: [
-            ...s.activityLog,
-            { ...entry, id: uid(), timestamp: new Date().toISOString() },
-          ],
-        })),
+          activityLog: [...s.activityLog, { ...entry, id: uid(), timestamp: new Date().toISOString() }],
+        }));
+        get().updateStreak();
+      },
 
       removeActivityEntry: (id) =>
         set((s) => ({ activityLog: s.activityLog.filter((e) => e.id !== id) })),
@@ -155,6 +171,43 @@ export const useStrideStore = create<StrideStore>()(
         return get().weightLog
           .filter((e) => new Date(e.date) >= cutoff)
           .sort((a, b) => a.date.localeCompare(b.date));
+      },
+
+      // ── Gamification ──────────────────────────────────────────────────────────
+      updateStreak: () => {
+        const today = new Date().toISOString().slice(0, 10);
+        const { lastActiveDate, streak } = get();
+        if (lastActiveDate === today) return; // already updated today
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yStr = yesterday.toISOString().slice(0, 10);
+        const newStreak = lastActiveDate === yStr ? streak + 1 : 1;
+        set({ streak: newStreak, lastActiveDate: today });
+      },
+
+      getDailyChallenges: (): DailyChallenge[] => {
+        const foodLog   = get().getTodayFoodLog();
+        const burned    = get().getTodayCaloriesBurned();
+        const net       = get().getNetCalories();
+        const target    = get().profile.targetCalories;
+        const onTarget  = net >= target * 0.85 && net <= target * 1.05;
+        return [
+          {
+            id: 'log3meals', label: 'Log 3 meals today', emoji: '🍽️',
+            target: 3, current: Math.min(foodLog.length, 3),
+            done: foodLog.length >= 3, xp: 30,
+          },
+          {
+            id: 'burn200', label: 'Burn 200 kcal', emoji: '🔥',
+            target: 200, current: Math.min(burned, 200),
+            done: burned >= 200, xp: 40,
+          },
+          {
+            id: 'hitgoal', label: 'Hit your calorie goal', emoji: '🎯',
+            target: 1, current: onTarget ? 1 : 0,
+            done: onTarget, xp: 50,
+          },
+        ];
       },
 
       // ── Computed ──────────────────────────────────────────────────────────────
