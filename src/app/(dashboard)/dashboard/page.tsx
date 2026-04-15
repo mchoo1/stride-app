@@ -39,7 +39,7 @@ function CalorieRing({
             fill="#F0F0F8" fontSize="38" fontWeight="900"
             fontFamily="Inter, sans-serif">{net}</text>
           <text x="100" y="104" textAnchor="middle"
-            fill="#44445A" fontSize="11" fontWeight="600"
+            fill="#6E6E90" fontSize="11" fontWeight="600"
             fontFamily="Inter, sans-serif">NET KCAL</text>
           <text x="100" y="126" textAnchor="middle"
             fill={over ? '#FF5A5A' : '#00E676'} fontSize="14" fontWeight="800"
