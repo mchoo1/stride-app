@@ -15,8 +15,8 @@
     --border-subtle:     rgba(255,255,255,0.04);
 
     --text-primary:      #F0F0F8;
-    --text-secondary:    #9090B0;
-    --text-muted:        #44445A;
+    --text-secondary:    #A8A8C8;   /* was #9090B0 — lifted for readability */
+    --text-muted:        #6E6E90;   /* was #44445A — lifted for readability */
 
     --accent-green:      #00E676;
     --accent-green-dim:  rgba(0,230,118,0.12);
@@ -106,21 +106,24 @@
   }
   .btn-ghost:hover { background: var(--bg-card2); color: var(--text-primary); }
 
-  /* ── Inputs ── */
+  /* ── Inputs — white bg + dark font for all contexts ── */
   .stride-input, .form-input {
     width: 100%;
-    background: var(--bg-input);
-    border: 1px solid var(--border);
+    background: #FFFFFF;
+    border: 1.5px solid #E0E0EC;
     border-radius: 12px;
     padding: 11px 14px;
     font-size: 15px;
-    color: var(--text-primary);
+    color: #1A1A2E;
     outline: none;
     font-family: inherit;
-    transition: border-color .15s;
+    transition: border-color .15s, box-shadow .15s;
   }
-  .stride-input::placeholder, .form-input::placeholder { color: var(--text-muted); }
-  .stride-input:focus, .form-input:focus { border-color: var(--accent-green); }
+  .stride-input::placeholder, .form-input::placeholder { color: #AAAABB; }
+  .stride-input:focus, .form-input:focus {
+    border-color: var(--accent-green);
+    box-shadow: 0 0 0 3px rgba(0,230,118,0.12);
+  }
 
   /* ── Section label ── */
   .section-label {

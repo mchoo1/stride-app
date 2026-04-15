@@ -48,6 +48,7 @@ export default function RegisterPage() {
     // Goal (step 0)
     goalType:      'weight_loss' as GoalType,
     // Body (step 1)
+    gender:        'male' as 'male' | 'female' | 'other',
     age:           27,
     heightCm:      170,
     currentWeight: 75,
@@ -60,6 +61,19 @@ export default function RegisterPage() {
     email:    '',
     password: '',
   });
+
+  // Raw string state for number inputs so clearing the field works correctly
+  const [rawNums, setRawNums] = useState({ age: '27', height: '170', cw: '75', tw: '65' });
+  const setRaw = (key: keyof typeof rawNums, val: string) => {
+    setRawNums(r => ({ ...r, [key]: val }));
+    const n = Number(val);
+    if (!isNaN(n) && val !== '') {
+      if (key === 'age')    setData(d => ({ ...d, age:           n }));
+      if (key === 'height') setData(d => ({ ...d, heightCm:      n }));
+      if (key === 'cw')     setData(d => ({ ...d, currentWeight: n }));
+      if (key === 'tw')     setData(d => ({ ...d, targetWeight:  n }));
+    }
+  };
 
   const update     = (key: string, value: unknown) => setData(d => ({ ...d, [key]: value }));
   const toggleDiet = (flag: DietaryFlag) => setData(d => ({
@@ -103,11 +117,12 @@ export default function RegisterPage() {
       completeOnboarding({
         name:          data.name,
         email:         data.email,
+        gender:        data.gender,
         goalType:      data.goalType,
-        currentWeight: data.currentWeight,
-        targetWeight:  data.targetWeight,
-        heightCm:      data.heightCm,
-        age:           data.age,
+        currentWeight: data.currentWeight || Number(rawNums.cw) || 75,
+        targetWeight:  data.targetWeight  || Number(rawNums.tw) || 65,
+        heightCm:      data.heightCm      || Number(rawNums.height) || 170,
+        age:           data.age           || Number(rawNums.age) || 27,
         activityLevel: data.activityLevel,
         dietaryFlags:  data.dietaryFlags,
       });
@@ -220,28 +235,48 @@ export default function RegisterPage() {
             <h2 style={{ fontSize: 24, fontWeight: 800, color: '#1a1a2e', marginBottom: 6 }}>Tell us about you</h2>
             <p style={{ fontSize: 14, color: '#888', marginBottom: 24 }}>Used to calculate your calorie needs accurately.</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {/* Gender */}
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#666', marginBottom: 8 }}>Biological sex <span style={{ fontWeight: 400, color: '#bbb' }}>(affects calorie calculation)</span></label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {(['male', 'female', 'other'] as const).map(g => (
+                    <button key={g} onClick={() => update('gender', g)} style={{
+                      flex: 1, borderRadius: 12, padding: '10px 8px',
+                      border: `2px solid ${data.gender === g ? '#4CAF82' : '#e8eaed'}`,
+                      background: data.gender === g ? 'rgba(76,175,130,.10)' : '#fff',
+                      cursor: 'pointer', transition: 'all .2s',
+                      fontSize: 13, fontWeight: 700, textTransform: 'capitalize',
+                      color: data.gender === g ? '#4CAF82' : '#888',
+                    }}>{g}</button>
+                  ))}
+                </div>
+              </div>
               <div style={{ display: 'flex', gap: 12 }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#666', marginBottom: 6 }}>Age</label>
-                  <input type="number" className="form-input" value={data.age}
-                    onChange={e => update('age', Number(e.target.value))}/>
+                  <input type="number" className="form-input" value={rawNums.age}
+                    onChange={e => setRaw('age', e.target.value)}
+                    placeholder="e.g. 27" min="10" max="100"/>
                 </div>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#666', marginBottom: 6 }}>Height (cm)</label>
-                  <input type="number" className="form-input" value={data.heightCm}
-                    onChange={e => update('heightCm', Number(e.target.value))}/>
+                  <input type="number" className="form-input" value={rawNums.height}
+                    onChange={e => setRaw('height', e.target.value)}
+                    placeholder="e.g. 170" min="100" max="250"/>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 12 }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#666', marginBottom: 6 }}>Current weight (kg)</label>
-                  <input type="number" className="form-input" value={data.currentWeight}
-                    onChange={e => update('currentWeight', Number(e.target.value))}/>
+                  <input type="number" className="form-input" value={rawNums.cw}
+                    onChange={e => setRaw('cw', e.target.value)}
+                    placeholder="e.g. 75" min="20" max="300" step="0.1"/>
                 </div>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#666', marginBottom: 6 }}>Target weight (kg)</label>
-                  <input type="number" className="form-input" value={data.targetWeight}
-                    onChange={e => update('targetWeight', Number(e.target.value))}/>
+                  <input type="number" className="form-input" value={rawNums.tw}
+                    onChange={e => setRaw('tw', e.target.value)}
+                    placeholder="e.g. 65" min="20" max="300" step="0.1"/>
                 </div>
               </div>
               <div>

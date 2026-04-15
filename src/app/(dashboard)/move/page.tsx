@@ -128,7 +128,7 @@ export default function MovePage() {
                 cursor: 'pointer', transition: 'all .15s',
               }}>
                 <span style={{ fontSize: 20 }}>{a.emoji}</span>
-                <span style={{ fontSize: 9, fontWeight: 700, color: selected?.id === a.id ? '#A78BFA' : '#44445A', textAlign: 'center' }}>
+                <span style={{ fontSize: 9, fontWeight: 700, color: selected?.id === a.id ? '#A78BFA' : '#6E6E90', textAlign: 'center' }}>
                   {a.name.split(' ')[0]}
                 </span>
               </button>
@@ -136,7 +136,7 @@ export default function MovePage() {
           </div>
 
           {!selected && (
-            <p style={{ fontSize: 13, color: '#44445A', textAlign: 'center', margin: '4px 0 0' }}>
+            <p style={{ fontSize: 13, color: '#6E6E90', textAlign: 'center', margin: '4px 0 0' }}>
               Pick an activity above
             </p>
           )}
@@ -144,14 +144,14 @@ export default function MovePage() {
           {selected && (
             <div style={{ animation: 'fadeIn .2s ease' }}>
               {/* Duration presets */}
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#9090B0', marginBottom: 8 }}>Duration (min)</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#A8A8C8', marginBottom: 8 }}>Duration (min)</div>
               <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
                 {DURATION_PRESETS.map(m => (
                   <button key={m} onClick={() => setMinutes(String(m))} style={{
                     flex: 1, padding: '9px 0', borderRadius: 12, border: 'none',
                     fontSize: 13, fontWeight: 700, cursor: 'pointer',
                     background: minutes === String(m) ? 'rgba(167,139,250,0.15)' : '#1E1E2E',
-                    color:      minutes === String(m) ? '#A78BFA' : '#44445A',
+                    color:      minutes === String(m) ? '#A78BFA' : '#6E6E90',
                     transition: 'all .15s',
                   }}>{m}</button>
                 ))}
@@ -178,13 +178,13 @@ export default function MovePage() {
                 <span style={{ fontSize: 32, marginRight: 14 }}>{selected.emoji}</span>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 800, color: '#F0F0F8' }}>{selected.name}</div>
-                  <div style={{ fontSize: 12, color: '#44445A', marginTop: 2 }}>
+                  <div style={{ fontSize: 12, color: '#6E6E90', marginTop: 2 }}>
                     {minutes} min · {profile.currentWeight || 70} kg
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: 30, fontWeight: 900, color: '#A78BFA', lineHeight: 1 }}>{burnEstimate}</div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: '#44445A' }}>kcal</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#6E6E90' }}>kcal</div>
                 </div>
               </div>
 
@@ -205,7 +205,7 @@ export default function MovePage() {
         <div style={{ fontSize: 14, fontWeight: 800, color: '#F0F0F8', marginBottom: 4 }}>
           Active Places Nearby
         </div>
-        <div style={{ fontSize: 12, color: '#44445A', marginBottom: 12 }}>
+        <div style={{ fontSize: 12, color: '#6E6E90', marginBottom: 12 }}>
           {locMsg || 'Gyms, parks, trails and studios near you'}
         </div>
 
@@ -216,7 +216,7 @@ export default function MovePage() {
               border: '2.5px solid #A78BFA', borderTopColor: 'transparent',
               animation: 'spin 1s linear infinite',
             }}/>
-            <span style={{ fontSize: 13, color: '#44445A' }}>Finding places near you…</span>
+            <span style={{ fontSize: 13, color: '#6E6E90' }}>Finding places near you…</span>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
@@ -236,7 +236,7 @@ export default function MovePage() {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: '#F0F0F8', marginBottom: 2 }}>{p.name}</div>
-                  <div style={{ fontSize: 12, color: '#44445A', marginBottom: 5 }}>
+                  <div style={{ fontSize: 12, color: '#6E6E90', marginBottom: 5 }}>
                     {p.type} · {p.distance}
                   </div>
                   <div style={{

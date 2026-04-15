@@ -8,6 +8,7 @@ export interface UserProfile {
   name:               string;
   email:              string;
   avatarUrl?:         string;
+  gender?:            'male' | 'female' | 'other';
   goalType:           GoalType;
   currentWeight:      number;   // kg
   targetWeight:       number;   // kg

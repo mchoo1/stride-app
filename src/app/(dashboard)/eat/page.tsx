@@ -117,7 +117,7 @@ export default function EatPage() {
         <div style={{ fontSize: 14, fontWeight: 800, color: '#F0F0F8', marginBottom: 4 }}>
           Nearby Restaurants
         </div>
-        <div style={{ fontSize: 12, color: '#44445A', marginBottom: 12 }}>
+        <div style={{ fontSize: 12, color: '#6E6E90', marginBottom: 12 }}>
           {locMsg || 'Showing restaurants that fit your calorie budget'}
         </div>
 
@@ -128,7 +128,7 @@ export default function EatPage() {
               border: '2.5px solid #FF6B35', borderTopColor: 'transparent',
               animation: 'spin 1s linear infinite',
             }}/>
-            <span style={{ fontSize: 13, color: '#44445A' }}>Locating you…</span>
+            <span style={{ fontSize: 13, color: '#6E6E90' }}>Locating you…</span>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
@@ -147,11 +147,11 @@ export default function EatPage() {
                   {r.emoji}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: '#F0F0F8' }}>{r.name}</span>
-                    <span style={{ fontSize: 11, color: '#44445A' }}>{r.priceRange}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                    <span style={{ fontSize: 15, fontWeight: 800, color: '#F0F0F8' }}>{r.name}</span>
+                    <span style={{ fontSize: 11, color: '#A8A8C8', fontWeight: 600 }}>{r.priceRange}</span>
                   </div>
-                  <div style={{ fontSize: 12, color: '#44445A', marginBottom: 5 }}>
+                  <div style={{ fontSize: 12, color: '#A8A8C8', marginBottom: 6 }}>
                     {r.cuisine} · {r.distance} · ⭐ {r.rating}
                   </div>
                   <div style={{
@@ -186,7 +186,7 @@ export default function EatPage() {
               flexShrink: 0, borderRadius: 999, padding: '6px 14px',
               fontSize: 12, fontWeight: 700, cursor: 'pointer', border: 'none',
               background: filter === f ? '#FF6B35' : '#1E1E2E',
-              color:      filter === f ? '#fff'    : '#44445A',
+              color:      filter === f ? '#fff'    : '#6E6E90',
               transition: 'all .2s',
             }}>{f}</button>
           ))}
@@ -205,7 +205,7 @@ export default function EatPage() {
               <div style={{ fontSize: 17, fontWeight: 900, color: '#FF6B35', marginBottom: 3 }}>
                 {food.calories} kcal
               </div>
-              <div style={{ fontSize: 10, color: '#44445A', marginBottom: 10 }}>
+              <div style={{ fontSize: 11, color: '#A8A8C8', marginBottom: 10 }}>
                 P {food.protein}g · C {food.carbs}g · F {food.fat}g
               </div>
               <button

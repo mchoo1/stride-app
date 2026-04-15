@@ -93,16 +93,18 @@ export default function MePage() {
     border: '1px solid rgba(255,255,255,0.06)', marginBottom: 12,
   };
 
+  // White inputs with dark font for readability (bug 2 + 6 fix)
   const inputStyle: React.CSSProperties = {
-    width: '100%', background: '#1E1E2E',
-    border: '1px solid rgba(255,255,255,0.07)',
+    width: '100%', background: '#FFFFFF',
+    border: '1.5px solid #E0E0EC',
     borderRadius: 12, padding: '11px 14px',
-    fontSize: 15, color: '#F0F0F8', outline: 'none',
+    fontSize: 15, color: '#1A1A2E', outline: 'none',
     fontFamily: 'Inter, sans-serif',
+    transition: 'border-color .15s',
   };
 
   const labelStyle: React.CSSProperties = {
-    fontSize: 11, fontWeight: 700, color: '#44445A', marginBottom: 5, display: 'block',
+    fontSize: 11, fontWeight: 700, color: '#A8A8C8', marginBottom: 6, display: 'block',
   };
 
   return (
@@ -112,7 +114,7 @@ export default function MePage() {
       <div style={{ padding: '52px 20px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 900, color: '#F0F0F8', margin: 0, marginBottom: 2 }}>Me</h1>
-          <p style={{ fontSize: 13, color: '#44445A', margin: 0 }}>Body stats, goals &amp; settings</p>
+          <p style={{ fontSize: 13, color: '#6E6E90', margin: 0 }}>Body stats, goals &amp; settings</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {streak > 0 && <div className="streak-badge">🔥 {streak}d</div>}
@@ -136,7 +138,7 @@ export default function MePage() {
               flex: 1, padding: '9px 0', borderRadius: 10, border: 'none',
               fontSize: 12, fontWeight: 700, cursor: 'pointer', textTransform: 'capitalize',
               background: tab === t ? 'rgba(74,158,255,0.15)' : 'transparent',
-              color:      tab === t ? '#4A9EFF' : '#44445A',
+              color:      tab === t ? '#4A9EFF' : '#6E6E90',
               transition: 'all .2s',
             }}>{t}</button>
           ))}
@@ -159,7 +161,7 @@ export default function MePage() {
                 <div key={s.label} style={{ background: '#161622', borderRadius: 18, padding: '16px 14px', border: '1px solid rgba(255,255,255,0.06)' }}>
                   <div style={{ fontSize: 22, marginBottom: 8 }}>{s.icon}</div>
                   <div style={{ fontSize: 20, fontWeight: 900, color: s.color }}>{s.val}</div>
-                  <div style={{ fontSize: 11, color: '#44445A', marginTop: 4 }}>{s.label}</div>
+                  <div style={{ fontSize: 11, color: '#6E6E90', marginTop: 4 }}>{s.label}</div>
                 </div>
               ))}
             </div>
@@ -175,30 +177,42 @@ export default function MePage() {
               </span>
             </div>
 
-            {/* Weight chart */}
-            {trend.length >= 2 ? (
+            {/* Weight chart — show as soon as there's at least 1 entry */}
+            {trend.length >= 1 ? (
               <div style={{ ...cardStyle }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                   <span style={{ fontSize: 14, fontWeight: 800, color: '#F0F0F8' }}>Weight (30 days)</span>
-                  <span style={{ fontSize: 12, color: '#44445A' }}>
-                    {trend[0].weight} → <strong style={{ color: '#F0F0F8' }}>{trend[trend.length - 1].weight} kg</strong>
-                  </span>
+                  {trend.length >= 2 ? (
+                    <span style={{ fontSize: 12, color: '#6E6E90' }}>
+                      {trend[0].weight} → <strong style={{ color: '#F0F0F8' }}>{trend[trend.length - 1].weight} kg</strong>
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: 12, color: '#6E6E90' }}>{trend[0].weight} kg today</span>
+                  )}
                 </div>
-                <div style={{ overflowX: 'auto' }}>
-                  <WeightChart entries={trend} />
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
-                  <span style={{ fontSize: 10, color: '#44445A' }}>
-                    {new Date(trend[0].date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                  </span>
-                  <span style={{ fontSize: 10, color: '#44445A' }}>Today</span>
-                </div>
+                {trend.length >= 2 ? (
+                  <>
+                    <div style={{ overflowX: 'auto' }}>
+                      <WeightChart entries={trend} />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
+                      <span style={{ fontSize: 10, color: '#6E6E90' }}>
+                        {new Date(trend[0].date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </span>
+                      <span style={{ fontSize: 10, color: '#6E6E90' }}>Today</span>
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '8px 0 4px', fontSize: 12, color: '#6E6E90' }}>
+                    Log more entries to see your trend chart
+                  </div>
+                )}
               </div>
             ) : (
               <div style={{ ...cardStyle, textAlign: 'center', padding: '28px 16px' }}>
                 <div style={{ fontSize: 36, marginBottom: 8 }}>📈</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#9090B0' }}>No weight trend yet</div>
-                <div style={{ fontSize: 12, color: '#44445A', marginTop: 4 }}>Log your weight below to start tracking</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#A8A8C8' }}>No weight logged yet</div>
+                <div style={{ fontSize: 12, color: '#6E6E90', marginTop: 4 }}>Log your weight below to start tracking</div>
               </div>
             )}
 
@@ -244,7 +258,7 @@ export default function MePage() {
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                     padding: '9px 0', borderTop: '1px solid rgba(255,255,255,0.04)',
                   }}>
-                    <span style={{ fontSize: 13, color: '#44445A' }}>
+                    <span style={{ fontSize: 13, color: '#6E6E90' }}>
                       {new Date(e.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                     </span>
                     <div style={{ display: 'flex', gap: 12 }}>
@@ -273,7 +287,7 @@ export default function MePage() {
                     cursor: 'pointer', transition: 'all .2s',
                   }}>
                     <span style={{ fontSize: 24 }}>{g.emoji}</span>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: form.goalType === g.key ? '#00E676' : '#44445A' }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: form.goalType === g.key ? '#00E676' : '#6E6E90' }}>
                       {g.label}
                     </span>
                   </button>
@@ -318,7 +332,7 @@ export default function MePage() {
                     background: form.activityLevel === key ? 'rgba(0,230,118,0.08)' : '#1E1E2E',
                     cursor: 'pointer', transition: 'all .2s',
                   }}>
-                    <span style={{ fontSize: 13, color: form.activityLevel === key ? '#F0F0F8' : '#44445A', fontWeight: form.activityLevel === key ? 700 : 400 }}>
+                    <span style={{ fontSize: 13, color: form.activityLevel === key ? '#F0F0F8' : '#6E6E90', fontWeight: form.activityLevel === key ? 700 : 400 }}>
                       {label}
                     </span>
                     {form.activityLevel === key && <span style={{ color: '#00E676', fontSize: 14 }}>✓</span>}
@@ -333,7 +347,7 @@ export default function MePage() {
               border: '1px solid rgba(0,230,118,0.15)',
             }}>
               <div style={{ fontSize: 12, color: '#00E676', fontWeight: 700, marginBottom: 6 }}>Preview with these settings</div>
-              <div style={{ fontSize: 13, color: '#9090B0' }}>
+              <div style={{ fontSize: 13, color: '#A8A8C8' }}>
                 BMR: <strong style={{ color: '#F0F0F8' }}>{calculateBMR(form)} kcal</strong>
                 {'  ·  '}
                 TDEE: <strong style={{ color: '#F0F0F8' }}>{calculateTargetCalories(form)} kcal</strong>
@@ -366,10 +380,24 @@ export default function MePage() {
                 <input style={inputStyle} value={form.name}
                   onChange={e => update('name', e.target.value)} placeholder="Your name"/>
               </div>
-              <div>
+              <div style={{ marginBottom: 12 }}>
                 <label style={labelStyle}>Email</label>
                 <input style={inputStyle} type="email" value={form.email}
                   onChange={e => update('email', e.target.value)} placeholder="your@email.com"/>
+              </div>
+              <div>
+                <label style={labelStyle}>Biological sex <span style={{ color: '#6E6E90', fontWeight: 400 }}>(affects calorie calc)</span></label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {(['male', 'female', 'other'] as const).map(g => (
+                    <button key={g} onClick={() => update('gender', g)} style={{
+                      flex: 1, padding: '9px 0', borderRadius: 12, border: 'none',
+                      fontSize: 12, fontWeight: 700, cursor: 'pointer', textTransform: 'capitalize',
+                      background: (form as unknown as Record<string, unknown>).gender === g ? 'rgba(0,230,118,0.15)' : '#1E1E2E',
+                      color:      (form as unknown as Record<string, unknown>).gender === g ? '#00E676' : '#6E6E90',
+                      transition: 'all .2s',
+                    }}>{g}</button>
+                  ))}
+                </div>
               </div>
             </div>
 

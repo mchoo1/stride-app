@@ -52,18 +52,18 @@ function CalorieRing({
       {/* Eaten / Burned row */}
       <div style={{ display: 'flex', gap: 32 }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 11, color: '#44445A', fontWeight: 600, marginBottom: 2 }}>EATEN</div>
+          <div style={{ fontSize: 11, color: '#6E6E90', fontWeight: 600, marginBottom: 2 }}>EATEN</div>
           <div style={{ fontSize: 18, fontWeight: 800, color: '#F0F0F8' }}>{consumed}</div>
         </div>
         <div style={{ width: 1, background: 'rgba(255,255,255,0.06)' }}/>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 11, color: '#44445A', fontWeight: 600, marginBottom: 2 }}>BURNED</div>
+          <div style={{ fontSize: 11, color: '#6E6E90', fontWeight: 600, marginBottom: 2 }}>BURNED</div>
           <div style={{ fontSize: 18, fontWeight: 800, color: '#FF6B35' }}>{burned}</div>
         </div>
         <div style={{ width: 1, background: 'rgba(255,255,255,0.06)' }}/>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 11, color: '#44445A', fontWeight: 600, marginBottom: 2 }}>GOAL</div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: '#9090B0' }}>{goal}</div>
+          <div style={{ fontSize: 11, color: '#6E6E90', fontWeight: 600, marginBottom: 2 }}>GOAL</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: '#A8A8C8' }}>{goal}</div>
         </div>
       </div>
     </div>
@@ -101,7 +101,7 @@ export default function DashboardPage() {
       {/* ── Header ── */}
       <div style={{ padding: '52px 20px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <p style={{ fontSize: 13, color: '#44445A', fontWeight: 600, marginBottom: 2 }}>
+          <p style={{ fontSize: 13, color: '#6E6E90', fontWeight: 600, marginBottom: 2 }}>
             {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
           </p>
           <h1 style={{ fontSize: 22, fontWeight: 900, color: '#F0F0F8', margin: 0 }}>
@@ -158,6 +158,66 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* ── Macro Summary ── */}
+        <div style={{
+          background: '#161622', borderRadius: 22, padding: 16,
+          border: '1px solid rgba(255,255,255,0.06)', marginBottom: 12,
+        }}>
+          <div style={{ fontSize: 14, fontWeight: 800, color: '#F0F0F8', marginBottom: 14 }}>
+            Today&apos;s Macros
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {[
+              {
+                label: 'Protein',
+                val:   totals.protein,
+                goal:  profile.targetProtein || Math.round((profile.targetCalories * 0.30) / 4),
+                color: '#4A9EFF',
+                unit:  'g',
+              },
+              {
+                label: 'Carbs',
+                val:   totals.carbs,
+                goal:  profile.targetCarbs || Math.round((profile.targetCalories * 0.45) / 4),
+                color: '#FFD166',
+                unit:  'g',
+              },
+              {
+                label: 'Fat',
+                val:   totals.fat,
+                goal:  profile.targetFat || Math.round((profile.targetCalories * 0.25) / 9),
+                color: '#00E676',
+                unit:  'g',
+              },
+            ].map(m => {
+              const pct = Math.min(m.val / Math.max(m.goal, 1), 1);
+              const over = m.val > m.goal;
+              return (
+                <div key={m.label}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 5 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#A8A8C8' }}>{m.label}</span>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
+                      <span style={{ fontSize: 16, fontWeight: 900, color: over ? '#FF5A5A' : m.color }}>
+                        {m.val}
+                      </span>
+                      <span style={{ fontSize: 11, color: '#6E6E90' }}>/ {m.goal}{m.unit}</span>
+                    </div>
+                  </div>
+                  <div style={{ height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%', borderRadius: 3,
+                      width: `${pct * 100}%`,
+                      background: over ? '#FF5A5A' : m.color,
+                      transition: 'width .6s cubic-bezier(.4,0,.2,1)',
+                      boxShadow: `0 0 8px ${over ? '#FF5A5A' : m.color}60`,
+                    }}/>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
         {/* ── Daily Challenges ── */}
         <div style={{
           background: '#161622', borderRadius: 22, padding: 16,
@@ -166,7 +226,7 @@ export default function DashboardPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <span style={{ fontSize: 14, fontWeight: 800, color: '#F0F0F8' }}>Daily Challenges</span>
             <span style={{
-              fontSize: 12, fontWeight: 700, color: doneCount === 3 ? '#00E676' : '#9090B0',
+              fontSize: 12, fontWeight: 700, color: doneCount === 3 ? '#00E676' : '#A8A8C8',
               background: doneCount === 3 ? 'rgba(0,230,118,0.12)' : 'rgba(255,255,255,0.06)',
               borderRadius: 20, padding: '3px 10px',
             }}>
@@ -185,7 +245,7 @@ export default function DashboardPage() {
                     <div style={{
                       height: '100%', borderRadius: 2,
                       width: `${Math.min((ch.current / ch.target) * 100, 100)}%`,
-                      background: ch.done ? '#00E676' : '#9090B0',
+                      background: ch.done ? '#00E676' : '#A8A8C8',
                       transition: 'width .5s',
                     }}/>
                   </div>
@@ -193,7 +253,7 @@ export default function DashboardPage() {
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
                   {ch.done
                     ? <span style={{ fontSize: 18 }}>✅</span>
-                    : <span style={{ fontSize: 11, color: '#44445A', fontWeight: 700 }}>+{ch.xp} XP</span>
+                    : <span style={{ fontSize: 11, color: '#6E6E90', fontWeight: 700 }}>+{ch.xp} XP</span>
                   }
                 </div>
               </div>
@@ -215,7 +275,7 @@ export default function DashboardPage() {
           {todayFood.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '20px 0' }}>
               <div style={{ fontSize: 32, marginBottom: 8 }}>🍽️</div>
-              <div style={{ fontSize: 13, color: '#44445A', fontWeight: 600 }}>Nothing logged yet</div>
+              <div style={{ fontSize: 13, color: '#6E6E90', fontWeight: 600 }}>Nothing logged yet</div>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -231,15 +291,15 @@ export default function DashboardPage() {
                   <span style={{ flex: 1, fontSize: 14, color: '#F0F0F8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {e.name}
                   </span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#9090B0' }}>{e.calories} kcal</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#A8A8C8' }}>{e.calories} kcal</span>
                   <button onClick={() => handleDeleteFood(e.id)} style={{
                     background: 'none', border: 'none', cursor: 'pointer',
-                    color: '#44445A', fontSize: 15, padding: '0 4px', lineHeight: 1,
+                    color: '#6E6E90', fontSize: 15, padding: '0 4px', lineHeight: 1,
                   }}>✕</button>
                 </div>
               ))}
               {todayFood.length > 5 && (
-                <Link href="/log" style={{ fontSize: 12, color: '#44445A', textDecoration: 'none', textAlign: 'center', paddingTop: 6 }}>
+                <Link href="/log" style={{ fontSize: 12, color: '#6E6E90', textDecoration: 'none', textAlign: 'center', paddingTop: 6 }}>
                   +{todayFood.length - 5} more entries
                 </Link>
               )}
@@ -284,7 +344,7 @@ export default function DashboardPage() {
             <span style={{ fontSize: 22 }}>🍜</span>
             <div>
               <div style={{ fontSize: 13, fontWeight: 800, color: '#F0F0F8' }}>What to Eat</div>
-              <div style={{ fontSize: 11, color: '#44445A', marginTop: 2 }}>Fits your budget</div>
+              <div style={{ fontSize: 11, color: '#6E6E90', marginTop: 2 }}>Fits your budget</div>
             </div>
           </Link>
           <Link href="/move" style={{
@@ -295,7 +355,7 @@ export default function DashboardPage() {
             <span style={{ fontSize: 22 }}>⚡</span>
             <div>
               <div style={{ fontSize: 13, fontWeight: 800, color: '#F0F0F8' }}>Move</div>
-              <div style={{ fontSize: 11, color: '#44445A', marginTop: 2 }}>Nearby activities</div>
+              <div style={{ fontSize: 11, color: '#6E6E90', marginTop: 2 }}>Nearby activities</div>
             </div>
           </Link>
         </div>

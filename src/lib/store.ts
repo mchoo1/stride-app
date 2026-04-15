@@ -28,6 +28,7 @@ export interface DailyChallenge {
 const DEFAULT_PROFILE: UserProfile = {
   name:               '',
   email:              '',
+  gender:             'male',
   goalType:           'weight_loss',
   currentWeight:      75,
   targetWeight:       65,
