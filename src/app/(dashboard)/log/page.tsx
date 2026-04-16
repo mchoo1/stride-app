@@ -538,7 +538,7 @@ function LogInner() {
             }}>
               <span style={{ fontSize: 14 }}>💡</span>
               <span style={{ fontSize: 12, color: '#4A9EFF', lineHeight: 1.6 }}>
-                AI scan uses <strong>Claude claude-3-5-haiku-20241022</strong>. Add <code style={{ background: '#1E1E2E', borderRadius: 4, padding: '1px 4px', color: '#F0F0F8' }}>ANTHROPIC_API_KEY</code> to enable.
+                AI scan uses <strong>Claude Haiku</strong> vision. Add <code style={{ background: '#1E1E2E', borderRadius: 4, padding: '1px 4px', color: '#F0F0F8' }}>ANTHROPIC_API_KEY</code> to enable.
               </span>
             </div>
           </div>

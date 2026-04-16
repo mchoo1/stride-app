@@ -58,6 +58,7 @@ interface StrideStore {
   // Profile actions
   updateProfile:          (updates: Partial<UserProfile>) => void;
   completeOnboarding:     (data: Partial<UserProfile>) => void;
+  resetAll:               () => void;
 
   // Food log actions
   addFoodEntry: (entry: Omit<FoodLogEntry, 'id' | 'timestamp'>) => void;
@@ -117,6 +118,18 @@ export const useStrideStore = create<StrideStore>()(
             targetFat:          macros.fat,
             onboardingComplete: true,
           },
+        });
+      },
+
+      resetAll: () => {
+        set({
+          profile:        DEFAULT_PROFILE,
+          foodLog:        [],
+          activityLog:    [],
+          waterMl:        {},
+          weightLog:      [],
+          streak:         0,
+          lastActiveDate: '',
         });
       },
 

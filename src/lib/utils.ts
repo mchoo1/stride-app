@@ -6,17 +6,21 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/** Mifflin-St Jeor BMR (kcal/day at complete rest) */
+/** Mifflin-St Jeor BMR (kcal/day at complete rest) — gender-aware */
 export function calculateBMR(profile: Partial<UserProfile>): number {
-  const { currentWeight = 70, heightCm = 170, age = 25 } = profile;
-  return Math.round(10 * currentWeight + 6.25 * heightCm - 5 * age + 5);
+  const { currentWeight = 70, heightCm = 170, age = 25, gender = 'male' } = profile;
+  // Male: +5  |  Female: -161  |  Other: midpoint -78
+  const genderConst = gender === 'female' ? -161 : gender === 'other' ? -78 : 5;
+  return Math.round(10 * currentWeight + 6.25 * heightCm - 5 * age + genderConst);
 }
 
 /** Mifflin-St Jeor equation for BMR, then multiply by activity factor */
 export function calculateTargetCalories(profile: Partial<UserProfile>): number {
-  const { currentWeight = 70, heightCm = 170, age = 25, activityLevel = 'moderate', goalType = 'maintenance' } = profile;
+  const { currentWeight = 70, heightCm = 170, age = 25, gender = 'male', activityLevel = 'moderate', goalType = 'maintenance' } = profile;
 
-  const bmr = 10 * currentWeight + 6.25 * heightCm - 5 * age + 5; // simplified (male baseline)
+  // Gender-aware BMR constant: male +5, female -161, other -78
+  const genderConst = gender === 'female' ? -161 : gender === 'other' ? -78 : 5;
+  const bmr = 10 * currentWeight + 6.25 * heightCm - 5 * age + genderConst;
 
   const factors: Record<string, number> = {
     sedentary:   1.2,

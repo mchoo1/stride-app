@@ -9,18 +9,6 @@ interface NearbyRestaurant {
 }
 
 // ── Types ────────────────────────────────────────────────────────────────────
-interface RestaurantCard {
-  id: string;
-  name: string;
-  cuisine: string;
-  distance: string;
-  calorieRange: string;
-  rating: number;
-  priceRange: string;
-  mapsUrl: string;
-  emoji: string;
-}
-
 interface ReadyToEatCard {
   id: string;
   name: string;
@@ -31,16 +19,6 @@ interface ReadyToEatCard {
   category: string;
   emoji: string;
 }
-
-// ── Mock restaurant data ──────────────────────────────────────────────────────
-const MOCK_RESTAURANTS: RestaurantCard[] = [
-  { id: 'r1', name: 'Sweetgreen',      cuisine: 'Salads',        distance: '0.3 mi', calorieRange: '300–600 kcal', rating: 4.5, priceRange: '$$',  mapsUrl: 'https://maps.google.com/?q=sweetgreen', emoji: '🥗' },
-  { id: 'r2', name: 'Chipotle',        cuisine: 'Mexican',       distance: '0.5 mi', calorieRange: '500–900 kcal', rating: 4.2, priceRange: '$$',  mapsUrl: 'https://maps.google.com/?q=chipotle',   emoji: '🌯' },
-  { id: 'r3', name: 'Subway',          cuisine: 'Sandwiches',    distance: '0.2 mi', calorieRange: '350–750 kcal', rating: 3.9, priceRange: '$',   mapsUrl: 'https://maps.google.com/?q=subway',     emoji: '🥪' },
-  { id: 'r4', name: 'CAVA',            cuisine: 'Mediterranean', distance: '0.8 mi', calorieRange: '400–700 kcal', rating: 4.6, priceRange: '$$',  mapsUrl: 'https://maps.google.com/?q=cava',       emoji: '🫙' },
-  { id: 'r5', name: 'Panera Bread',    cuisine: 'Café',          distance: '0.6 mi', calorieRange: '400–800 kcal', rating: 4.0, priceRange: '$$',  mapsUrl: 'https://maps.google.com/?q=panera',     emoji: '🥖' },
-  { id: 'r6', name: 'Local Sushi Bar', cuisine: 'Japanese',      distance: '1.0 mi', calorieRange: '400–700 kcal', rating: 4.4, priceRange: '$$$', mapsUrl: 'https://maps.google.com/?q=sushi',      emoji: '🍱' },
-];
 
 // ── Ready-to-eat foods ────────────────────────────────────────────────────────
 const READY_TO_EAT: ReadyToEatCard[] = [

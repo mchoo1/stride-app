@@ -3,6 +3,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useStrideStore } from '@/lib/store';
 import { calculateBMR, calculateTargetCalories, calculateMacros } from '@/lib/utils';
+import { auth } from '@/lib/firebase';
+import { signOut } from 'firebase/auth';
 import type { GoalType } from '@/types';
 
 const GOAL_OPTS: { key: GoalType; emoji: string; label: string }[] = [
@@ -436,19 +438,32 @@ export default function MePage() {
 
             <div style={cardStyle}>
               <div style={{ fontSize: 14, fontWeight: 800, color: '#F0F0F8', marginBottom: 12 }}>Account</div>
-              <button onClick={() => {
-                if (confirm('Reset all app data and start over?')) {
-                  store.updateProfile({ onboardingComplete: false });
-                  window.location.href = '/onboarding';
-                }
-              }} style={{
-                width: '100%', borderRadius: 14, padding: '12px 0',
-                fontSize: 14, fontWeight: 600,
-                background: 'rgba(255,90,90,0.08)', color: '#FF5A5A',
-                border: '1px solid rgba(255,90,90,0.20)', cursor: 'pointer',
-              }}>
-                🔄 Reset App &amp; Start Over
-              </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <button onClick={async () => {
+                  try { await signOut(auth); } catch { /* ignore */ }
+                  window.location.href = '/login';
+                }} style={{
+                  width: '100%', borderRadius: 14, padding: '12px 0',
+                  fontSize: 14, fontWeight: 700,
+                  background: 'rgba(74,158,255,0.08)', color: '#4A9EFF',
+                  border: '1px solid rgba(74,158,255,0.20)', cursor: 'pointer',
+                }}>
+                  🚪 Sign Out
+                </button>
+                <button onClick={() => {
+                  if (confirm('Reset all app data and start over? This will clear all logs.')) {
+                    store.resetAll();
+                    window.location.href = '/register';
+                  }
+                }} style={{
+                  width: '100%', borderRadius: 14, padding: '12px 0',
+                  fontSize: 14, fontWeight: 600,
+                  background: 'rgba(255,90,90,0.08)', color: '#FF5A5A',
+                  border: '1px solid rgba(255,90,90,0.20)', cursor: 'pointer',
+                }}>
+                  🔄 Reset App &amp; Start Over
+                </button>
+              </div>
             </div>
           </>
         )}

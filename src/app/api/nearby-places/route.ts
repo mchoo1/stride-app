@@ -2,6 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const API_KEY = process.env.GOOGLE_PLACES_API_KEY;
 
+// ─── In-memory cache ────────────────────────────────────────────────────────
+// Rounds lat/lng to 2 decimal places (~1 km grid) so nearby requests reuse
+// the same cached result. TTL: 10 minutes per bucket.
+interface CacheEntry { data: unknown; expires: number }
+const cache = new Map<string, CacheEntry>();
+const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
+function cacheKey(lat: number, lng: number, mode: string) {
+  const rLat = Math.round(lat * 100) / 100;
+  const rLng = Math.round(lng * 100) / 100;
+  return `${rLat},${rLng},${mode}`;
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 // Haversine distance in km
 function distKm(lat1: number, lng1: number, lat2: number, lng2: number) {
   const R = 6371;
@@ -76,6 +90,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'lat and lng required' }, { status: 400 });
   }
 
+  // Return cached result if still fresh
+  const key    = cacheKey(lat, lng, mode);
+  const cached = cache.get(key);
+  if (cached && cached.expires > Date.now()) {
+    return NextResponse.json(cached.data);
+  }
+
   if (!API_KEY) {
     return NextResponse.json(
       { error: 'GOOGLE_PLACES_API_KEY is not configured' },
@@ -131,7 +152,11 @@ export async function GET(req: NextRequest) {
       .map((p: unknown) => normalise(p, lat, lng, mode))
       .sort((a: { distKm: number }, b: { distKm: number }) => a.distKm - b.distKm);
 
-    return NextResponse.json({ places });
+    // Store in cache before returning
+    const result = { places };
+    cache.set(key, { data: result, expires: Date.now() + CACHE_TTL_MS });
+
+    return NextResponse.json(result);
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
