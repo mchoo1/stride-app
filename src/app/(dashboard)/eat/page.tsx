@@ -1,6 +1,12 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useStrideStore } from '@/lib/store';
+
+interface NearbyRestaurant {
+  id: string; name: string; type: string; distance: string;
+  rating: number | null; priceLevel: string | null;
+  hours: string; emoji: string; mapsUrl: string;
+}
 
 // ── Types ────────────────────────────────────────────────────────────────────
 interface RestaurantCard {
@@ -64,14 +70,44 @@ const FILTER_MATCH: Record<string, (f: ReadyToEatCard) => boolean> = {
 export default function EatPage() {
   const store     = useStrideStore();
   const remaining = store.getCaloriesRemaining();
-  const [filter,  setFilter]  = useState('All');
-  const [added,   setAdded]   = useState<Set<string>>(new Set());
-  const [locMsg,  setLocMsg]  = useState('Getting nearby restaurants…');
+  const [filter,       setFilter]       = useState('All');
+  const [added,        setAdded]        = useState<Set<string>>(new Set());
+  const [restaurants,  setRestaurants]  = useState<NearbyRestaurant[]>([]);
+  const [locState,     setLocState]     = useState<'locating' | 'fetching' | 'done' | 'error' | 'no_key'>('locating');
+  const [locError,     setLocError]     = useState('');
+
+  const fetchRestaurants = useCallback(async (lat: number, lng: number) => {
+    setLocState('fetching');
+    try {
+      const res  = await fetch(`/api/nearby-places?lat=${lat}&lng=${lng}&type=food`);
+      const data = await res.json();
+      if (data.error) {
+        if (res.status === 503) { setLocState('no_key'); return; }
+        throw new Error(data.error);
+      }
+      setRestaurants(data.places ?? []);
+      setLocState('done');
+    } catch (e) {
+      setLocError(e instanceof Error ? e.message : 'Failed to load restaurants');
+      setLocState('error');
+    }
+  }, []);
 
   useEffect(() => {
-    const t = setTimeout(() => setLocMsg(''), 1800);
-    return () => clearTimeout(t);
-  }, []);
+    if (!navigator.geolocation) {
+      setLocError('Geolocation not supported by your browser');
+      setLocState('error');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      pos => fetchRestaurants(pos.coords.latitude, pos.coords.longitude),
+      err => {
+        setLocError(`Location access denied: ${err.message}`);
+        setLocState('error');
+      },
+      { enableHighAccuracy: false, timeout: 10000 },
+    );
+  }, [fetchRestaurants]);
 
   const logFood = (food: ReadyToEatCard) => {
     store.addFoodEntry({
@@ -118,21 +154,52 @@ export default function EatPage() {
           Nearby Restaurants
         </div>
         <div style={{ fontSize: 12, color: '#6E6E90', marginBottom: 12 }}>
-          {locMsg || 'Showing restaurants that fit your calorie budget'}
+          {locState === 'done'
+            ? `${restaurants.length} places found near you`
+            : locState === 'locating' ? 'Getting your location…'
+            : locState === 'fetching' ? 'Finding restaurants…'
+            : 'Restaurants near you'}
         </div>
 
-        {locMsg ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 0' }}>
+        {(locState === 'locating' || locState === 'fetching') && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 0', marginBottom: 16 }}>
             <div style={{
               width: 18, height: 18, borderRadius: '50%',
               border: '2.5px solid #FF6B35', borderTopColor: 'transparent',
               animation: 'spin 1s linear infinite',
             }}/>
-            <span style={{ fontSize: 13, color: '#6E6E90' }}>Locating you…</span>
+            <span style={{ fontSize: 13, color: '#6E6E90' }}>
+              {locState === 'locating' ? 'Getting your location…' : 'Finding nearby restaurants…'}
+            </span>
           </div>
-        ) : (
+        )}
+
+        {locState === 'error' && (
+          <div style={{
+            background: 'rgba(255,90,90,0.08)', border: '1px solid rgba(255,90,90,0.20)',
+            borderRadius: 14, padding: '12px 14px', marginBottom: 16,
+            display: 'flex', gap: 8,
+          }}>
+            <span>⚠️</span>
+            <span style={{ fontSize: 12, color: '#FF5A5A', lineHeight: 1.6 }}>{locError}</span>
+          </div>
+        )}
+
+        {locState === 'no_key' && (
+          <div style={{
+            background: 'rgba(74,158,255,0.06)', borderRadius: 14, padding: '12px 14px', marginBottom: 16,
+            display: 'flex', gap: 8, border: '1px solid rgba(74,158,255,0.12)',
+          }}>
+            <span style={{ fontSize: 14 }}>💡</span>
+            <span style={{ fontSize: 12, color: '#4A9EFF', lineHeight: 1.6 }}>
+              Add <code style={{ background: '#1E1E2E', borderRadius: 4, padding: '1px 4px' }}>GOOGLE_PLACES_API_KEY</code> to your environment to enable live restaurant suggestions.
+            </span>
+          </div>
+        )}
+
+        {locState === 'done' && restaurants.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
-            {MOCK_RESTAURANTS.map(r => (
+            {restaurants.map(r => (
               <div key={r.id} style={{
                 background: '#161622', borderRadius: 18, padding: '14px',
                 border: '1px solid rgba(255,255,255,0.06)',
@@ -141,25 +208,25 @@ export default function EatPage() {
                 <div style={{
                   width: 50, height: 50, borderRadius: 16, flexShrink: 0,
                   background: 'rgba(255,107,53,0.10)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 24,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24,
                 }}>
                   {r.emoji}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
                     <span style={{ fontSize: 15, fontWeight: 800, color: '#F0F0F8' }}>{r.name}</span>
-                    <span style={{ fontSize: 11, color: '#A8A8C8', fontWeight: 600 }}>{r.priceRange}</span>
+                    {r.priceLevel && (
+                      <span style={{ fontSize: 11, color: '#A8A8C8', fontWeight: 600 }}>{r.priceLevel}</span>
+                    )}
                   </div>
                   <div style={{ fontSize: 12, color: '#A8A8C8', marginBottom: 6 }}>
-                    {r.cuisine} · {r.distance} · ⭐ {r.rating}
+                    {r.type} · {r.distance}{r.rating ? ` · ⭐ ${r.rating.toFixed(1)}` : ''}
                   </div>
                   <div style={{
                     display: 'inline-block', background: 'rgba(255,107,53,0.12)',
-                    borderRadius: 8, padding: '2px 8px',
-                    fontSize: 11, fontWeight: 700, color: '#FF6B35',
+                    borderRadius: 8, padding: '2px 8px', fontSize: 11, fontWeight: 700, color: '#FF6B35',
                   }}>
-                    ~{r.calorieRange}
+                    {r.hours}
                   </div>
                 </div>
                 <a href={r.mapsUrl} target="_blank" rel="noopener noreferrer" style={{
@@ -224,16 +291,6 @@ export default function EatPage() {
           ))}
         </div>
 
-        {/* Setup note */}
-        <div style={{
-          background: 'rgba(74,158,255,0.06)', borderRadius: 14, padding: '12px 14px', marginTop: 20,
-          display: 'flex', gap: 8, border: '1px solid rgba(74,158,255,0.12)',
-        }}>
-          <span style={{ fontSize: 14 }}>💡</span>
-          <span style={{ fontSize: 12, color: '#4A9EFF', lineHeight: 1.6 }}>
-            Live restaurant suggestions unlock when a <strong>Google Places API key</strong> or <strong>Yelp API key</strong> is added to your environment variables.
-          </span>
-        </div>
       </div>
     </div>
   );

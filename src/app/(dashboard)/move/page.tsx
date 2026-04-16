@@ -1,6 +1,11 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useStrideStore } from '@/lib/store';
+
+interface NearbyPlace {
+  id: string; name: string; type: string; distance: string;
+  rating: number | null; hours: string; emoji: string; mapsUrl: string;
+}
 
 // ── Activity list (shared format with log page) ───────────────────────────────
 const ACTIVITY_LIST = [
@@ -43,19 +48,8 @@ const ACTIVITY_LIST = [
 const DURATION_PRESETS = [15, 30, 45, 60, 90];
 const GENDER_FACTOR: Record<string, number> = { male: 1.0, female: 0.90, other: 0.95 };
 
-interface NearbyPlace {
-  id: string; name: string; type: string;
-  distance: string; hours: string; emoji: string; mapsUrl: string;
-}
 
-const MOCK_PLACES: NearbyPlace[] = [
-  { id: 'p1', name: 'LA Fitness',            type: 'Gym',            distance: '0.4 mi', hours: 'Open 24h',      emoji: '🏋️', mapsUrl: 'https://maps.google.com/?q=LA+Fitness'    },
-  { id: 'p2', name: 'Central Park Trail',    type: 'Park / Trail',   distance: '0.2 mi', hours: 'Always open',   emoji: '🌳', mapsUrl: 'https://maps.google.com/?q=central+park'  },
-  { id: 'p3', name: 'Orange Theory Fitness', type: 'Fitness Studio', distance: '0.7 mi', hours: 'Open 6am–9pm',  emoji: '⚡', mapsUrl: 'https://maps.google.com/?q=orangetheory'  },
-  { id: 'p4', name: 'Community Pool',        type: 'Swimming Pool',  distance: '1.1 mi', hours: 'Open 7am–8pm',  emoji: '🏊', mapsUrl: 'https://maps.google.com/?q=swimming+pool' },
-  { id: 'p5', name: 'Riverside Bike Path',   type: 'Cycling Trail',  distance: '0.3 mi', hours: 'Always open',   emoji: '🚴', mapsUrl: 'https://maps.google.com/?q=bike+path'     },
-  { id: 'p6', name: 'CorePower Yoga',        type: 'Yoga Studio',    distance: '0.9 mi', hours: 'Open 6am–10pm', emoji: '🧘', mapsUrl: 'https://maps.google.com/?q=corepower+yoga'},
-];
+
 
 export default function MovePage() {
   const store   = useStrideStore();
@@ -71,14 +65,46 @@ export default function MovePage() {
   const [activityType,   setActivityType]   = useState('');
   const [customCalories, setCustomCalories] = useState('');
   const [actLogged,      setActLogged]      = useState(false);
-  const [locMsg,         setLocMsg]         = useState('Finding activities near you…');
+
+  // Location + nearby places state
+  const [places,    setPlaces]    = useState<NearbyPlace[]>([]);
+  const [locState,  setLocState]  = useState<'locating' | 'fetching' | 'done' | 'error' | 'no_key'>('locating');
+  const [locError,  setLocError]  = useState('');
 
   const burned = store.getTodayCaloriesBurned();
 
-  useEffect(() => {
-    const t = setTimeout(() => setLocMsg(''), 1600);
-    return () => clearTimeout(t);
+  const fetchPlaces = useCallback(async (lat: number, lng: number) => {
+    setLocState('fetching');
+    try {
+      const res  = await fetch(`/api/nearby-places?lat=${lat}&lng=${lng}&type=activity`);
+      const data = await res.json();
+      if (data.error) {
+        if (res.status === 503) { setLocState('no_key'); return; }
+        throw new Error(data.error);
+      }
+      setPlaces(data.places ?? []);
+      setLocState('done');
+    } catch (e) {
+      setLocError(e instanceof Error ? e.message : 'Failed to load places');
+      setLocState('error');
+    }
   }, []);
+
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setLocError('Geolocation not supported by your browser');
+      setLocState('error');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      pos => fetchPlaces(pos.coords.latitude, pos.coords.longitude),
+      err => {
+        setLocError(`Location access denied: ${err.message}`);
+        setLocState('error');
+      },
+      { enableHighAccuracy: false, timeout: 10000 },
+    );
+  }, [fetchPlaces]);
 
   const effectiveDuration = customDuration ? Number(customDuration) : duration;
   const displayName = selectedAct
@@ -276,21 +302,51 @@ export default function MovePage() {
           Active Places Nearby
         </div>
         <div style={{ fontSize: 12, color: '#6E6E90', marginBottom: 12 }}>
-          {locMsg || 'Gyms, parks, trails and studios near you'}
+          {locState === 'done'
+            ? `${places.length} places found near you`
+            : locState === 'locating' ? 'Getting your location…'
+            : locState === 'fetching' ? 'Finding gyms, parks and studios…'
+            : 'Gyms, parks, trails and studios near you'}
         </div>
 
-        {locMsg ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 0' }}>
+        {(locState === 'locating' || locState === 'fetching') && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 0', marginBottom: 16 }}>
             <div style={{
               width: 18, height: 18, borderRadius: '50%',
               border: '2.5px solid #A78BFA', borderTopColor: 'transparent',
               animation: 'spin 1s linear infinite',
             }}/>
-            <span style={{ fontSize: 13, color: '#6E6E90' }}>Finding places near you…</span>
+            <span style={{ fontSize: 13, color: '#6E6E90' }}>
+              {locState === 'locating' ? 'Getting your location…' : 'Finding places near you…'}
+            </span>
           </div>
-        ) : (
+        )}
+
+        {locState === 'error' && (
+          <div style={{
+            background: 'rgba(255,90,90,0.08)', border: '1px solid rgba(255,90,90,0.20)',
+            borderRadius: 14, padding: '12px 14px', marginBottom: 16, display: 'flex', gap: 8,
+          }}>
+            <span>⚠️</span>
+            <span style={{ fontSize: 12, color: '#FF5A5A', lineHeight: 1.6 }}>{locError}</span>
+          </div>
+        )}
+
+        {locState === 'no_key' && (
+          <div style={{
+            background: 'rgba(74,158,255,0.06)', borderRadius: 14, padding: '12px 14px', marginBottom: 16,
+            display: 'flex', gap: 8, border: '1px solid rgba(74,158,255,0.12)',
+          }}>
+            <span style={{ fontSize: 14 }}>💡</span>
+            <span style={{ fontSize: 12, color: '#4A9EFF', lineHeight: 1.6 }}>
+              Add <code style={{ background: '#1E1E2E', borderRadius: 4, padding: '1px 4px' }}>GOOGLE_PLACES_API_KEY</code> to your environment to show real gyms, parks and studios near you.
+            </span>
+          </div>
+        )}
+
+        {locState === 'done' && places.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
-            {MOCK_PLACES.map(p => (
+            {places.map(p => (
               <div key={p.id} style={{
                 background: '#161622', borderRadius: 18, padding: '14px',
                 border: '1px solid rgba(255,255,255,0.06)',
@@ -305,7 +361,9 @@ export default function MovePage() {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: '#F0F0F8', marginBottom: 2 }}>{p.name}</div>
-                  <div style={{ fontSize: 12, color: '#6E6E90', marginBottom: 5 }}>{p.type} · {p.distance}</div>
+                  <div style={{ fontSize: 12, color: '#6E6E90', marginBottom: 5 }}>
+                    {p.type} · {p.distance}{p.rating ? ` · ⭐ ${p.rating.toFixed(1)}` : ''}
+                  </div>
                   <div style={{
                     display: 'inline-block', background: 'rgba(167,139,250,0.12)',
                     borderRadius: 8, padding: '2px 8px', fontSize: 11, fontWeight: 700, color: '#A78BFA',
@@ -320,17 +378,6 @@ export default function MovePage() {
             ))}
           </div>
         )}
-
-        <div style={{
-          background: 'rgba(74,158,255,0.06)', borderRadius: 14, padding: '12px 14px',
-          display: 'flex', gap: 8, border: '1px solid rgba(74,158,255,0.12)',
-        }}>
-          <span style={{ fontSize: 14 }}>💡</span>
-          <span style={{ fontSize: 12, color: '#4A9EFF', lineHeight: 1.6 }}>
-            Live location-based activity discovery requires a <strong>Google Places API key</strong> added as{' '}
-            <code style={{ background: '#1E1E2E', borderRadius: 4, padding: '1px 4px' }}>GOOGLE_PLACES_API_KEY</code>.
-          </span>
-        </div>
       </div>
     </div>
   );
