@@ -162,12 +162,102 @@ export default function MovePage() {
 
       <div style={{ padding: '0 16px 100px' }}>
 
-        {/* ── Activity list ── */}
-        <div style={{ fontSize: 14, fontWeight: 800, color: '#F0F0F8', marginBottom: 12 }}>
-          Log an Activity
+        {/* ── Nearby Places ── */}
+        <div style={{ fontSize: 14, fontWeight: 800, color: '#F0F0F8', marginBottom: 4 }}>
+          Active Places Nearby
+        </div>
+        <div style={{ fontSize: 12, color: '#6E6E90', marginBottom: 12 }}>
+          {locState === 'done'
+            ? `${places.length} places found near you`
+            : locState === 'locating' ? 'Getting your location…'
+            : locState === 'fetching' ? 'Finding gyms, parks and studios…'
+            : 'Gyms, parks, trails and studios near you'}
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 24 }}>
+        {(locState === 'locating' || locState === 'fetching') && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 0', marginBottom: 16 }}>
+            <div style={{
+              width: 18, height: 18, borderRadius: '50%',
+              border: '2.5px solid #A78BFA', borderTopColor: 'transparent',
+              animation: 'spin 1s linear infinite',
+            }}/>
+            <span style={{ fontSize: 13, color: '#6E6E90' }}>
+              {locState === 'locating' ? 'Getting your location…' : 'Finding places near you…'}
+            </span>
+          </div>
+        )}
+
+        {locState === 'error' && (
+          <div style={{
+            background: 'rgba(255,90,90,0.08)', border: '1px solid rgba(255,90,90,0.20)',
+            borderRadius: 14, padding: '12px 14px', marginBottom: 16, display: 'flex', gap: 8,
+          }}>
+            <span>⚠️</span>
+            <span style={{ fontSize: 12, color: '#FF5A5A', lineHeight: 1.6 }}>{locError}</span>
+          </div>
+        )}
+
+        {locState === 'no_key' && (
+          <div style={{
+            background: 'rgba(74,158,255,0.06)', borderRadius: 14, padding: '12px 14px', marginBottom: 16,
+            display: 'flex', gap: 8, border: '1px solid rgba(74,158,255,0.12)',
+          }}>
+            <span style={{ fontSize: 14 }}>💡</span>
+            <span style={{ fontSize: 12, color: '#4A9EFF', lineHeight: 1.6 }}>
+              Add <code style={{ background: '#1E1E2E', borderRadius: 4, padding: '1px 4px' }}>GOOGLE_PLACES_API_KEY</code> to your environment to show real gyms, parks and studios near you.
+            </span>
+          </div>
+        )}
+
+        {locState === 'done' && places.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 28 }}>
+            {places.map(p => (
+              <div key={p.id} style={{
+                background: '#161622', borderRadius: 18, padding: '14px',
+                border: '1px solid rgba(255,255,255,0.06)',
+                display: 'flex', alignItems: 'center', gap: 12,
+              }}>
+                <div style={{
+                  width: 50, height: 50, borderRadius: 16, flexShrink: 0,
+                  background: 'rgba(167,139,250,0.10)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24,
+                }}>
+                  {p.emoji}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#F0F0F8', marginBottom: 2 }}>{p.name}</div>
+                  <div style={{ fontSize: 12, color: '#6E6E90', marginBottom: 5 }}>
+                    {p.type} · {p.distance}{p.rating ? ` · ⭐ ${p.rating.toFixed(1)}` : ''}
+                  </div>
+                  <div style={{
+                    display: 'inline-block', background: 'rgba(167,139,250,0.12)',
+                    borderRadius: 8, padding: '2px 8px', fontSize: 11, fontWeight: 700, color: '#A78BFA',
+                  }}>{p.hours}</div>
+                </div>
+                <a href={p.mapsUrl} target="_blank" rel="noopener noreferrer" style={{
+                  flexShrink: 0, background: '#A78BFA', color: '#fff',
+                  borderRadius: 12, padding: '8px 12px', fontSize: 12, fontWeight: 700,
+                  textDecoration: 'none',
+                }}>Map →</a>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── Activity list ── */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <span style={{ fontSize: 14, fontWeight: 800, color: '#F0F0F8' }}>Log an Activity</span>
+          <span style={{ fontSize: 11, color: '#6E6E90' }}>{ACTIVITY_LIST.length} activities</span>
+        </div>
+
+        {/* Scrollable container — shows ~5 rows, rest scroll within */}
+        <div style={{
+          maxHeight: 320, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6,
+          paddingRight: 2,
+          // Custom scrollbar
+          scrollbarWidth: 'thin',
+          scrollbarColor: 'rgba(167,139,250,0.3) transparent',
+        }}>
           {ACTIVITY_LIST.map(a => {
             const isSel     = selectedAct?.id === a.id;
             const kcalMin   = Math.round(a.met * weight / 60);
@@ -297,87 +387,6 @@ export default function MovePage() {
           })}
         </div>
 
-        {/* ── Nearby Places ── */}
-        <div style={{ fontSize: 14, fontWeight: 800, color: '#F0F0F8', marginBottom: 4 }}>
-          Active Places Nearby
-        </div>
-        <div style={{ fontSize: 12, color: '#6E6E90', marginBottom: 12 }}>
-          {locState === 'done'
-            ? `${places.length} places found near you`
-            : locState === 'locating' ? 'Getting your location…'
-            : locState === 'fetching' ? 'Finding gyms, parks and studios…'
-            : 'Gyms, parks, trails and studios near you'}
-        </div>
-
-        {(locState === 'locating' || locState === 'fetching') && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 0', marginBottom: 16 }}>
-            <div style={{
-              width: 18, height: 18, borderRadius: '50%',
-              border: '2.5px solid #A78BFA', borderTopColor: 'transparent',
-              animation: 'spin 1s linear infinite',
-            }}/>
-            <span style={{ fontSize: 13, color: '#6E6E90' }}>
-              {locState === 'locating' ? 'Getting your location…' : 'Finding places near you…'}
-            </span>
-          </div>
-        )}
-
-        {locState === 'error' && (
-          <div style={{
-            background: 'rgba(255,90,90,0.08)', border: '1px solid rgba(255,90,90,0.20)',
-            borderRadius: 14, padding: '12px 14px', marginBottom: 16, display: 'flex', gap: 8,
-          }}>
-            <span>⚠️</span>
-            <span style={{ fontSize: 12, color: '#FF5A5A', lineHeight: 1.6 }}>{locError}</span>
-          </div>
-        )}
-
-        {locState === 'no_key' && (
-          <div style={{
-            background: 'rgba(74,158,255,0.06)', borderRadius: 14, padding: '12px 14px', marginBottom: 16,
-            display: 'flex', gap: 8, border: '1px solid rgba(74,158,255,0.12)',
-          }}>
-            <span style={{ fontSize: 14 }}>💡</span>
-            <span style={{ fontSize: 12, color: '#4A9EFF', lineHeight: 1.6 }}>
-              Add <code style={{ background: '#1E1E2E', borderRadius: 4, padding: '1px 4px' }}>GOOGLE_PLACES_API_KEY</code> to your environment to show real gyms, parks and studios near you.
-            </span>
-          </div>
-        )}
-
-        {locState === 'done' && places.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
-            {places.map(p => (
-              <div key={p.id} style={{
-                background: '#161622', borderRadius: 18, padding: '14px',
-                border: '1px solid rgba(255,255,255,0.06)',
-                display: 'flex', alignItems: 'center', gap: 12,
-              }}>
-                <div style={{
-                  width: 50, height: 50, borderRadius: 16, flexShrink: 0,
-                  background: 'rgba(167,139,250,0.10)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24,
-                }}>
-                  {p.emoji}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#F0F0F8', marginBottom: 2 }}>{p.name}</div>
-                  <div style={{ fontSize: 12, color: '#6E6E90', marginBottom: 5 }}>
-                    {p.type} · {p.distance}{p.rating ? ` · ⭐ ${p.rating.toFixed(1)}` : ''}
-                  </div>
-                  <div style={{
-                    display: 'inline-block', background: 'rgba(167,139,250,0.12)',
-                    borderRadius: 8, padding: '2px 8px', fontSize: 11, fontWeight: 700, color: '#A78BFA',
-                  }}>{p.hours}</div>
-                </div>
-                <a href={p.mapsUrl} target="_blank" rel="noopener noreferrer" style={{
-                  flexShrink: 0, background: '#A78BFA', color: '#fff',
-                  borderRadius: 12, padding: '8px 12px', fontSize: 12, fontWeight: 700,
-                  textDecoration: 'none',
-                }}>Map →</a>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
