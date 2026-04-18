@@ -385,22 +385,63 @@ Macro split (% of target kcal):
 
 ## 11. Outstanding Tasks 🔲
 
-### High Priority
-- [ ] **Wire dashboard to API on mount** — call `store.loadTodayFromServer()` in `dashboard/page.tsx` useEffect
-- [ ] **Wire profile/me page** — call `store.syncProfileFromServer()` on mount
-- [ ] **Recommendations page** — connect to `GET /api/recommendations` (page is a stub)
-- [ ] **Expand SG food database** — Phase 1 gaps: A&W, Jollibee, Popeyes, Toast Box, LiHo, Cheers, FairPrice Xpress
-- [ ] **Firestore security rules** — `firestore.rules` exists but needs proper per-user read/write rules deployed
+> **Full roadmap:** `docs/planning/stride-product-spec.md` (v2.0 simplification plan with phase-by-phase task list)
 
-### Medium Priority
-- [ ] **Food search** — connect `log/food/page.tsx` to `GET /api/foods` for community DB search
-- [ ] **Wearable sync** — Apple HealthKit (iOS), Google Fit (Android) — see `src/types/index.ts` ActivitySource
-- [ ] **Barcode scan** — add barcode mode to `/scan` page using Open Food Facts API
+### 🚨 Critical — Deployment Blockers
+
+- [ ] **Add all env vars to Vercel** — `ANTHROPIC_API_KEY`, all 6 Firebase keys (`NEXT_PUBLIC_*` + admin vars). Without these, live site cannot call Claude or Firebase.
+- [ ] **Redeploy on Vercel** — trigger redeploy from Vercel dashboard after vars saved
+- [ ] **Push food scan model fix** — `claude-3-5-haiku` model name fix (`git add -A && git commit && git push`)
+- [ ] **Deploy Firestore security rules** — copy `firestore.rules` → Firebase Console → Rules tab → Publish
+
+### 🔴 High Priority — Core App Wiring
+
+- [ ] **Wire dashboard to API on mount** — add `store.loadTodayFromServer()` in `dashboard/page.tsx` useEffect
+- [ ] **Wire profile/me page** — add `store.syncProfileFromServer()` on mount
 - [ ] **Profile edit page** — `/profile/page.tsx` exists but doesn't call `PUT /api/profile`
+- [ ] **Recommendations page** — connect to `GET /api/recommendations` (`recommendations/page.tsx` is a stub)
+- [ ] **Food search** — connect `log/food/page.tsx` to `GET /api/foods` for community DB search
 - [ ] **Weight trend chart** — add Recharts line chart to `/me` page using `api.weight.getTrend()`
+- [ ] **Run seed script** — `npx ts-node --project tsconfig.json scripts/seed-foods.ts` to populate foods collection
+
+### 🟡 Testing Checklist (run before any release)
+
+- [ ] **Full registration flow** — Goal → Body → Diet → Account → Done → dashboard
+- [ ] **Sign-in with existing account** — confirm redirect to dashboard (not landing page)
+- [ ] **Food logging — manual entry** — enter name, weight, macros; confirm saves to Firestore
+- [ ] **Food logging — AI photo scan** — upload banana photo; verify correct food identified
+- [ ] **Food logging — database search** — search "chicken"; verify results from seeded foods
+- [ ] **Workout logging** — log a workout; verify it appears in history
+- [ ] **Water tracking** — add water log; verify daily total updates
+- [ ] **Sign out → sign back in → data persistence** — confirm all logs persist across sessions
+- [ ] **Mobile browser** — open Vercel URL on iOS Safari + Android Chrome; check layout & touch targets
+- [ ] **Add-to-home-screen PWA** — Share → Add to Home Screen on iOS and Android
+
+### 🟡 Food AI Improvements
+
+- [ ] **Verify claude-3-5-haiku fix** — confirm banana → sushi misidentification is resolved
+- [ ] **Edge case test suite** — 20 images: mixed plates, packaged food, drinks, restaurant meals
+- [ ] **Confidence threshold UI** — if confidence < 0.6, show "Is this correct?" prompt before saving
+- [ ] **Editable food name** — allow user to edit AI-identified food name before saving
+- [ ] **Log AI accuracy** — store confidence score + user corrections in Firestore for monitoring
+
+### 🟡 Food Database Expansion
+
+- [ ] **Expand foods to 100+** — add proteins, carbs, fats, fruits, vegetables, snacks (USDA verified)
+- [ ] **Consolidate macro sources** — `source` field: `USDA` / `AI estimate` / `custom` on every food log
+- [ ] **Prefix search** — fast Firestore query: `foods where name starts with searchTerm`
+- [ ] **User-submitted foods** — `POST /api/foods` with community review flag
+- [ ] **Expand SG restaurant database** — A&W, Jollibee, Popeyes, Toast Box, LiHo, Cheers, FairPrice Xpress
+
+### 🔵 Dashboard & UI Polish
+
 - [ ] **Daily summary refresh** — after any log action, re-fetch summary to update progress bars
+- [ ] **Skeleton loaders** — add across all pages to prevent blank screens on slow connections
+- [ ] **Barcode scan** — add barcode mode to `/scan` page using Open Food Facts API
+- [ ] **Wearable sync** — Apple HealthKit (iOS), Google Fit (Android) — see `src/types/index.ts` ActivitySource
 
 ### Phase 2 (Community — See `docs/planning/`)
+
 - [ ] **Community feed** — Instagram-style food/workout posts (`/community` is a stub)
 - [ ] **Workout library** — structured workout plans with sets/reps (`/workouts` is a stub)
 - [ ] **Service provider portal** — restaurant/gym partner dashboard (`/provider` is a stub)
@@ -409,6 +450,7 @@ Macro split (% of target kcal):
 - [ ] **GrabFood/Deliveroo integration** — deep-link with macro pre-fill
 
 ### Phase 3 (Monetisation)
+
 - [ ] **Stride Pro subscription** — Stripe integration, gated AI features
 - [ ] **PT/nutritionist booking** — in-app booking and payments
 - [ ] **Sponsored listings** — clearly labelled partner placements in Eat
