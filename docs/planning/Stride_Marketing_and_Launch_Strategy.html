@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Stride — Marketing & Product Launch Strategy (April 2026)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* Design system tokens */
+    --brand-navy:#0F1B2D;
+    --brand-green:#1E7F5C;
+    --brand-green-bright:#13A26B;
+    --brand-amber:#F2A93B;
+    --brand-red:#D04E36;
+
+    --canvas:#F7F8FB;
+    --card:#FFFFFF;
+    --hairline:#E5E9F2;
+    --hairline-strong:#D3D9E3;
+
+    --fg-1:#0F1B2D;
+    --fg-2:#5B6576;
+    --fg-3:#8B95A7;
+    --fg-on-brand:#FFFFFF;
+
+    /* Pillar colors */
+    --pillar-track:#1E7F5C;
+    --pillar-monitor:#2E6FB8;
+    --pillar-eat:#C98A2E;
+    --pillar-move:#7A4BC2;
+
+    /* Semantic */
+    --success-bg:rgba(30,127,92,0.10);
+    --warning-bg:rgba(242,169,59,0.12);
+    --danger-bg:rgba(208,78,54,0.10);
+
+    --font-sans:"Inter",-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --font-display:"Anton","Inter",-apple-system,BlinkMacSystemFont,Impact,Arial,sans-serif;
+    --font-wordmark:"Archivo Black","Helvetica Neue",Arial,sans-serif;
+
+    --shadow-card:0 1px 2px rgba(15,27,45,0.04), 0 1px 3px rgba(15,27,45,0.03);
+    --shadow-raised:0 2px 8px rgba(15,27,45,0.06), 0 1px 3px rgba(15,27,45,0.04);
+    --shadow-hero:0 8px 24px rgba(15,27,45,0.08), 0 2px 8px rgba(15,27,45,0.04);
+
+    --r-sm:12px; --r-md:16px; --r-lg:20px; --r-xl:28px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--canvas);color:var(--fg-1);font-family:var(--font-sans);line-height:1.45;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;font-size:16px}
+  .wrap{max-width:1080px;margin:0 auto;padding:32px 28px 80px}
+
+  header.cover{
+    background:var(--brand-navy);
+    color:#fff; border-radius:var(--r-xl); padding:48px 44px;
+    box-shadow:var(--shadow-hero); margin-bottom:28px;
+    position:relative; overflow:hidden;
+  }
+  header.cover::before{
+    content:""; position:absolute; right:-80px; top:-40px; width:420px; height:420px;
+    background:radial-gradient(circle at center, rgba(19,162,107,0.22), transparent 65%);
+    pointer-events:none;
+  }
+  header.cover .lockup{display:flex;align-items:center;gap:18px;margin-bottom:24px;position:relative;z-index:1}
+  header.cover .lockup svg.mark{width:68px;height:68px;flex:0 0 68px}
+  header.cover .lockup .wordmark{font-family:var(--font-wordmark);font-size:48px;color:#fff;letter-spacing:-0.01em;line-height:1}
+  header.cover .eyebrow{letter-spacing:0.12em;font-size:11px;text-transform:uppercase;color:#9FD9BD;font-weight:600;position:relative;z-index:1}
+  header.cover h1{font-family:var(--font-display);font-size:56px;line-height:1.05;margin:10px 0 8px;font-weight:400;letter-spacing:0.01em;text-transform:uppercase;position:relative;z-index:1}
+  header.cover h2{font-family:var(--font-sans);font-size:18px;margin:0 0 18px;font-weight:500;color:#C9E3D6;position:relative;z-index:1;line-height:1.4}
+  header.cover .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px;font-size:12px;color:#BFD5C8;position:relative;z-index:1}
+  header.cover .meta span{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);padding:6px 12px;border-radius:999px;letter-spacing:0.02em}
+
+  nav.toc{background:var(--card);border:1px solid var(--hairline);border-radius:var(--r-md);padding:20px 24px;margin-bottom:28px;box-shadow:var(--shadow-card)}
+  nav.toc h3{margin:0 0 10px;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--fg-3);font-weight:600}
+  nav.toc ol{margin:0;padding-left:20px;columns:2;column-gap:36px}
+  nav.toc a{color:var(--fg-2);text-decoration:none;font-size:14px}
+  nav.toc a:hover{color:var(--brand-green)}
+
+  section{background:var(--card);border:1px solid var(--hairline);border-radius:var(--r-md);padding:32px 36px;margin-bottom:20px;box-shadow:var(--shadow-card)}
+  section h2{font-family:var(--font-display);font-weight:400;margin:0 0 6px;font-size:30px;color:var(--fg-1);letter-spacing:0;text-transform:uppercase;line-height:1.15}
+  section h2 .num{display:inline-block;color:var(--brand-green);font-family:var(--font-display);font-weight:400;margin-right:10px;font-size:30px}
+  section h3{margin:24px 0 8px;font-size:18px;color:var(--fg-1);font-weight:600;letter-spacing:-0.005em}
+  section h4{margin:18px 0 6px;font-size:12px;color:var(--fg-3);text-transform:uppercase;letter-spacing:0.06em;font-weight:600}
+  p{margin:8px 0;color:var(--fg-2);font-size:15px}
+  ul,ol{margin:8px 0 12px 22px}
+  li{margin:4px 0;color:var(--fg-2);font-size:15px}
+  .lede{font-size:16px;color:var(--fg-2);margin-bottom:14px}
+  strong{color:var(--fg-1)}
+
+  .grid{display:grid;gap:16px}
+  .grid-2{grid-template-columns:repeat(2,1fr)}
+  .grid-3{grid-template-columns:repeat(3,1fr)}
+  .grid-4{grid-template-columns:repeat(4,1fr)}
+  @media (max-width:820px){.grid-3,.grid-4{grid-template-columns:repeat(2,1fr)} nav.toc ol{columns:1}}
+  @media (max-width:560px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
+
+  .card{border:1px solid var(--hairline);border-radius:var(--r-sm);padding:16px;background:var(--card);box-shadow:var(--shadow-card)}
+  .card .tag{font-size:10px;font-weight:600;letter-spacing:0.08em;color:var(--brand-green);text-transform:uppercase}
+  .card h4{margin:6px 0 4px;color:var(--fg-1);font-size:16px;text-transform:none;letter-spacing:0;font-weight:600}
+  .card p{margin:0;font-size:14px;color:var(--fg-2)}
+
+  .kpi{display:flex;flex-direction:column;gap:4px;border:1px solid var(--hairline);border-left:4px solid var(--brand-green);background:var(--card);padding:16px 18px;border-radius:var(--r-sm);box-shadow:var(--shadow-card)}
+  .kpi .v{font-family:var(--font-display);font-weight:400;font-size:32px;color:var(--fg-1);line-height:1.05;letter-spacing:0}
+  .kpi .l{font-size:11px;letter-spacing:0.06em;color:var(--fg-3);text-transform:uppercase;font-weight:600}
+
+  table{width:100%;border-collapse:collapse;margin:10px 0 4px;font-size:14px}
+  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--hairline);vertical-align:top;color:var(--fg-2)}
+  th{background:#F1F4F9;color:var(--fg-1);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:0.06em}
+  tr:last-child td{border-bottom:none}
+
+  .pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:0.02em}
+  .pill.green{background:var(--success-bg);color:var(--brand-green)}
+  .pill.amber{background:var(--warning-bg);color:#9A6300}
+  .pill.red{background:var(--danger-bg);color:var(--brand-red)}
+  .pill.blue{background:rgba(46,111,184,0.12);color:var(--pillar-monitor)}
+  .pill.gray{background:rgba(15,27,45,0.06);color:var(--fg-2)}
+
+  .callout{border-left:4px solid var(--brand-amber);background:var(--warning-bg);padding:14px 18px;border-radius:var(--r-sm);margin:14px 0;color:#7A5300}
+  .callout strong{color:#5C3D00}
+  .quote{border-left:4px solid var(--brand-green);background:var(--success-bg);padding:14px 18px;border-radius:var(--r-sm);margin:14px 0;color:#13573D;font-style:italic}
+  .footer{color:var(--fg-3);font-size:12px;text-align:center;margin-top:24px}
+
+  .bands{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0 4px}
+  .band{border:1px solid var(--hairline);border-radius:var(--r-sm);padding:16px;background:var(--card);border-top:4px solid var(--pillar-track)}
+  .band:nth-child(2){border-top-color:var(--pillar-monitor)}
+  .band:nth-child(3){border-top-color:var(--pillar-eat)}
+  .band:nth-child(4){border-top-color:var(--pillar-move)}
+  .band h5{margin:4px 0;font-size:14px;color:var(--fg-1);font-weight:600}
+  .band .when{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--fg-3);font-weight:600}
+  .band ul{margin:6px 0 0 16px;font-size:13px}
+  .band ul li{margin:2px 0;font-size:13px}
+  @media (max-width:820px){.bands{grid-template-columns:repeat(2,1fr)}}
+  @media (max-width:500px){.bands{grid-template-columns:1fr}}
+
+  .countdown{display:grid;grid-template-columns:120px 1fr;gap:0;border:1px solid var(--hairline);border-radius:var(--r-sm);overflow:hidden;margin:10px 0;box-shadow:var(--shadow-card)}
+  .countdown .wk{background:var(--brand-navy);color:#fff;padding:14px;font-family:var(--font-display);font-weight:400;font-size:18px;display:flex;align-items:center;justify-content:center;text-align:center;letter-spacing:0.02em;text-transform:uppercase}
+  .countdown:nth-of-type(even) .wk{background:var(--brand-green)}
+  .countdown .content{padding:14px 18px;background:var(--card)}
+  .countdown .content strong{color:var(--fg-1)}
+
+  .pillars{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px}
+  @media (max-width:820px){.pillars{grid-template-columns:repeat(2,1fr)}}
+  .pillar-card{background:var(--card);border:1px solid var(--hairline);border-radius:var(--r-sm);padding:14px 16px;border-left:4px solid var(--pillar-track)}
+  .pillar-card:nth-child(2){border-left-color:var(--pillar-monitor)}
+  .pillar-card:nth-child(3){border-left-color:var(--pillar-eat)}
+  .pillar-card:nth-child(4){border-left-color:var(--pillar-move)}
+  .pillar-card h5{margin:0 0 4px;font-size:11px;color:var(--fg-3);text-transform:uppercase;letter-spacing:0.06em;font-weight:600}
+  .pillar-card p{margin:0;font-size:14px;color:var(--fg-1)}
+
+  .hashtags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .hashtags span{background:var(--success-bg);color:var(--brand-green);padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600}
+  hr.div{border:none;border-top:1px dashed var(--hairline);margin:18px 0}
+
+  .messaging{border:1px solid var(--hairline);border-radius:var(--r-sm);padding:14px 16px;background:var(--card);margin:8px 0;box-shadow:var(--shadow-card)}
+  .messaging h5{margin:0 0 4px;font-size:11px;color:var(--fg-3);text-transform:uppercase;letter-spacing:0.08em;font-weight:600}
+  .messaging p{margin:0;font-size:15px;color:var(--fg-1);font-weight:500}
+
+  @media print{body{background:#fff}section{box-shadow:none;border:1px solid #ddd;break-inside:avoid}header.cover{box-shadow:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="cover">
+  <div class="eyebrow">Marketing &amp; Launch Strategy · v1.0</div>
+  <div class="lockup">
+    <svg class="mark" viewBox="0 0 1024 1024" aria-label="Stride icon">
+      <rect width="1024" height="1024" rx="230" fill="#0F1B2D"/>
+      <path d="M266 758 C 266 580, 388 460, 552 410 C 716 360, 796 300, 778 200 C 676 300, 532 320, 408 360 C 222 440, 138 600, 220 800 Z" fill="#13A26B"/>
+      <path d="M320 700 C 380 580, 500 500, 640 430" fill="none" stroke="#0F1B2D" stroke-width="22" stroke-linecap="round" opacity="0.35"/>
+    </svg>
+    <div class="wordmark">stride</div>
+  </div>
+  <h1>How we win Singapore</h1>
+  <h2>Positioning, channels, content, and the launch playbook — Move. Eat. Connect.</h2>
+  <div class="meta">
+    <span>Prepared April 2026</span>
+    <span>Market: Singapore</span>
+    <span>Target launch: Q3 2026</span>
+    <span>Goal: 5,000 MAU by end Q4 2026</span>
+  </div>
+</header>
+
+<nav class="toc">
+  <h3>Contents</h3>
+  <ol>
+    <li><a href="#summary">Strategy at a glance</a></li>
+    <li><a href="#who">Who we're talking to</a></li>
+    <li><a href="#position">Positioning &amp; brand promise</a></li>
+    <li><a href="#messaging">Messaging architecture</a></li>
+    <li><a href="#identity">Brand identity &amp; tone</a></li>
+    <li><a href="#channels">Channel strategy</a></li>
+    <li><a href="#content">Content pillars &amp; calendar</a></li>
+    <li><a href="#creators">Creator program</a></li>
+    <li><a href="#launch-strategy">Product launch — overall approach</a></li>
+    <li><a href="#countdown">12-week launch countdown</a></li>
+    <li><a href="#day-of">Launch day runbook</a></li>
+    <li><a href="#post">Post-launch (first 30/60/90 days)</a></li>
+    <li><a href="#budget">Budget &amp; KPIs</a></li>
+    <li><a href="#risks">Risks &amp; contingencies</a></li>
+    <li><a href="#next">Next steps</a></li>
+  </ol>
+</nav>
+
+<section id="summary">
+  <h2><span class="num">1.</span>Strategy at a Glance</h2>
+  <p class="lede">Stride wins Singapore by being the first calorie/activity app that actually knows Singapore — FairPrice ready meals, 7-Eleven onigiri, Toast Box wraps, nearby gyms, parks and trails. We use that authenticity to earn creator-led word of mouth, then scale through App Store featuring and a tight freemium paywall.</p>
+  <div class="grid grid-4">
+    <div class="kpi"><div class="v">One-stop</div><div class="l">Positioning anchor</div></div>
+    <div class="kpi"><div class="v">4 pillars</div><div class="l">Track · Monitor · Eat Smart · Move Nearby</div></div>
+    <div class="kpi"><div class="v">Creators first</div><div class="l">Primary acquisition channel</div></div>
+    <div class="kpi"><div class="v">Q3 2026</div><div class="l">SG public launch</div></div>
+  </div>
+  <h3>Three commitments</h3>
+  <ol>
+    <li><strong>Singapore-native, not Singapore-translated.</strong> Every screen, screenshot and creator brief must feel unmistakably SG.</li>
+    <li><strong>Earn trust before chasing scale.</strong> Retention &amp; reviews first; paid spend only after PMF signal.</li>
+    <li><strong>Decision over data.</strong> Lead every message with what users should do, not what we track.</li>
+  </ol>
+</section>
+
+<section id="who">
+  <h2><span class="num">2.</span>Who We're Talking To</h2>
+  <h3>Primary audience — "Goal-Oriented Office Pro"</h3>
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="tag">Persona A · Primary</div>
+      <h4>Urban SG professional, 28–42</h4>
+      <p>Owns a wearable, eats lunch out 4–5x/week, has tried MyFitnessPal and quit. Goal: lose 3–8kg or maintain post-30 metabolism. Time-poor, budget-aware, brand-conscious.</p>
+    </div>
+    <div class="card">
+      <div class="tag">Persona B · Secondary</div>
+      <h4>Active Parent 35–50</h4>
+      <p>Wants to model healthy habits, needs "tell me what to grab" answers. Open to corporate wellness via employer.</p>
+    </div>
+    <div class="card">
+      <div class="tag">Persona C · Growth</div>
+      <h4>New-to-Fitness Beginner</h4>
+      <p>First gym, intimidated by macros. Responds to friendly, plain-English framing (no jargon, no gamification).</p>
+    </div>
+    <div class="card">
+      <div class="tag">Persona D · Niche</div>
+      <h4>Returning-to-Fitness 40+</h4>
+      <p>Cares about BF%, BMR, trend lines. Wants gentle nudges, not streak pressure.</p>
+    </div>
+  </div>
+  <h3>Jobs to be done</h3>
+  <ul>
+    <li><strong>When</strong> I'm deciding what to order for lunch, <strong>I want</strong> to know which nearby option fits my remaining calorie budget, <strong>so I can</strong> stay on track without thinking about it.</li>
+    <li><strong>When</strong> I weigh myself on Sunday, <strong>I want</strong> a clear line showing trajectory toward my goal, <strong>so I can</strong> keep going without obsessing.</li>
+    <li><strong>When</strong> I finish work with calories to burn, <strong>I want</strong> a nearby gym or park with opening hours, <strong>so I can</strong> move without planning.</li>
+  </ul>
+</section>
+
+<section id="position">
+  <h2><span class="num">3.</span>Positioning &amp; Brand Promise</h2>
+  <div class="messaging">
+    <h5>Positioning statement</h5>
+    <p>For health-aware Singaporeans who eat out and want to stay on track, Stride is the simplest one-stop health app that turns your daily calorie budget into clear answers — what to eat nearby, where to move, and how your body is trending. Unlike global trackers built on US food data, Stride is built on a verified Singapore food database and Google Places, so the first answer is always the right answer for here.</p>
+  </div>
+  <div class="grid grid-2">
+    <div class="messaging">
+      <h5>Brand promise</h5>
+      <p>Move. Eat. Connect. — Stride makes the healthy choice the easy choice, in your neighbourhood, in your language, in 3 seconds.</p>
+    </div>
+    <div class="messaging">
+      <h5>Category we're carving out</h5>
+      <p>Not "another calorie tracker." Stride is the <em>decision layer</em> between your goals, your food, and your neighbourhood.</p>
+    </div>
+  </div>
+</section>
+
+<section id="messaging">
+  <h2><span class="num">4.</span>Messaging Architecture</h2>
+  <h3>Headline framework — by audience</h3>
+  <table>
+    <thead><tr><th>Audience</th><th>Hook (what to say)</th><th>Proof (why believe)</th><th>CTA</th></tr></thead>
+    <tbody>
+      <tr><td>SG consumer (mass)</td><td>"Know what to eat. See where to move. All in Singapore."</td><td>Verified FairPrice + 7-Eleven database, live in-app</td><td>Download Stride — free</td></tr>
+      <tr><td>Health-conscious</td><td>"Your calorie budget, turned into nearby answers."</td><td>Snap a photo → get macros + alternatives in seconds</td><td>Try the scan</td></tr>
+      <tr><td>Beginner</td><td>"Finally, a health app that isn't full of jargon."</td><td>One number on the home screen: am I over or under?</td><td>Start today (no gym needed)</td></tr>
+      <tr><td>Creators / media</td><td>"The first SG-native health app built for how we actually eat."</td><td>352 verified SG SKUs and counting; built in Singapore</td><td>Review us / partner with us</td></tr>
+      <tr><td>Partners (restaurants, gyms)</td><td>"Reach customers already in-market, in your neighbourhood."</td><td>Goal-matched discovery; verified menus; launch case studies</td><td>Join as Founding Partner</td></tr>
+    </tbody>
+  </table>
+  <h3>Proof points (evidence we repeat everywhere)</h3>
+  <ul>
+    <li>Verified Singapore food database (launching with 352 SKUs, growing to thousands).</li>
+    <li>AI photo scan that recognises SG-specific dishes.</li>
+    <li>Google Places-powered Eat &amp; Move — restaurants, gyms, parks, trails nearby.</li>
+    <li>Built for Apple Health + Fitbit (Garmin + Google Fit at Phase 2).</li>
+    <li>Made in Singapore, for Singapore.</li>
+  </ul>
+  <h3>Words we use / words we avoid</h3>
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="tag">Use</div>
+      <h4>Friendly &amp; concrete</h4>
+      <p>"Net calories", "what to eat", "nearby", "on track", "your day", "simple".</p>
+    </div>
+    <div class="card">
+      <div class="tag">Avoid</div>
+      <h4>Jargon &amp; guilt</h4>
+      <p>"Crush your goals", "grind", "cheat day", "shredded", "optimise", "biohack".</p>
+    </div>
+  </div>
+</section>
+
+<section id="identity">
+  <h2><span class="num">5.</span>Brand Identity &amp; Tone</h2>
+  <h3>Voice</h3>
+  <ul>
+    <li>Clear, friendly, direct. Talks like a knowledgeable friend — not a coach.</li>
+    <li>Plain English. Explains the "why" in one sentence.</li>
+    <li>Calm confidence — no hype, no guilt-tripping.</li>
+  </ul>
+  <h3>Visual direction</h3>
+  <ul>
+    <li>Clean, generous whitespace, one hero number per screen.</li>
+    <li>Palette: deep navy (#0F1B2D), calm green (#1E7F5C) for "on track", warm amber (#F2A93B) for attention.</li>
+    <li>Photography: real SG food (hawker, kopitiam, convenience), real SG neighbourhoods (HDB, CBD, parks). No generic stock.</li>
+  </ul>
+  <h3>Tagline options</h3>
+  <ul>
+    <li>Primary: <strong>Move. Eat. Connect.</strong></li>
+    <li>Alt 1: <em>Singapore's simplest health companion.</em></li>
+    <li>Alt 2: <em>Eat smart. Move nearby. Stride.</em></li>
+  </ul>
+</section>
+
+<section id="channels">
+  <h2><span class="num">6.</span>Channel Strategy</h2>
+  <p class="lede">Test each channel with a small budget; scale only what hits success metrics. Prioritise organic + creator; treat paid as a scaling lever, not a discovery tool.</p>
+  <table>
+    <thead><tr><th>Channel</th><th>Role</th><th>Priority</th><th>Success metric</th></tr></thead>
+    <tbody>
+      <tr><td>IG + TikTok creators (SG)</td><td>Primary acquisition &amp; social proof</td><td><span class="pill green">P0</span></td><td>CAC ≤ S$5; &gt;3% click-to-install</td></tr>
+      <tr><td>App Store Optimisation</td><td>Capture intent (SG "calorie tracker")</td><td><span class="pill green">P0</span></td><td>Top-3 SG ranking on 5 keywords</td></tr>
+      <tr><td>Reddit r/singapore + SG Telegram groups</td><td>Trust, founder voice</td><td><span class="pill blue">P1</span></td><td>Organic mentions; 2 AMAs</td></tr>
+      <tr><td>PR — TIA, e27, CNA Lifestyle, Daily SG</td><td>Credibility, narrative</td><td><span class="pill blue">P1</span></td><td>≥3 SG outlets covered</td></tr>
+      <tr><td>Partner co-marketing</td><td>Access their customers</td><td><span class="pill blue">P1</span></td><td>3 anchor partners co-promote</td></tr>
+      <tr><td>Meta + TikTok paid</td><td>Scale post-PMF only</td><td><span class="pill amber">P2</span></td><td>CAC ≤ S$8; D7 ≥ 25%</td></tr>
+      <tr><td>Newsletter + content SEO</td><td>Long-tail SG nutrition queries</td><td><span class="pill amber">P2</span></td><td>1k organic visits/mo by Phase 4</td></tr>
+      <tr><td>Referral program</td><td>Existing users invite friends</td><td><span class="pill amber">P2</span></td><td>Referral CAC ≤ S$3</td></tr>
+      <tr><td>HPB / Healthier SG outreach</td><td>Public sector distribution</td><td><span class="pill gray">P3</span></td><td>1 introduction meeting</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="content">
+  <h2><span class="num">7.</span>Content Pillars &amp; Calendar</h2>
+  <h3>Four content pillars (always-on themes)</h3>
+  <div class="pillars">
+    <div class="pillar-card"><h5>1. SG Eats Decoded</h5><p>"The calories in [popular SG dish]" — with a better alternative. Hawker, FairPrice, 7-Eleven, cafés.</p></div>
+    <div class="pillar-card"><h5>2. Photo-Scan Magic</h5><p>15-sec videos: user snaps dish → app returns macros + 2 nearby alternatives.</p></div>
+    <div class="pillar-card"><h5>3. Neighbourhood Movement</h5><p>"10 free fitness spots in [SG area]" — parks, trails, HDB gyms.</p></div>
+    <div class="pillar-card"><h5>4. Founder &amp; Build Story</h5><p>Why SG needed its own tracker; behind the scenes; verification data moat.</p></div>
+  </div>
+  <h3>Content calendar (pre-launch 8 weeks, per week)</h3>
+  <table>
+    <thead><tr><th>Week</th><th>Pillar 1 post</th><th>Pillar 2 post</th><th>Pillar 3 post</th><th>Pillar 4 post</th></tr></thead>
+    <tbody>
+      <tr><td>T-8</td><td>Chicken rice calorie breakdown</td><td>Teaser reel: scanning kaya toast</td><td>5 free park workouts in Bishan</td><td>"Why SG needs its own tracker"</td></tr>
+      <tr><td>T-7</td><td>FairPrice ready-meal ranking</td><td>7-Eleven onigiri scan demo</td><td>East Coast Park running routes</td><td>Behind the build — 4 pillars</td></tr>
+      <tr><td>T-6</td><td>Kopitiam "healthier choice" picks</td><td>Dim sum macro overlay</td><td>CBD lunchtime walk loops</td><td>The 352-SKU database story</td></tr>
+      <tr><td>T-5</td><td>Grab lunch under 500 kcal</td><td>Cai png (mixed rice) scan reel</td><td>HDB estate free gym list</td><td>Waitlist opens — why sign up</td></tr>
+      <tr><td>T-4</td><td>SaladStop! goal-matched bowls</td><td>Laksa macro reveal</td><td>Nearby trails under 30 mins</td><td>Founder day-in-the-life</td></tr>
+      <tr><td>T-3</td><td>FairPrice Gourmet line reviewed</td><td>Nasi lemak scan + alt</td><td>Group HIIT classes &lt; S$25</td><td>How verification works</td></tr>
+      <tr><td>T-2</td><td>Convenience store high-protein haul</td><td>Bubble tea macro reality check</td><td>Sunrise trails for commuters</td><td>Creator launch partners reveal</td></tr>
+      <tr><td>T-1</td><td>Top 10 SG dishes &amp; calories</td><td>Best scan of the week compilation</td><td>Launch-week group run invite</td><td>Countdown — 7 days</td></tr>
+    </tbody>
+  </table>
+  <h3>Hashtag set (primary)</h3>
+  <div class="hashtags">
+    <span>#StrideSG</span><span>#MoveEatConnect</span><span>#SGHealthy</span><span>#EatSmartSG</span>
+    <span>#SingaporeFoodCalories</span><span>#SGFitness</span><span>#FairPriceReadyMeals</span><span>#HealthierChoiceSG</span>
+  </div>
+</section>
+
+<section id="creators">
+  <h2><span class="num">8.</span>Creator Program</h2>
+  <h3>Target mix (8–12 creators, 3-week burst)</h3>
+  <table>
+    <thead><tr><th>Creator type</th><th>Why it matters</th><th>Count</th><th>Deliverables</th><th>Comp model</th></tr></thead>
+    <tbody>
+      <tr><td>SG fitness / gym creators</td><td>Core persona trust</td><td>3–4</td><td>1 reel + 1 story + referral code</td><td>Flat fee + revshare on code</td></tr>
+      <tr><td>SG food / healthier eating</td><td>Eat Smart anchor</td><td>2–3</td><td>2 reels (scan + dish ranking)</td><td>Flat fee + revshare on code</td></tr>
+      <tr><td>SG lifestyle / wellness</td><td>Broader reach, secondary personas</td><td>2–3</td><td>1 reel + carousel post</td><td>Flat fee</td></tr>
+      <tr><td>Micro / student (20k–80k)</td><td>High engagement, low cost</td><td>2</td><td>1 reel + stories</td><td>Product + small fee</td></tr>
+      <tr><td>Nutritionist / PT (verified)</td><td>Authority + data moat endorsement</td><td>1</td><td>Long-form explainer</td><td>Founding Partner badge + fee</td></tr>
+    </tbody>
+  </table>
+  <h3>Brief (every creator gets the same one-pager)</h3>
+  <ul>
+    <li><strong>Hook in 3 sec:</strong> show a real SG moment (hawker plate, FairPrice aisle, kopitiam table).</li>
+    <li><strong>Show the scan:</strong> one continuous shot, no cuts.</li>
+    <li><strong>Show the decision:</strong> app suggests a nearby option.</li>
+    <li><strong>CTA:</strong> "Try Stride free — link in bio, use code <em>[CREATOR]</em>."</li>
+  </ul>
+  <div class="callout"><strong>Measurement:</strong> each creator gets a unique referral code in-app. We track installs, D7 retention, and Stride+ conversion per code, not just reach.</div>
+</section>
+
+<section id="launch-strategy">
+  <h2><span class="num">9.</span>Product Launch — Overall Approach</h2>
+  <p class="lede">Sequenced launch: closed beta → open waitlist → public launch → creator wave → paid pilot. Each stage has a go/no-go gate; we don't throw marketing spend at a leaky bucket.</p>
+  <div class="bands">
+    <div class="band">
+      <div class="when">Stage 1</div><h5>Closed Beta</h5>
+      <ul><li>150 invited users</li><li>Weekly retention readout</li><li>Gate: D3 ≥70%</li></ul>
+    </div>
+    <div class="band">
+      <div class="when">Stage 2</div><h5>Open Waitlist</h5>
+      <ul><li>Landing page + IG + TikTok teaser</li><li>Target 1,500 signups</li><li>Gate: ≥500 waitlist</li></ul>
+    </div>
+    <div class="band">
+      <div class="when">Stage 3</div><h5>Public Launch</h5>
+      <ul><li>App Store + Play live (SG)</li><li>PR + creator wave</li><li>Gate: ≥4.5 rating in 72h</li></ul>
+    </div>
+    <div class="band">
+      <div class="when">Stage 4</div><h5>Scale</h5>
+      <ul><li>Paid pilot (S$5k)</li><li>Stride+ paywall live</li><li>Gate: CAC ≤ S$8, D7 ≥ 25%</li></ul>
+    </div>
+  </div>
+  <h3>Launch principles</h3>
+  <ol>
+    <li><strong>Ship small, land hard.</strong> Better to launch with 4 rock-solid pillars than 8 half-built ones.</li>
+    <li><strong>One market, one language.</strong> SG-only messaging — no dilution, no geo-split testing.</li>
+    <li><strong>Reviews are oxygen.</strong> Aggressive in-app review prompts at moments of success (scan worked, weekly PDF generated, weight trend green).</li>
+    <li><strong>Every user ≥ S$10 of value.</strong> Optimise first-week experience like it's the only thing that matters — because it is.</li>
+  </ol>
+</section>
+
+<section id="countdown">
+  <h2><span class="num">10.</span>12-Week Launch Countdown</h2>
+  <p class="lede">Calendar runs T-12 → T-0, where T-0 is the public App Store / Play release day in SG.</p>
+
+  <div class="countdown"><div class="wk">T-12 / T-11</div><div class="content">
+    <strong>Foundation.</strong> Lock v2.0 spec. Finalise design system. Set up App Store Connect &amp; Google Play Console. Stand up analytics (Mixpanel / Firebase). Begin landing page build. Draft PDPA privacy policy.
+  </div></div>
+  <div class="countdown"><div class="wk">T-10 / T-9</div><div class="content">
+    <strong>Build momentum.</strong> Ship core MVP builds. Wire Apple Health + Fitbit. Seed database. Begin creator long-list (30 targets) and outreach. Landing page live with waitlist.
+  </div></div>
+  <div class="countdown"><div class="wk">T-8</div><div class="content">
+    <strong>Content starts.</strong> Begin 8-week content calendar (Pillar 1–4). Teaser reels on IG + TikTok. Invite internal dogfood group (10–15 users). First Reddit soft-mention as founder.
+  </div></div>
+  <div class="countdown"><div class="wk">T-7 / T-6</div><div class="content">
+    <strong>Closed beta.</strong> Open TestFlight + Play closed beta — 150 invitees. Weekly cohort retention readouts. Fix top-3 friction each week. Sign 4–6 creators with launch dates in T-2 / T-1.
+  </div></div>
+  <div class="countdown"><div class="wk">T-5 / T-4</div><div class="content">
+    <strong>Polish + press.</strong> Beta v2 with fixes. First press outreach (TIA, e27, CNA Lifestyle) under embargo. Open waitlist to public — target 500+. Prepare App Store assets (screenshots, subtitle, keywords).
+  </div></div>
+  <div class="countdown"><div class="wk">T-3</div><div class="content">
+    <strong>Submission window opens.</strong> App Store + Play submissions. Age rating, App Privacy form, Google Data safety form. Finalise creator briefs. Lock media embargo dates.
+  </div></div>
+  <div class="countdown"><div class="wk">T-2</div><div class="content">
+    <strong>Go/no-go review.</strong> Retention gate: ≥70% D3 on closed beta. Crash-free ≥99.5%. Final rehearsal of day-of runbook. Creators get final assets + links.
+  </div></div>
+  <div class="countdown"><div class="wk">T-1</div><div class="content">
+    <strong>Priming.</strong> Countdown posts across IG/TikTok. Waitlist email: "We're live Tuesday." Reddit &amp; Telegram group founder post scheduled. Team on standby for day-of monitoring.
+  </div></div>
+  <div class="countdown"><div class="wk">T-0</div><div class="content">
+    <strong>Launch day.</strong> Live on App Store + Play (SG). Creator wave goes live within a 12-hour window. PR embargo lifts 9am SGT. Founder posts long-form story on LinkedIn + IG. Founder-led Reddit AMA 8pm SGT.
+  </div></div>
+</section>
+
+<section id="day-of">
+  <h2><span class="num">11.</span>Launch Day Runbook</h2>
+  <table>
+    <thead><tr><th>Time (SGT)</th><th>Action</th><th>Owner</th></tr></thead>
+    <tbody>
+      <tr><td>06:00</td><td>Confirm App Store + Play live; verify deep links; test download on fresh device</td><td>Ming</td></tr>
+      <tr><td>07:00</td><td>Send waitlist launch email (1,500 subs) with deep link + referral code</td><td>Ming</td></tr>
+      <tr><td>08:00</td><td>Post founder IG + TikTok reel; LinkedIn long-form; founder newsletter</td><td>Ming</td></tr>
+      <tr><td>09:00</td><td>PR embargo lifts. Follow up with journalists. Share "we're live" tweet thread</td><td>Ming</td></tr>
+      <tr><td>09:00–18:00</td><td>Creator wave — sequenced posts every 60–90 min across 8–12 creators</td><td>Ming + creators</td></tr>
+      <tr><td>12:00</td><td>First-hour ops review: crashes, ratings, signups, top issues</td><td>Ming</td></tr>
+      <tr><td>13:00</td><td>Reddit r/singapore founder post (value-first, not ad)</td><td>Ming</td></tr>
+      <tr><td>18:00</td><td>End-of-day readout: MAU, installs, D1 retention sample, rating, top bugs</td><td>Ming</td></tr>
+      <tr><td>20:00</td><td>Reddit AMA — 60-minute founder Q&amp;A</td><td>Ming</td></tr>
+      <tr><td>22:00</td><td>Overnight monitoring: Crashlytics alerts; ASO keyword check; rating watch</td><td>Ming</td></tr>
+    </tbody>
+  </table>
+  <div class="callout"><strong>Incident kill-switch:</strong> if crash-free drops below 98% or rating drops below 4.0 in first 24h, pause creator wave, fix, redeploy within 48h, resume wave with a "we heard you" creator brief.</div>
+</section>
+
+<section id="post">
+  <h2><span class="num">12.</span>Post-Launch — First 30 / 60 / 90 Days</h2>
+  <div class="grid grid-3">
+    <div class="card">
+      <div class="tag">First 30 days</div>
+      <h4>Harden &amp; learn</h4>
+      <p>Weekly cohort retention. Ship 2 hotfix releases. Measure which content pillar drove the best installs. Double down on winner, kill the laggard.</p>
+    </div>
+    <div class="card">
+      <div class="tag">Days 31–60</div>
+      <h4>Turn on monetisation</h4>
+      <p>Stride+ paywall live once D7 ≥25%. Paid pilot with S$5k across Meta + TikTok. Begin App Store featuring pitch.</p>
+    </div>
+    <div class="card">
+      <div class="tag">Days 61–90</div>
+      <h4>Partner wave</h4>
+      <p>Announce first 2–3 anchor partners (Founding Partner badge). Launch referral program. Begin corporate wellness outreach.</p>
+    </div>
+  </div>
+  <h3>Weekly business review (every Monday)</h3>
+  <ul>
+    <li>MAU, DAU, D1/D7/D30 retention by cohort.</li>
+    <li>Installs by source (creator code, organic, paid, ASO).</li>
+    <li>Top 5 scan misses this week → input into AI retraining queue.</li>
+    <li>App Store rating + top 10 reviews — respond to all 1-/2-star reviews.</li>
+    <li>Stride+ conversion funnel once live.</li>
+  </ul>
+</section>
+
+<section id="budget">
+  <h2><span class="num">13.</span>Budget &amp; KPIs</h2>
+  <h3>Launch window budget (S$, indicative — Phase 3 + Phase 4 Q4'26 / Q1'27)</h3>
+  <table>
+    <thead><tr><th>Bucket</th><th>Pre-launch (T-12→T-0)</th><th>Launch + 30 days</th><th>Scale (60–90 days)</th><th>Total</th></tr></thead>
+    <tbody>
+      <tr><td>Creator fees</td><td>3,000</td><td>4,000</td><td>1,000</td><td>8,000</td></tr>
+      <tr><td>Paid pilot (Meta + TikTok)</td><td>0</td><td>1,000</td><td>4,000</td><td>5,000</td></tr>
+      <tr><td>ASO tools + assets</td><td>600</td><td>200</td><td>200</td><td>1,000</td></tr>
+      <tr><td>Landing page + demo videos</td><td>1,200</td><td>0</td><td>0</td><td>1,200</td></tr>
+      <tr><td>PR &amp; outreach (contingency)</td><td>500</td><td>500</td><td>0</td><td>1,000</td></tr>
+      <tr><td>Referral program seed</td><td>0</td><td>500</td><td>1,000</td><td>1,500</td></tr>
+      <tr><td>Contingency (10%)</td><td>500</td><td>650</td><td>650</td><td>1,800</td></tr>
+      <tr><td><strong>Total</strong></td><td><strong>5,800</strong></td><td><strong>6,850</strong></td><td><strong>6,850</strong></td><td><strong>19,500</strong></td></tr>
+    </tbody>
+  </table>
+  <h3>Marketing KPIs (launch window)</h3>
+  <table>
+    <thead><tr><th>KPI</th><th>T-4 waitlist</th><th>Launch +7d</th><th>Launch 

@@ -8,6 +8,8 @@ import Link from 'next/link';
 import { auth, db } from '@/lib/firebase';
 import { useStrideStore } from '@/lib/store';
 import type { GoalType, DietaryFlag, UserProfile } from '@/types';
+import StrideWordmark from '@/components/StrideWordmark';
+import StrideIcon from '@/components/StrideIcon';
 
 // ─── Step definitions — Goal first, account last ─────────────────────────────
 const STEPS = ['Goal', 'Body', 'Diet', 'Account', 'Done'];
@@ -183,9 +185,8 @@ export default function RegisterPage() {
         }}>
           ← Back
         </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 20 }}>⚡</span>
-          <span style={{ fontWeight: 800, color: '#1a1a2e', fontSize: 16 }}>Stride</span>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <StrideWordmark height={28} />
         </div>
         <span style={{ fontSize: 12, fontWeight: 600, color: '#bbb' }}>{step + 1} / {STEPS.length}</span>
       </div>
@@ -370,10 +371,12 @@ export default function RegisterPage() {
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', paddingTop: 24 }}>
             <div style={{
               width: 96, height: 96, borderRadius: '50%',
-              background: 'rgba(76,175,130,.15)', border: '2px solid #4CAF82',
+              background: 'rgba(19,162,107,.12)', border: '2px solid #13A26B',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 48, marginBottom: 20,
-            }}>⚡</div>
+              marginBottom: 20,
+            }}>
+              <StrideIcon size={56} />
+            </div>
             <h2 style={{ fontSize: 24, fontWeight: 800, color: '#1a1a2e', marginBottom: 8 }}>
               You&apos;re all set, {data.name || 'Athlete'}!
             </h2>

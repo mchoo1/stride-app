@@ -3,73 +3,171 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useStrideStore } from '@/lib/store';
 
-const R = 72;
-const CIRC = 2 * Math.PI * R;
+// ── Design tokens ──────────────────────────────────────────────────────────
+const T = {
+  canvas:        '#F7F8FB',
+  card:          '#FFFFFF',
+  border:        '#E5E9F2',
+  shadowCard:    '0 1px 2px rgba(15,27,45,0.04), 0 1px 3px rgba(15,27,45,0.03)',
+  shadowHero:    '0 8px 24px rgba(15,27,45,0.08)',
+  textPrimary:   '#0F1B2D',
+  textSecondary: '#5B6576',
+  textMuted:     '#8B95A7',
+  green:         '#1E7F5C',
+  amber:         '#F2A93B',
+  red:           '#D04E36',
+  blue:          '#2E6FB8',
+  fontDisplay:   "'Anton', Impact, sans-serif",
+} as const;
 
-function CalorieRing({
+// ── Status chip ────────────────────────────────────────────────────────────
+function StatusChip({ state }: { state: 'on_track' | 'close' | 'over' }) {
+  const map = {
+    on_track: { label: 'On track',     color: T.green, bg: 'rgba(30,127,92,0.10)' },
+    close:    { label: 'Close',        color: T.amber, bg: 'rgba(242,169,59,0.14)' },
+    over:     { label: 'Over budget',  color: T.red,   bg: 'rgba(208,78,54,0.10)' },
+  };
+  const s = map[state];
+  return (
+    <div style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      background: s.bg, borderRadius: 99, padding: '4px 10px',
+    }}>
+      <div style={{ width: 6, height: 6, borderRadius: '50%', background: s.color, flexShrink: 0 }} />
+      <span style={{ fontSize: 12, fontWeight: 600, color: s.color, lineHeight: 1 }}>{s.label}</span>
+    </div>
+  );
+}
+
+// ── Hero calorie card ──────────────────────────────────────────────────────
+function CalorieHeroCard({
   net, goal, consumed, burned,
 }: { net: number; goal: number; consumed: number; burned: number }) {
-  const pct    = Math.min(net / Math.max(goal, 1), 1);
-  const over   = net > goal + 50;
-  const color  = over ? '#FF5A5A' : '#00E676';
-  const offset = CIRC * (1 - pct);
-  const remaining = Math.max(goal - net, 0);
+  const remaining  = goal - net;          // positive = left, negative = over
+  const over       = remaining < -50;
+  const close      = !over && remaining < goal * 0.10;
+  const chipState: 'on_track' | 'close' | 'over' = over ? 'over' : close ? 'close' : 'on_track';
+
+  const pct        = Math.min(net / Math.max(goal, 1), 1);
+  const barColor   = over ? T.red : close ? T.amber : T.green;
+  const numColor   = over ? T.red : T.textPrimary;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-      <div style={{ position: 'relative', width: 200, height: 200 }}>
-        <svg width="200" height="200" viewBox="0 0 200 200" style={{ animation: 'ringPop .5s ease' }}>
-          {/* Track */}
-          <circle cx="100" cy="100" r={R}
-            fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="12"/>
-          {/* Progress */}
-          <circle cx="100" cy="100" r={R}
-            fill="none" stroke={color} strokeWidth="12"
-            strokeDasharray={CIRC}
-            strokeDashoffset={offset}
-            strokeLinecap="round"
-            transform="rotate(-90 100 100)"
-            style={{
-              transition: 'stroke-dashoffset 1s cubic-bezier(.4,0,.2,1), stroke .4s',
-              filter: `drop-shadow(0 0 8px ${color}80)`,
-            }}
-          />
-          {/* Center: net kcal */}
-          <text x="100" y="85" textAnchor="middle"
-            fill="#F0F0F8" fontSize="38" fontWeight="900"
-            fontFamily="Inter, sans-serif">{net}</text>
-          <text x="100" y="104" textAnchor="middle"
-            fill="#6E6E90" fontSize="11" fontWeight="600"
-            fontFamily="Inter, sans-serif">NET KCAL</text>
-          <text x="100" y="126" textAnchor="middle"
-            fill={over ? '#FF5A5A' : '#00E676'} fontSize="14" fontWeight="800"
-            fontFamily="Inter, sans-serif">
-            {over ? `${net - goal} over` : `${remaining} left`}
-          </text>
-        </svg>
+    <div style={{
+      background: T.card,
+      borderRadius: 24,
+      border: `1px solid ${T.border}`,
+      boxShadow: T.shadowHero,
+      padding: '20px 20px 18px',
+      marginBottom: 12,
+    }}>
+      {/* Top row: label + chip */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <span style={{
+          fontSize: 11, fontWeight: 700, letterSpacing: '0.08em',
+          color: T.textMuted, textTransform: 'uppercase',
+        }}>
+          Net Calories Left
+        </span>
+        <StatusChip state={chipState} />
       </div>
 
-      {/* Eaten / Burned row */}
-      <div style={{ display: 'flex', gap: 32 }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 11, color: '#6E6E90', fontWeight: 600, marginBottom: 2 }}>EATEN</div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: '#F0F0F8' }}>{consumed}</div>
+      {/* Big numeral */}
+      <div style={{
+        fontFamily: T.fontDisplay,
+        fontSize: 96,
+        lineHeight: 0.92,
+        color: numColor,
+        fontVariantNumeric: 'tabular-nums',
+        marginBottom: 12,
+      }}>
+        {Math.abs(remaining)}
+      </div>
+
+      {/* Sub-label */}
+      <div style={{ fontSize: 13, color: T.textMuted, marginBottom: 14 }}>
+        {consumed} in &nbsp;·&nbsp; {burned} out &nbsp;·&nbsp; {goal} goal
+      </div>
+
+      {/* Progress bar */}
+      <div>
+        <div style={{
+          height: 8, background: T.border, borderRadius: 4, overflow: 'hidden', marginBottom: 6,
+        }}>
+          <div style={{
+            height: '100%',
+            width: `${pct * 100}%`,
+            background: barColor,
+            borderRadius: 4,
+            transition: 'width 0.8s cubic-bezier(.4,0,.2,1)',
+          }} />
         </div>
-        <div style={{ width: 1, background: 'rgba(255,255,255,0.06)' }}/>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 11, color: '#6E6E90', fontWeight: 600, marginBottom: 2 }}>BURNED</div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: '#FF6B35' }}>{burned}</div>
-        </div>
-        <div style={{ width: 1, background: 'rgba(255,255,255,0.06)' }}/>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 11, color: '#6E6E90', fontWeight: 600, marginBottom: 2 }}>GOAL</div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: '#A8A8C8' }}>{goal}</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 12, color: T.textMuted }}>0</span>
+          <span style={{ fontSize: 12, color: T.textMuted }}>{goal} kcal</span>
         </div>
       </div>
     </div>
   );
 }
 
+// ── Quick action tile ──────────────────────────────────────────────────────
+function QuickTile({
+  href, icon, label, iconBg,
+}: { href: string; icon: React.ReactNode; label: string; iconBg: string }) {
+  return (
+    <Link href={href} style={{
+      flex: 1, background: T.card, borderRadius: 20,
+      border: `1px solid ${T.border}`,
+      boxShadow: T.shadowCard,
+      padding: '16px 12px',
+      textDecoration: 'none',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+    }}>
+      <div style={{
+        width: 44, height: 44, borderRadius: 14,
+        background: iconBg,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        {icon}
+      </div>
+      <span style={{ fontSize: 13, fontWeight: 600, color: T.textPrimary, textAlign: 'center' }}>
+        {label}
+      </span>
+    </Link>
+  );
+}
+
+// ── Section label ──────────────────────────────────────────────────────────
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{
+      fontSize: 11, fontWeight: 700, letterSpacing: '0.08em',
+      color: T.textMuted, textTransform: 'uppercase', marginBottom: 14,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+// ── White card wrapper ─────────────────────────────────────────────────────
+function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+  return (
+    <div style={{
+      background: T.card,
+      borderRadius: 20,
+      border: `1px solid ${T.border}`,
+      boxShadow: T.shadowCard,
+      padding: 16,
+      marginBottom: 12,
+      ...style,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+// ── Main page ──────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const store      = useStrideStore();
   const profile    = store.profile;
@@ -86,7 +184,7 @@ export default function DashboardPage() {
   const net      = Math.max(0, consumed - burned);
 
   const h = new Date().getHours();
-  const greet = h < 5 ? 'Night owl' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  const greet = h < 5 ? 'NIGHT OWL' : h < 12 ? 'GOOD MORNING' : h < 17 ? 'GOOD AFTERNOON' : 'GOOD EVENING';
 
   const doneCount = challenges.filter(c => c.done).length;
 
@@ -95,267 +193,363 @@ export default function DashboardPage() {
     setTimeout(() => { store.removeFoodEntry(id); setDeletingId(null); }, 280);
   };
 
+  const dateLabel = new Date().toLocaleDateString('en-US', {
+    weekday: 'long', month: 'short', day: 'numeric',
+  }).toUpperCase();
+
   return (
-    <div style={{ background: '#0C0C14', minHeight: '100vh' }}>
+    <div style={{ background: T.canvas, minHeight: '100vh' }}>
 
       {/* ── Header ── */}
-      <div style={{ padding: '52px 20px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div style={{
+        padding: '52px 20px 8px',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+      }}>
         <div>
-          <p style={{ fontSize: 13, color: '#6E6E90', fontWeight: 600, marginBottom: 2 }}>
-            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+          {/* Eyebrow */}
+          <p style={{
+            fontSize: 11, fontWeight: 700, letterSpacing: '0.08em',
+            color: T.textMuted, textTransform: 'uppercase', margin: '0 0 4px',
+          }}>
+            {dateLabel}
           </p>
-          <h1 style={{ fontSize: 22, fontWeight: 900, color: '#F0F0F8', margin: 0 }}>
-            {greet}{profile.name ? `, ${profile.name.split(' ')[0]}` : ''} 👋
-          </h1>
+          {/* Title */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <h1 style={{
+              fontFamily: T.fontDisplay,
+              fontSize: 40,
+              lineHeight: 1,
+              color: T.textPrimary,
+              margin: 0,
+            }}>
+              TODAY
+            </h1>
+            {streak > 0 && (
+              <div style={{
+                background: 'rgba(242,169,59,0.12)',
+                borderRadius: 99,
+                padding: '4px 10px',
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+              }}>
+                <span style={{ fontSize: 14 }}>🔥</span>
+                <span style={{
+                  fontSize: 13, fontWeight: 700,
+                  color: T.amber, lineHeight: 1,
+                }}>
+                  {streak}d
+                </span>
+              </div>
+            )}
+          </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {streak > 0 && (
-            <div className="streak-badge">
-              🔥 {streak}d
-            </div>
-          )}
-          <Link href="/me" style={{
-            width: 38, height: 38, borderRadius: '50%',
-            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            textDecoration: 'none', fontSize: 18,
-          }}>👤</Link>
-        </div>
+
+        {/* Avatar */}
+        <Link href="/me" style={{
+          width: 40, height: 40, borderRadius: '50%',
+          background: 'rgba(15,27,45,0.06)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          textDecoration: 'none', fontSize: 18, flexShrink: 0,
+        }}>
+          👤
+        </Link>
       </div>
 
       <div style={{ padding: '16px 16px 100px' }}>
 
-        {/* ── Calorie Ring ── */}
-        <div style={{
-          background: '#161622', borderRadius: 28, padding: '24px 20px 20px',
-          border: '1px solid rgba(255,255,255,0.06)',
-          marginBottom: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
-        }}>
-          <CalorieRing net={net} goal={profile.targetCalories} consumed={consumed} burned={burned} />
+        {/* ── Hero Calorie Card ── */}
+        <CalorieHeroCard
+          net={net}
+          goal={profile.targetCalories}
+          consumed={consumed}
+          burned={burned}
+        />
 
-          {/* Quick log buttons */}
-          <div style={{ display: 'flex', gap: 10, width: '100%' }}>
-            <Link href="/log" style={{
-              flex: 1, borderRadius: 16,
-              background: 'rgba(0,230,118,0.10)', border: '1px solid rgba(0,230,118,0.20)',
-              padding: '13px 0', textAlign: 'center', textDecoration: 'none',
-              fontSize: 13, fontWeight: 800, color: '#00E676',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00E676" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
-              Log Food
-            </Link>
-            <Link href="/log?tab=activity" style={{
-              flex: 1, borderRadius: 16,
-              background: 'rgba(255,107,53,0.10)', border: '1px solid rgba(255,107,53,0.20)',
-              padding: '13px 0', textAlign: 'center', textDecoration: 'none',
-              fontSize: 13, fontWeight: 800, color: '#FF6B35',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF6B35" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg>
-              Log Activity
-            </Link>
-          </div>
+        {/* ── Quick action row ── */}
+        <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+          <QuickTile
+            href="/log"
+            label="Log food"
+            iconBg="rgba(30,127,92,0.10)"
+            icon={
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke={T.green} strokeWidth="2.5" strokeLinecap="round">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            }
+          />
+          <QuickTile
+            href="/scan"
+            label="Scan"
+            iconBg="rgba(46,111,184,0.10)"
+            icon={
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke={T.blue} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                <circle cx="12" cy="13" r="4" />
+              </svg>
+            }
+          />
+          <QuickTile
+            href="/log?tab=activity"
+            label="Activity"
+            iconBg="rgba(242,169,59,0.14)"
+            icon={
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke={T.amber} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" />
+              </svg>
+            }
+          />
         </div>
 
-        {/* ── Macro Summary ── */}
-        <div style={{
-          background: '#161622', borderRadius: 22, padding: 16,
-          border: '1px solid rgba(255,255,255,0.06)', marginBottom: 12,
-        }}>
-          <div style={{ fontSize: 14, fontWeight: 800, color: '#F0F0F8', marginBottom: 14 }}>
-            Today&apos;s Macros
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {/* ── Macros card ── */}
+        <Card>
+          <SectionLabel>Today&apos;s Macros</SectionLabel>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {[
               {
                 label: 'Protein',
                 val:   totals.protein,
                 goal:  profile.targetProtein || Math.round((profile.targetCalories * 0.30) / 4),
-                color: '#4A9EFF',
-                unit:  'g',
+                color: T.blue,
               },
               {
                 label: 'Carbs',
                 val:   totals.carbs,
                 goal:  profile.targetCarbs || Math.round((profile.targetCalories * 0.45) / 4),
-                color: '#FFD166',
-                unit:  'g',
+                color: '#C98A2E',
               },
               {
                 label: 'Fat',
                 val:   totals.fat,
                 goal:  profile.targetFat || Math.round((profile.targetCalories * 0.25) / 9),
-                color: '#00E676',
-                unit:  'g',
+                color: T.green,
               },
             ].map(m => {
-              const pct = Math.min(m.val / Math.max(m.goal, 1), 1);
+              const pct  = Math.min(m.val / Math.max(m.goal, 1), 1);
               const over = m.val > m.goal;
+              const barColor = over ? T.red : m.color;
               return (
                 <div key={m.label}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 5 }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: '#A8A8C8' }}>{m.label}</span>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
-                      <span style={{ fontSize: 16, fontWeight: 900, color: over ? '#FF5A5A' : m.color }}>
+                  <div style={{
+                    display: 'flex', justifyContent: 'space-between',
+                    alignItems: 'baseline', marginBottom: 6,
+                  }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: T.textSecondary }}>
+                      {m.label}
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
+                      <span style={{
+                        fontSize: 15, fontWeight: 700,
+                        color: over ? T.red : m.color,
+                      }}>
                         {m.val}
                       </span>
-                      <span style={{ fontSize: 11, color: '#6E6E90' }}>/ {m.goal}{m.unit}</span>
+                      <span style={{ fontSize: 12, color: T.textMuted }}>&nbsp;/ {m.goal} g</span>
                     </div>
                   </div>
-                  <div style={{ height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' }}>
+                  <div style={{
+                    height: 8, background: T.border, borderRadius: 4, overflow: 'hidden',
+                  }}>
                     <div style={{
-                      height: '100%', borderRadius: 3,
+                      height: '100%',
                       width: `${pct * 100}%`,
-                      background: over ? '#FF5A5A' : m.color,
-                      transition: 'width .6s cubic-bezier(.4,0,.2,1)',
-                      boxShadow: `0 0 8px ${over ? '#FF5A5A' : m.color}60`,
-                    }}/>
+                      background: barColor,
+                      borderRadius: 4,
+                      transition: 'width 0.6s cubic-bezier(.4,0,.2,1)',
+                    }} />
                   </div>
                 </div>
               );
             })}
           </div>
-        </div>
+        </Card>
 
-        {/* ── Daily Challenges ── */}
-        <div style={{
-          background: '#161622', borderRadius: 22, padding: 16,
-          border: '1px solid rgba(255,255,255,0.06)', marginBottom: 12,
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <span style={{ fontSize: 14, fontWeight: 800, color: '#F0F0F8' }}>Daily Challenges</span>
-            <span style={{
-              fontSize: 12, fontWeight: 700, color: doneCount === 3 ? '#00E676' : '#A8A8C8',
-              background: doneCount === 3 ? 'rgba(0,230,118,0.12)' : 'rgba(255,255,255,0.06)',
-              borderRadius: 20, padding: '3px 10px',
+        {/* ── Today's Food card ── */}
+        <Card>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <SectionLabel>Recent</SectionLabel>
+            <Link href="/log" style={{
+              fontSize: 13, fontWeight: 600, color: T.green, textDecoration: 'none', marginTop: -4,
             }}>
-              {doneCount}/3 done
-            </span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {challenges.map(ch => (
-              <div key={ch.id} className={`challenge-card${ch.done ? ' done' : ''}`}>
-                <span style={{ fontSize: 20 }}>{ch.emoji}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: ch.done ? '#00E676' : '#F0F0F8', marginBottom: 4 }}>
-                    {ch.label}
-                  </div>
-                  <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
-                    <div style={{
-                      height: '100%', borderRadius: 2,
-                      width: `${Math.min((ch.current / ch.target) * 100, 100)}%`,
-                      background: ch.done ? '#00E676' : '#A8A8C8',
-                      transition: 'width .5s',
-                    }}/>
-                  </div>
-                </div>
-                <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  {ch.done
-                    ? <span style={{ fontSize: 18 }}>✅</span>
-                    : <span style={{ fontSize: 11, color: '#6E6E90', fontWeight: 700 }}>+{ch.xp} XP</span>
-                  }
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* ── Today's Food ── */}
-        <div style={{
-          background: '#161622', borderRadius: 22, padding: 16,
-          border: '1px solid rgba(255,255,255,0.06)', marginBottom: 12,
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <span style={{ fontSize: 14, fontWeight: 800, color: '#F0F0F8' }}>Today&apos;s Food</span>
-            <Link href="/log" style={{ fontSize: 12, color: '#00E676', fontWeight: 700, textDecoration: 'none' }}>
-              + Add
+              See all
             </Link>
           </div>
+
           {todayFood.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '20px 0' }}>
+            <div style={{ textAlign: 'center', padding: '18px 0' }}>
               <div style={{ fontSize: 32, marginBottom: 8 }}>🍽️</div>
-              <div style={{ fontSize: 13, color: '#6E6E90', fontWeight: 600 }}>Nothing logged yet</div>
+              <div style={{ fontSize: 13, color: T.textMuted, fontWeight: 500 }}>
+                Nothing logged yet
+              </div>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {todayFood.slice(-5).map(e => (
                 <div key={e.id} style={{
                   display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '8px 6px', borderRadius: 10,
-                  opacity: deletingId === e.id ? 0.3 : 1,
+                  padding: '7px 4px', borderRadius: 10,
+                  opacity:   deletingId === e.id ? 0.3 : 1,
                   transform: deletingId === e.id ? 'translateX(-10px)' : 'none',
                   transition: 'opacity .28s, transform .28s',
                 }}>
-                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#00E676', flexShrink: 0 }}/>
-                  <span style={{ flex: 1, fontSize: 14, color: '#F0F0F8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div style={{
+                    width: 8, height: 8, borderRadius: '50%',
+                    background: T.green, flexShrink: 0,
+                  }} />
+                  <span style={{
+                    flex: 1, fontSize: 14, color: T.textPrimary,
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>
                     {e.name}
                   </span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#A8A8C8' }}>{e.calories} kcal</span>
-                  <button onClick={() => handleDeleteFood(e.id)} style={{
-                    background: 'none', border: 'none', cursor: 'pointer',
-                    color: '#6E6E90', fontSize: 15, padding: '0 4px', lineHeight: 1,
-                  }}>✕</button>
+                  <span style={{
+                    fontFamily: T.fontDisplay,
+                    fontSize: 22, lineHeight: 1,
+                    color: T.textSecondary,
+                  }}>
+                    {e.calories}
+                  </span>
+                  <span style={{ fontSize: 11, color: T.textMuted, marginLeft: -4 }}>kcal</span>
+                  <button
+                    onClick={() => handleDeleteFood(e.id)}
+                    style={{
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      color: T.textMuted, fontSize: 14, padding: '0 2px', lineHeight: 1,
+                    }}
+                  >
+                    ✕
+                  </button>
                 </div>
               ))}
               {todayFood.length > 5 && (
-                <Link href="/log" style={{ fontSize: 12, color: '#6E6E90', textDecoration: 'none', textAlign: 'center', paddingTop: 6 }}>
+                <Link href="/log" style={{
+                  fontSize: 12, color: T.textMuted, textDecoration: 'none',
+                  textAlign: 'center', paddingTop: 6,
+                }}>
                   +{todayFood.length - 5} more entries
                 </Link>
               )}
             </div>
           )}
-        </div>
+        </Card>
 
-        {/* ── Today's Activity ── */}
+        {/* ── Today's Activity card ── */}
         {todayAct.length > 0 && (
-          <div style={{
-            background: '#161622', borderRadius: 22, padding: 16,
-            border: '1px solid rgba(255,255,255,0.06)', marginBottom: 12,
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <span style={{ fontSize: 14, fontWeight: 800, color: '#F0F0F8' }}>Activity</span>
-              <Link href="/log?tab=activity" style={{ fontSize: 12, color: '#FF6B35', fontWeight: 700, textDecoration: 'none' }}>
+          <Card>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <SectionLabel>Activity</SectionLabel>
+              <Link href="/log?tab=activity" style={{
+                fontSize: 13, fontWeight: 600, color: T.amber, textDecoration: 'none', marginTop: -4,
+              }}>
                 + Add
               </Link>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {todayAct.map(e => (
                 <div key={e.id} style={{
-                  display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '6px 4px',
+                  display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0',
                 }}>
-                  <span style={{ fontSize: 18 }}>{e.emoji}</span>
-                  <span style={{ flex: 1, fontSize: 13, color: '#F0F0F8' }}>{e.name}</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#FF6B35' }}>-{e.caloriesBurned} kcal</span>
+                  <span style={{ fontSize: 20 }}>{e.emoji}</span>
+                  <span style={{ flex: 1, fontSize: 14, color: T.textPrimary }}>{e.name}</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: T.amber }}>
+                    -{e.caloriesBurned} kcal
+                  </span>
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
         )}
+
+        {/* ── Daily Challenges card ── */}
+        <Card>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <SectionLabel>Daily Challenges</SectionLabel>
+            <div style={{
+              fontSize: 12, fontWeight: 600,
+              color: doneCount === 3 ? T.green : T.textMuted,
+              background: doneCount === 3 ? 'rgba(30,127,92,0.10)' : T.border,
+              borderRadius: 99, padding: '3px 10px',
+            }}>
+              {doneCount}/3 done
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {challenges.map(ch => (
+              <div key={ch.id} style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '8px 10px',
+                background: ch.done ? 'rgba(30,127,92,0.06)' : T.canvas,
+                borderRadius: 12,
+                border: `1px solid ${ch.done ? 'rgba(30,127,92,0.15)' : T.border}`,
+              }}>
+                <span style={{ fontSize: 20 }}>{ch.emoji}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{
+                    fontSize: 13, fontWeight: 600,
+                    color: ch.done ? T.green : T.textPrimary,
+                    marginBottom: 5,
+                  }}>
+                    {ch.label}
+                  </div>
+                  <div style={{
+                    height: 4, background: T.border, borderRadius: 2, overflow: 'hidden',
+                  }}>
+                    <div style={{
+                      height: '100%',
+                      borderRadius: 2,
+                      width: `${Math.min((ch.current / ch.target) * 100, 100)}%`,
+                      background: ch.done ? T.green : T.textMuted,
+                      transition: 'width .5s',
+                    }} />
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  {ch.done
+                    ? <span style={{ fontSize: 18 }}>✅</span>
+                    : <span style={{
+                        fontSize: 11, fontWeight: 700,
+                        color: T.textMuted,
+                      }}>
+                        +{ch.xp} XP
+                      </span>
+                  }
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
 
         {/* ── Discover row ── */}
         <div style={{ display: 'flex', gap: 10 }}>
           <Link href="/eat" style={{
-            flex: 1, borderRadius: 20, padding: '16px 14px',
-            background: '#161622', border: '1px solid rgba(255,107,53,0.15)',
-            textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10,
+            flex: 1, borderRadius: 20,
+            padding: '16px 14px',
+            background: T.card,
+            border: `1px solid ${T.border}`,
+            boxShadow: T.shadowCard,
+            textDecoration: 'none',
+            display: 'flex', alignItems: 'center', gap: 12,
           }}>
-            <span style={{ fontSize: 22 }}>🍜</span>
+            <span style={{ fontSize: 24 }}>🍜</span>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: '#F0F0F8' }}>What to Eat</div>
-              <div style={{ fontSize: 11, color: '#6E6E90', marginTop: 2 }}>Fits your budget</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: T.textPrimary }}>What to Eat</div>
+              <div style={{ fontSize: 11, color: T.textMuted, marginTop: 2 }}>Fits your budget</div>
             </div>
           </Link>
           <Link href="/move" style={{
-            flex: 1, borderRadius: 20, padding: '16px 14px',
-            background: '#161622', border: '1px solid rgba(167,139,250,0.15)',
-            textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10,
+            flex: 1, borderRadius: 20,
+            padding: '16px 14px',
+            background: T.card,
+            border: `1px solid ${T.border}`,
+            boxShadow: T.shadowCard,
+            textDecoration: 'none',
+            display: 'flex', alignItems: 'center', gap: 12,
           }}>
-            <span style={{ fontSize: 22 }}>⚡</span>
+            <span style={{ fontSize: 24 }}>⚡</span>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: '#F0F0F8' }}>Move</div>
-              <div style={{ fontSize: 11, color: '#6E6E90', marginTop: 2 }}>Nearby activities</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: T.textPrimary }}>Move</div>
+              <div style={{ fontSize: 11, color: T.textMuted, marginTop: 2 }}>Nearby activities</div>
             </div>
           </Link>
         </div>

@@ -1,0 +1,7 @@
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 120" font-family="&#39;Archivo Black&#39;, &#39;Helvetica Neue&#39;, Arial, sans-serif">
+  <rect x="0" y="0" width="120" height="120" rx="28" fill="#0F1B2D"></rect>
+  <path d="M32 92&#xA;           C 32 70, 47 55, 67 49&#xA;           C 87 43, 97 36, 95 24&#xA;           C 83 36, 65 38, 50 42&#xA;           C 27 50, 17 70, 27 95 Z" fill="#13A26B"></path>
+  <path d="M37 85 C 45 70, 60 58, 78 48" fill="none" stroke="#0F1B2D" stroke-width="2.8" stroke-linecap="round" opacity="0.35"></path>
+  <text x="148" y="83" font-size="64" letter-spacing="-1" fill="#0F1B2D">stride</text>
+</svg>

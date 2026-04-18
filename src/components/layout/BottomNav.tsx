@@ -2,93 +2,110 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+// ── Design system nav icons ────────────────────────────────────────────────
+const HomeOutline = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3.5 10.5 12 3.5l8.5 7"/>
+    <path d="M5.5 9v10.5a1 1 0 0 0 1 1h3.5v-5.5h4v5.5h3.5a1 1 0 0 0 1-1V9"/>
+  </svg>
+);
+const HomeFill = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3.5 10.5 12 3.5l8.5 7v0" fill="none"/>
+    <path d="M5.5 9.2V19.5a1 1 0 0 0 1 1h3.5V15a.9.9 0 0 1 .9-.9h2.2a.9.9 0 0 1 .9.9v5.5h3.5a1 1 0 0 0 1-1V9.2L12 3.8 5.5 9.2Z" fill="currentColor" stroke="none"/>
+  </svg>
+);
+const ScanOutline = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="6.5" width="18" height="13" rx="2.5"/>
+    <circle cx="12" cy="13.2" r="3.5"/>
+    <path d="M8.5 6.5 9.6 4.5h4.8l1.1 2"/>
+  </svg>
+);
+const ScanFill = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M8.5 4.8a1 1 0 0 1 .86-.5h5.28a1 1 0 0 1 .86.5l.9 1.7H20a1.5 1.5 0 0 1 1.5 1.5v10.5A1.5 1.5 0 0 1 20 20H4a1.5 1.5 0 0 1-1.5-1.5V8A1.5 1.5 0 0 1 4 6.5h3.6l.9-1.7Z" fill="currentColor" stroke="none"/>
+    <circle cx="12" cy="13.2" r="3.2" fill="#fff" stroke="none"/>
+  </svg>
+);
+const EatOutline = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3.5 11h17"/>
+    <path d="M4.5 11a7.5 7.5 0 0 0 15 0"/>
+    <path d="M15.5 7 18 4.5"/>
+    <path d="M13 7l1-3"/>
+  </svg>
+);
+const EatFill = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3.5 11h17a0 0 0 0 1 0 0 7.5 7.5 0 0 1-15 0 0 0 0 0 1 0 0z" fill="currentColor" stroke="none"/>
+    <path d="M3.5 11h17" stroke="currentColor"/>
+    <path d="M15.5 7 18 4.5" stroke="currentColor"/>
+    <path d="M13 7l1-3" stroke="currentColor"/>
+  </svg>
+);
+const MoveOutline = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M13.5 3 5.5 13h5.5l-1 8 8-10h-5.5l1-8Z"/>
+  </svg>
+);
+const MoveFill = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M13.5 3 5.5 13h5.5l-1 8 8-10h-5.5l1-8Z" fill="currentColor" stroke="none"/>
+  </svg>
+);
+const MeOutline = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="8" r="3.75"/>
+    <path d="M4.5 20c0-3.8 3.4-6.5 7.5-6.5s7.5 2.7 7.5 6.5"/>
+  </svg>
+);
+const MeFill = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="8" r="3.75" fill="currentColor" stroke="none"/>
+    <path d="M4.5 20.5c0-3.8 3.4-6.8 7.5-6.8s7.5 3 7.5 6.8" fill="currentColor" stroke="none"/>
+  </svg>
+);
+
 const NAV_ITEMS = [
-  {
-    href: '/dashboard', activePrefix: '/dashboard', label: 'Home',
-    icon: (active: boolean) => (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? '#00E676' : '#44445A'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 12L12 4l9 8v8a1 1 0 01-1 1h-5v-5H9v5H4a1 1 0 01-1-1v-8z"/>
-      </svg>
-    ),
-  },
-  {
-    href: '/eat', activePrefix: '/eat', label: 'Eat',
-    icon: (active: boolean) => (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? '#FF6B35' : '#44445A'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 11l19-9-9 19-2-8-8-2z"/>
-      </svg>
-    ),
-  },
-  {
-    href: '/move', activePrefix: '/move', label: 'Move',
-    icon: (active: boolean) => (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? '#A78BFA' : '#44445A'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/>
-      </svg>
-    ),
-  },
-  {
-    href: '/me', activePrefix: '/me', label: 'Me',
-    icon: (active: boolean) => (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? '#4A9EFF' : '#44445A'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="8" r="4"/>
-        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-      </svg>
-    ),
-  },
+  { href: '/dashboard', prefix: '/dashboard', label: 'Home',  Outline: HomeOutline,  Fill: HomeFill  },
+  { href: '/scan',      prefix: '/scan',      label: 'Scan',  Outline: ScanOutline,  Fill: ScanFill  },
+  { href: '/eat',       prefix: '/eat',       label: 'Eat',   Outline: EatOutline,   Fill: EatFill   },
+  { href: '/move',      prefix: '/move',      label: 'Move',  Outline: MoveOutline,  Fill: MoveFill  },
+  { href: '/me',        prefix: '/me',        label: 'Me',    Outline: MeOutline,    Fill: MeFill    },
 ];
 
-const ACTIVE_COLORS: Record<string, string> = {
-  '/dashboard': '#00E676',
-  '/eat':       '#FF6B35',
-  '/move':      '#A78BFA',
-  '/me':        '#4A9EFF',
-};
+const GREEN = '#1E7F5C';
+const MUTED = '#8B95A7';
 
 export default function BottomNav() {
   const path = usePathname();
 
-  const getActiveColor = () => {
-    for (const item of NAV_ITEMS) {
-      if (path === item.activePrefix || path.startsWith(item.activePrefix + '/')) {
-        return ACTIVE_COLORS[item.activePrefix] || '#00E676';
-      }
-    }
-    return '#00E676';
-  };
-
   return (
     <nav style={{
       position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
-      background: 'rgba(14,14,20,0.92)',
-      backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
-      borderTop: '1px solid rgba(255,255,255,0.06)',
-      padding: '10px 0 max(14px, env(safe-area-inset-bottom))',
+      background: 'rgba(255,255,255,0.92)',
+      backdropFilter: 'blur(20px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+      borderTop: '1px solid #E5E9F2',
+      padding: '8px 0 max(20px, env(safe-area-inset-bottom))',
     }}>
       <div style={{ maxWidth: 500, margin: '0 auto', display: 'flex', alignItems: 'center' }}>
         {NAV_ITEMS.map((item) => {
-          const active = path === item.activePrefix || path.startsWith(item.activePrefix + '/');
-          const color = active ? ACTIVE_COLORS[item.activePrefix] : '#44445A';
+          const active = path === item.prefix || path.startsWith(item.prefix + '/');
+          const Icon   = active ? item.Fill : item.Outline;
+          const color  = active ? GREEN : MUTED;
           return (
             <Link key={item.href} href={item.href} style={{
               flex: 1, display: 'flex', flexDirection: 'column',
-              alignItems: 'center', gap: 4,
-              padding: '2px 0', textDecoration: 'none',
+              alignItems: 'center', gap: 3,
+              padding: '4px 0', textDecoration: 'none', color,
+              transition: 'color .15s',
             }}>
-              <div style={{
-                width: 40, height: 32,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                borderRadius: 12,
-                background: active ? `${ACTIVE_COLORS[item.activePrefix]}14` : 'transparent',
-                transition: 'background .2s',
-              }}>
-                {item.icon(active)}
-              </div>
+              <Icon />
               <span style={{
-                fontSize: 10, fontWeight: 700, letterSpacing: '0.3px',
-                color,
-                transition: 'color .2s',
+                fontSize: 10, fontWeight: 600, letterSpacing: '0.02em',
+                fontFamily: 'var(--font-sans)',
               }}>
                 {item.label}
               </span>
