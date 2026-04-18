@@ -2,10 +2,16 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { calculateTargetCalories, calculateMacros, uid, todayKey } from './utils';
+import { api } from './apiClient';
 import type {
   UserProfile, FoodLogEntry, ActivityLogEntry,
   MealType, IntensityLevel, ActivitySource, GoalType,
 } from '@/types';
+
+// ── Fire-and-forget helper — never blocks the UI ──────────────────────────────
+function bg(fn: () => Promise<unknown>) {
+  fn().catch(() => { /* silently ignore sync errors */ });
+}
 
 export interface WeightEntry {
   id: string;
@@ -55,6 +61,10 @@ interface StrideStore {
   streak:       number;
   lastActiveDate: string; // YYYY-MM-DD
 
+  // Server sync
+  loadTodayFromServer:    () => Promise<void>;
+  syncProfileFromServer:  () => Promise<void>;
+
   // Profile actions
   updateProfile:          (updates: Partial<UserProfile>) => void;
   completeOnboarding:     (data: Partial<UserProfile>) => void;
@@ -101,6 +111,111 @@ export const useStrideStore = create<StrideStore>()(
       streak:         0,
       lastActiveDate: '',
 
+      // ── Server sync ───────────────────────────────────────────────────────────
+      /**
+       * Called on dashboard mount — pulls today's food/activity/water from
+       * Firestore and merges into local state so the UI is always current.
+       * Falls back gracefully if the user is offline or not logged in.
+       */
+      loadTodayFromServer: async () => {
+        try {
+          const today = new Date().toISOString().slice(0, 10);
+          const [foodLogs, actLogs, waterData, streakData] = await Promise.all([
+            api.food.getByDate(today),
+            api.activity.getByDate(today),
+            api.water.getByDate(today),
+            api.streak.get(),
+          ]);
+
+          set((s) => {
+            // Merge server food logs — keep local-only entries, replace server ones by id
+            const serverFoodIds = new Set(foodLogs.map(f => f.id));
+            const localOnly = s.foodLog.filter(e => !serverFoodIds.has(e.id));
+            const mergedFood: FoodLogEntry[] = [
+              ...localOnly,
+              ...foodLogs.map(f => ({
+                id:        f.id,
+                foodItemId: f.foodItemId ?? f.id,
+                name:      f.name,
+                emoji:     f.emoji,
+                mealType:  (f.mealType ?? 'snack') as MealType,
+                quantity:  f.quantity ?? 100,
+                calories:  f.calories,
+                protein:   f.protein,
+                carbs:     f.carbs,
+                fat:       f.fat,
+                timestamp: f.loggedAt,
+              })),
+            ];
+
+            // Merge server activity logs
+            const serverActIds = new Set(actLogs.map(a => a.id));
+            const localActOnly = s.activityLog.filter(e => !serverActIds.has(e.id));
+            const mergedAct: ActivityLogEntry[] = [
+              ...localActOnly,
+              ...actLogs.map(a => ({
+                id:             a.id,
+                name:           a.name,
+                emoji:          a.emoji,
+                durationMins:   a.durationMins,
+                intensity:      (a.intensity ?? 'medium') as IntensityLevel,
+                caloriesBurned: a.caloriesBurned,
+                source:         (a.source ?? 'manual') as ActivitySource,
+                notes:          a.notes ?? undefined,
+                timestamp:      a.loggedAt,
+              })),
+            ];
+
+            // Merge water
+            const key = todayKey();
+            return {
+              foodLog:     mergedFood,
+              activityLog: mergedAct,
+              waterMl:     { ...s.waterMl, [key]: waterData.totalMl },
+              streak:         streakData.streak,
+              lastActiveDate: streakData.lastActiveDate ?? s.lastActiveDate,
+            };
+          });
+        } catch {
+          // Offline or unauthenticated — local state is already hydrated from localStorage
+        }
+      },
+
+      /**
+       * Pull profile from Firestore and update local state.
+       * Called after login and on the Me/Profile pages.
+       */
+      syncProfileFromServer: async () => {
+        try {
+          const serverProfile = await api.profile.get();
+          set((s) => ({
+            profile: {
+              ...s.profile,
+              name:               serverProfile.name            ?? s.profile.name,
+              email:              serverProfile.email           ?? s.profile.email,
+              goalType:           (serverProfile.goalType       ?? s.profile.goalType) as GoalType,
+              currentWeight:      serverProfile.currentWeight   ?? s.profile.currentWeight,
+              targetWeight:       serverProfile.targetWeight    ?? s.profile.targetWeight,
+              heightCm:           serverProfile.heightCm        ?? s.profile.heightCm,
+              age:                serverProfile.age             ?? s.profile.age,
+              gender:             (serverProfile.gender         ?? s.profile.gender) as UserProfile['gender'],
+              activityLevel:      (serverProfile.activityLevel  ?? s.profile.activityLevel) as UserProfile['activityLevel'],
+              targetCalories:     serverProfile.targetCalories  ?? s.profile.targetCalories,
+              targetProtein:      serverProfile.targetProtein   ?? s.profile.targetProtein,
+              targetCarbs:        serverProfile.targetCarbs     ?? s.profile.targetCarbs,
+              targetFat:          serverProfile.targetFat       ?? s.profile.targetFat,
+              targetWater:        serverProfile.targetWater     ?? s.profile.targetWater,
+              dietaryFlags:       (serverProfile.dietaryFlags   ?? s.profile.dietaryFlags) as UserProfile['dietaryFlags'],
+              onboardingComplete: serverProfile.onboardingComplete ?? s.profile.onboardingComplete,
+            },
+            streak:         serverProfile.streak         ?? s.streak,
+            lastActiveDate: serverProfile.lastActiveDate ?? s.lastActiveDate,
+          }));
+        } catch {
+          // Ignore — keep local state
+        }
+      },
+
       // ── Profile ──────────────────────────────────────────────────────────────
       updateProfile: (updates) =>
         set((s) => ({ profile: { ...s.profile, ...updates } })),
@@ -135,33 +250,84 @@ export const useStrideStore = create<StrideStore>()(
 
       // ── Food ─────────────────────────────────────────────────────────────────
       addFoodEntry: (entry) => {
+        const now       = new Date().toISOString();
+        const localId   = uid();
+        // 1. Optimistic local update
         set((s) => ({
-          foodLog: [...s.foodLog, { ...entry, id: uid(), timestamp: new Date().toISOString() }],
+          foodLog: [...s.foodLog, { ...entry, id: localId, timestamp: now }],
         }));
+        // 2. Background Firestore sync + streak + summary recompute
+        bg(async () => {
+          await api.food.log({
+            name:      entry.name,
+            emoji:     entry.emoji,
+            calories:  entry.calories,
+            protein:   entry.protein,
+            carbs:     entry.carbs,
+            fat:       entry.fat,
+            quantity:  entry.quantity,
+            mealType:  entry.mealType,
+            loggedAt:  now,
+          });
+          await Promise.all([
+            api.streak.markActive(),
+            api.summary.recompute(),
+          ]);
+        });
         get().updateStreak();
       },
 
-      removeFoodEntry: (id) =>
-        set((s) => ({ foodLog: s.foodLog.filter((e) => e.id !== id) })),
+      removeFoodEntry: (id) => {
+        set((s) => ({ foodLog: s.foodLog.filter((e) => e.id !== id) }));
+        bg(async () => {
+          await api.food.delete(id);
+          await api.summary.recompute();
+        });
+      },
 
       // ── Activity ──────────────────────────────────────────────────────────────
       addActivityEntry: (entry) => {
+        const now     = new Date().toISOString();
+        const localId = uid();
         set((s) => ({
-          activityLog: [...s.activityLog, { ...entry, id: uid(), timestamp: new Date().toISOString() }],
+          activityLog: [...s.activityLog, { ...entry, id: localId, timestamp: now }],
         }));
+        bg(async () => {
+          await api.activity.log({
+            name:           entry.name,
+            emoji:          entry.emoji,
+            durationMins:   entry.durationMins,
+            intensity:      entry.intensity,
+            caloriesBurned: entry.caloriesBurned,
+            source:         entry.source,
+            notes:          entry.notes,
+            loggedAt:       now,
+          });
+          await Promise.all([
+            api.streak.markActive(),
+            api.summary.recompute(),
+          ]);
+        });
         get().updateStreak();
       },
 
-      removeActivityEntry: (id) =>
-        set((s) => ({ activityLog: s.activityLog.filter((e) => e.id !== id) })),
+      removeActivityEntry: (id) => {
+        set((s) => ({ activityLog: s.activityLog.filter((e) => e.id !== id) }));
+        bg(async () => {
+          await api.activity.delete(id);
+          await api.summary.recompute();
+        });
+      },
 
       // ── Water ─────────────────────────────────────────────────────────────────
-      addWater: (ml) =>
+      addWater: (ml) => {
         set((s) => {
           const key  = todayKey();
           const prev = s.waterMl[key] ?? 0;
           return { waterMl: { ...s.waterMl, [key]: prev + ml } };
-        }),
+        });
+        bg(() => api.water.log(ml));
+      },
 
       resetWater: () =>
         set((s) => ({ waterMl: { ...s.waterMl, [todayKey()]: 0 } })),
@@ -170,13 +336,13 @@ export const useStrideStore = create<StrideStore>()(
       addWeightEntry: (weight, bodyFat) => {
         const today = new Date().toISOString().slice(0, 10);
         set((s) => {
-          // replace today's entry if it exists
           const filtered = s.weightLog.filter((e) => e.date !== today);
           return {
             weightLog: [...filtered, { id: uid(), date: today, weight, bodyFat }],
-            profile: { ...s.profile, currentWeight: weight },
+            profile:   { ...s.profile, currentWeight: weight },
           };
         });
+        bg(() => api.weight.log(weight, bodyFat));
       },
 
       getWeightTrend: (days = 30) => {
