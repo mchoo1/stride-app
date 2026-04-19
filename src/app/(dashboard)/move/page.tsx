@@ -17,6 +17,32 @@ interface NearbyPlace {
   rating: number | null; hours: string; emoji: string; mapsUrl: string;
 }
 
+/* ── Place category classifier ── */
+type PlaceCategory = 'Gym' | 'Fitness Corner' | 'Yoga Studio' | 'Running Track' | 'Pool' | 'Sports Court' | 'Martial Arts' | 'Park' | 'Other';
+
+const PLACE_CATEGORY_CFG: { label: PlaceCategory; emoji: string; keywords: string[] }[] = [
+  { label: 'Gym',            emoji: '🏋️', keywords: ['gym', 'fitness center', 'fitness club', 'weight', 'anytime fitness', 'pure fitness', 'planet fitness', 'crossfit', 'f45', 'gold\'s'] },
+  { label: 'Fitness Corner', emoji: '🏃', keywords: ['fitness corner', 'outdoor fitness', 'exercise area', 'fitness station', 'exercise station'] },
+  { label: 'Yoga Studio',    emoji: '🧘', keywords: ['yoga', 'pilates', 'barre', 'stretch', 'mindful', 'zen'] },
+  { label: 'Running Track',  emoji: '👟', keywords: ['track', 'park connector', 'jogging', 'running track', 'athletics'] },
+  { label: 'Pool',           emoji: '🏊', keywords: ['pool', 'swim', 'aquatic', 'water sport'] },
+  { label: 'Sports Court',   emoji: '⚽', keywords: ['stadium', 'sports club', 'court', 'field', 'sepaktakraw', 'badminton', 'tennis', 'basketball', 'soccer', 'football', 'netball', 'volleyball', 'squash', 'handball', 'hockey', 'cricket', 'bowling'] },
+  { label: 'Martial Arts',   emoji: '🥊', keywords: ['boxing', 'martial arts', 'judo', 'karate', 'taekwondo', 'muay thai', 'bjj', 'mma', 'kickboxing', 'wushu', 'silat'] },
+  { label: 'Park',           emoji: '🌳', keywords: ['park', 'garden', 'nature', 'reserve', 'beach', 'hill', 'forest', 'trail', 'reservoir', 'hiking', 'green'] },
+];
+
+function classifyPlace(place: NearbyPlace): PlaceCategory {
+  const haystack = (place.name + ' ' + place.type).toLowerCase();
+  for (const cfg of PLACE_CATEGORY_CFG) {
+    if (cfg.keywords.some(kw => haystack.includes(kw))) return cfg.label;
+  }
+  return 'Other';
+}
+
+const ALL_CATEGORY_EMOJIS: Record<PlaceCategory, string> = Object.fromEntries(
+  PLACE_CATEGORY_CFG.map(c => [c.label, c.emoji])
+) as Record<PlaceCategory, string>;
+
 const ACTIVITY_LIST = [
   { id: 'run',        name: 'Running',        emoji: '🏃', met: 9.8,  hasDistance: true  },
   { id: 'walk',       name: 'Walking',        emoji: '🚶', met: 3.5,  hasDistance: true  },
@@ -76,8 +102,22 @@ export default function MovePage() {
   const [locState,      setLocState]      = useState<'locating' | 'fetching' | 'done' | 'error' | 'no_key'>('locating');
   const [locError,      setLocError]      = useState('');
   const [showAllPlaces, setShowAllPlaces] = useState(false);
+  const [placeSearch,   setPlaceSearch]   = useState('');
+  const [activeCategory, setActiveCategory] = useState<PlaceCategory | 'All'>('All');
 
   const PLACES_LIMIT = 5;
+
+  // Derive available categories from actual places data
+  const availableCategories = places.length > 0
+    ? (['All', ...Array.from(new Set(places.map(classifyPlace))).sort()] as (PlaceCategory | 'All')[])
+    : [];
+
+  // Apply search + category filter, then limit
+  const filteredPlaces = places.filter(p => {
+    const matchesSearch   = !placeSearch || p.name.toLowerCase().includes(placeSearch.toLowerCase()) || p.type.toLowerCase().includes(placeSearch.toLowerCase());
+    const matchesCategory = activeCategory === 'All' || classifyPlace(p) === activeCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   const burned = store.getTodayCaloriesBurned();
 
@@ -176,16 +216,23 @@ export default function MovePage() {
       <div style={{ padding: '0 16px 100px' }}>
 
         {/* ── Nearby Places ── */}
-        <div style={{ fontSize: 15, fontWeight: 800, color: FG1, marginBottom: 2 }}>
-          Active Places Nearby
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 2 }}>
+          <div style={{ fontSize: 15, fontWeight: 800, color: FG1 }}>Active Places Nearby</div>
+          <div style={{ fontSize: 12, color: FG3 }}>
+            {locState === 'done'
+              ? `${filteredPlaces.length}${activeCategory !== 'All' || placeSearch ? ` of ${places.length}` : ''} found`
+              : locState === 'locating' ? 'Locating…'
+              : locState === 'fetching' ? 'Loading…'
+              : ''}
+          </div>
         </div>
-        <div style={{ fontSize: 13, color: FG3, marginBottom: 14 }}>
-          {locState === 'done'
-            ? `${places.length} places found near you`
-            : locState === 'locating'  ? 'Getting your location…'
-            : locState === 'fetching'  ? 'Finding gyms, parks and studios…'
-            : 'Gyms, parks, trails and studios near you'}
-        </div>
+        {locState !== 'done' && (
+          <div style={{ fontSize: 13, color: FG3, marginBottom: 14 }}>
+            {locState === 'locating' ? 'Getting your location…'
+              : locState === 'fetching' ? 'Finding gyms, parks and studios…'
+              : 'Gyms, parks, trails and studios near you'}
+          </div>
+        )}
 
         {/* Loading */}
         {(locState === 'locating' || locState === 'fetching') && (
@@ -225,16 +272,98 @@ export default function MovePage() {
           </div>
         )}
 
+        {/* Search + category filter (only when places loaded) */}
+        {locState === 'done' && places.length > 0 && (
+          <div style={{ marginBottom: 12 }}>
+            {/* Search bar */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              background: CARD, border: `1.5px solid ${BORDER}`, borderRadius: 12,
+              padding: '8px 12px', marginBottom: 10, boxShadow: SHADOW,
+            }}>
+              <span style={{ fontSize: 14, color: FG3 }}>🔍</span>
+              <input
+                type="text"
+                placeholder="Search by name or type…"
+                value={placeSearch}
+                onChange={e => { setPlaceSearch(e.target.value); setShowAllPlaces(false); }}
+                style={{
+                  flex: 1, border: 'none', outline: 'none', background: 'none',
+                  fontSize: 14, color: FG1, fontFamily: 'inherit',
+                }}
+              />
+              {placeSearch && (
+                <button onClick={() => setPlaceSearch('')} style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  fontSize: 14, color: FG3, padding: 0, lineHeight: 1,
+                }}>✕</button>
+              )}
+            </div>
+
+            {/* Category chips */}
+            {availableCategories.length > 1 && (
+              <div style={{
+                display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4,
+                scrollbarWidth: 'none',
+              }}>
+                {availableCategories.map(cat => {
+                  const isActive = activeCategory === cat;
+                  const catEmoji = cat === 'All' ? '📍' : (ALL_CATEGORY_EMOJIS[cat as PlaceCategory] ?? '📍');
+                  return (
+                    <button
+                      key={cat}
+                      onClick={() => { setActiveCategory(cat); setShowAllPlaces(false); }}
+                      style={{
+                        flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
+                        padding: '6px 12px', borderRadius: 20, border: 'none',
+                        fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
+                        background: isActive ? GREEN : CARD,
+                        color:      isActive ? '#fff' : FG2,
+                        boxShadow:  isActive ? '0 2px 8px rgba(30,127,92,0.25)' : SHADOW,
+                        transition: 'all .15s',
+                      }}
+                    >
+                      <span>{catEmoji}</span>
+                      <span>{cat}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Places list */}
         {locState === 'done' && places.length > 0 && (
           <div style={{ marginBottom: 24 }}>
+            {filteredPlaces.length === 0 ? (
+              <div style={{
+                background: CARD, borderRadius: 14, padding: '20px 16px',
+                textAlign: 'center', border: `1px solid ${BORDER}`, marginBottom: 8,
+              }}>
+                <div style={{ fontSize: 28, marginBottom: 8 }}>🔍</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: FG2 }}>No places match</div>
+                <div style={{ fontSize: 12, color: FG3, marginTop: 4 }}>Try a different search or category</div>
+                {(placeSearch || activeCategory !== 'All') && (
+                  <button onClick={() => { setPlaceSearch(''); setActiveCategory('All'); }} style={{
+                    marginTop: 10, padding: '6px 14px', borderRadius: 10,
+                    background: BG, border: `1px solid ${BORDER}`, fontSize: 12,
+                    fontWeight: 600, color: FG2, cursor: 'pointer',
+                  }}>Clear filters</button>
+                )}
+              </div>
+            ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {(showAllPlaces ? places : places.slice(0, PLACES_LIMIT)).map(p => (
+              {(showAllPlaces ? filteredPlaces : filteredPlaces.slice(0, PLACES_LIMIT)).map(p => {
+                const cat      = classifyPlace(p);
+                const catEmoji = ALL_CATEGORY_EMOJIS[cat] ?? '📍';
+                return (
                 <div key={p.id} style={{
                   background: CARD, borderRadius: 14, padding: '10px 12px',
                   border: `1px solid ${BORDER}`, boxShadow: SHADOW,
                   display: 'flex', alignItems: 'center', gap: 10,
                 }}>
+                  {/* Icon */}
                   <div style={{
                     width: 40, height: 40, borderRadius: 12, flexShrink: 0,
                     background: 'rgba(30,127,92,0.08)',
@@ -242,20 +371,32 @@ export default function MovePage() {
                   }}>
                     {p.emoji}
                   </div>
+
+                  {/* Info */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: FG1, marginBottom: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
-                    <div style={{ fontSize: 11, color: FG3, display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <span>{p.type}</span>
-                      <span>·</span>
-                      <span>{p.distance}</span>
-                      {p.rating && <><span>·</span><span>⭐ {p.rating.toFixed(1)}</span></>}
+                    <div style={{ fontSize: 13, fontWeight: 700, color: FG1, marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {p.name}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+                      {/* Category badge */}
                       <span style={{
-                        background: p.hours === 'Open now' ? 'rgba(30,127,92,0.08)' : 'rgba(139,149,167,0.10)',
-                        borderRadius: 6, padding: '1px 6px', fontWeight: 700, marginLeft: 2,
+                        display: 'inline-flex', alignItems: 'center', gap: 3,
+                        background: 'rgba(30,127,92,0.08)', border: '1px solid rgba(30,127,92,0.18)',
+                        borderRadius: 6, padding: '1px 6px', fontSize: 10, fontWeight: 700, color: GREEN,
+                      }}>
+                        {catEmoji} {cat}
+                      </span>
+                      <span style={{ fontSize: 10, color: FG3 }}>{p.distance}</span>
+                      {p.rating && <span style={{ fontSize: 10, color: FG3 }}>· ⭐ {p.rating.toFixed(1)}</span>}
+                      <span style={{
+                        background: p.hours === 'Open now' ? 'rgba(30,127,92,0.07)' : 'rgba(139,149,167,0.10)',
+                        borderRadius: 6, padding: '1px 6px', fontSize: 10, fontWeight: 700,
                         color: p.hours === 'Open now' ? GREEN : FG3,
                       }}>{p.hours}</span>
                     </div>
                   </div>
+
+                  {/* Map button */}
                   <a href={p.mapsUrl} target="_blank" rel="noopener noreferrer" style={{
                     flexShrink: 0, background: GREEN, color: '#fff',
                     borderRadius: 10, padding: '6px 12px', fontSize: 11, fontWeight: 700,
@@ -263,9 +404,11 @@ export default function MovePage() {
                     whiteSpace: 'nowrap',
                   }}>Map →</a>
                 </div>
-              ))}
+                );
+              })}
             </div>
-            {places.length > PLACES_LIMIT && (
+            )}
+            {filteredPlaces.length > PLACES_LIMIT && (
               <button onClick={() => setShowAllPlaces(v => !v)} style={{
                 width: '100%', marginTop: 8, padding: '9px 0',
                 background: CARD, border: `1px solid ${BORDER}`,
@@ -273,8 +416,8 @@ export default function MovePage() {
                 cursor: 'pointer', boxShadow: SHADOW,
               }}>
                 {showAllPlaces
-                  ? `Show fewer places ▲`
-                  : `Show all ${places.length} places ▼`}
+                  ? 'Show fewer ▲'
+                  : `Show all ${filteredPlaces.length} ▼`}
               </button>
             )}
           </div>
