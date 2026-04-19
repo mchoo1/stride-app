@@ -6,7 +6,7 @@
 
 ## Before You Start — Claim a Restaurant
 
-1. Read `/sessions/pensive-laughing-hopper/mnt/Fitness App/docs/food-data/_index.json`
+1. Read `docs/food-data/_index.json`
 2. Find the first entry where `"status": "todo"` (or `"partial"` if no `todo` entries remain)
 3. **Immediately update that entry:**
    - `"status"` → `"in_progress"`
@@ -23,7 +23,7 @@ Open `_index.json` and note these fields for your claimed restaurant:
 |-------|--------------------|
 | `id` | Used as the JSON file `id` field and in all item `id` prefixes |
 | `name` | Official brand name — use exactly as written |
-| `emoji` | Start emoji — can be changed if a better one exists |
+| `emoji` | Starting emoji — can be changed if a better one exists |
 | `cuisine` | Cuisine label — use the value from the index |
 | `tab` | `"restaurant"` or `"grab_go"` — copy exactly |
 | `nutritionUrl` | **Start here** for official nutrition data |
@@ -35,61 +35,73 @@ Open `_index.json` and note these fields for your claimed restaurant:
 
 ## Step 2 — Research Nutrition Data
 
-### Primary sources (in order of preference):
+### Primary source — Official brand website
 
-1. **Brand's official Singapore website** — use the URL in `nutritionUrl`
-   - Look for: Nutrition Calculator, Nutrition PDF, Menu with Calories, Allergen Info page
-   - Use WebFetch to retrieve the page. If blocked, try searching `site:brand.com.sg nutrition`
+Fetch the URL in `nutritionUrl`. Look for any of:
+- Nutrition Calculator
+- Nutrition PDF or downloadable menu
+- Menu page listing calories and macros per item
+- Allergen / Nutrition info page
 
-2. **HPB Healthhub** — https://www.healthhub.sg/programmes/nutrition-tools
-   - Search for the brand name
+If the main page has no data, try these variations before giving up:
+- `{nutritionUrl}/nutrition`
+- `{nutritionUrl}/menu`
+- Web search: `site:{domain} nutrition calories protein`
 
-3. **MyNetDiary SG** — https://www.mynetdiary.com/food.do (community data — mark `verified: false`)
+**Record the exact URL where you found the data** — stored as `sourceUrl` in every menu item.
 
-4. **Carb Manager** — community submissions (mark `verified: false`)
+---
 
-### What data to collect per item:
+### If the official website has NO nutrition data — try ONE alternative source
+
+Go through this fallback list in order and **stop at the first one that has data**:
+
+| # | Source | URL | `source` value | `verified` |
+|---|--------|-----|----------------|------------|
+| 1 | HPB Healthhub | https://www.healthhub.sg/programmes/nutrition-tools | `"hpb"` | `true` |
+| 2 | MyNetDiary SG | https://www.mynetdiary.com/food.do | `"community"` | `false` |
+| 3 | Carb Manager | https://www.carbmanager.com | `"community"` | `false` |
+
+**Try only one alternative.** If none have data, still produce the file with item names and prices (set `calories/protein/carbs/fat` to `0` and write `"(No nutrition data found)"` in `description`).
+
+---
+
+### What to collect per item
 
 | Field | Required? | Notes |
 |-------|-----------|-------|
-| `name` | ✅ Yes | Exact menu name |
-| `price` | ✅ Yes | SGD — standard menu price |
-| `calories` | ✅ Yes | kcal per serving |
-| `protein` | ✅ Yes | grams — use `0` if unavailable, add note in description |
-| `carbs` | ✅ Yes | grams — use `0` if unavailable |
-| `fat` | ✅ Yes | grams — use `0` if unavailable |
-| `fibre` | Optional | Only include if published |
-| `sugar` | Optional | Only include if published |
-| `sodium` | Optional | Only include if published (mg) |
-| `category` | ✅ Yes | Menu section (e.g. "Mains", "Sides", "Drinks") |
+| `name` | ✅ | Exact menu spelling |
+| `price` | ✅ | SGD — standard menu price |
+| `calories` | ✅ | kcal per serving |
+| `protein` | ✅ | g — use `0` + note in description if unavailable |
+| `carbs` | ✅ | g — use `0` + note if unavailable |
+| `fat` | ✅ | g — use `0` + note if unavailable |
+| `fibre` | Optional | Only include if officially published |
+| `sugar` | Optional | Only include if officially published |
+| `sodium` | Optional | Only include if officially published (mg) |
+| `category` | ✅ | Menu section: "Mains", "Sides", "Drinks", "Desserts", etc. |
+| `sourceUrl` | ✅ | Exact URL where you found this item's nutrition data |
 
-### Items to skip:
-- Bundle deals / meal combos (nutrition varies by selection)
-- Sauces with no published data
-- Items with no price listed and no nutrition data at all
+**Skip:** bundle deals, items with no price and no nutrition, condiment sachets.
 
 ---
 
 ## Step 3 — Build the JSON File
 
-### File format (must match `sgFoodDb.ts` schema exactly):
+Save as a single JSON object matching the `sgFoodDb.ts` schema exactly:
 
-```json
+```jsonc
 {
   "id": "brand_slug",
   "name": "Official Brand Name",
   "emoji": "🍽️",
   "cuisine": "Cuisine Label",
   "tab": "grab_go",
-  "aliases": [
-    "brand name lowercase",
-    "common short name",
-    "any alternate spelling"
-  ],
+  "aliases": ["brand name", "short name", "alternate spelling"],
   "dietTags": [],
   "priceRange": "$$",
   "nutritionUrl": "https://brand.com.sg/nutrition",
-  "lastUpdated": "2026-04-19",
+  "lastUpdated": "YYYY-MM-DD",
   "menu": [
     {
       "id": "brandslug_item_name_slug",
@@ -100,64 +112,67 @@ Open `_index.json` and note these fields for your claimed restaurant:
       "protein": 35,
       "carbs": 42,
       "fat": 12,
-      "fibre": 5,
+      "fibre": 5,           // optional — omit if not published
+      "sugar": 3,           // optional — omit if not published
+      "sodium": 620,        // optional — omit if not published (mg)
       "category": "Mains",
       "compatibleWith": [],
       "isPopular": false,
-      "description": "Brief one-line description of the item",
+      "description": "One-line description of the item",
       "source": "official_sg",
+      "sourceUrl": "https://brand.com.sg/exact/page/where/data/was/found",
       "verified": true,
-      "lastVerified": "2026-04-19"
+      "lastVerified": "YYYY-MM-DD"
     }
   ]
 }
 ```
 
-### ID format rules:
-- Restaurant `id`: lowercase brand slug, e.g. `"starbucks"`, `"toast_box"`, `"liho"`
-- Menu item `id`: `{restaurantId}_{item_name_slugified}`, e.g. `"starbucks_caffe_latte_tall"`
-- Slugify = lowercase, spaces and special chars → underscores, strip leading/trailing underscores
+---
 
-### Valid `tab` values:
+## Reference Values
+
+### `tab`
 - `"restaurant"` — dine-in chains (A&W, Jollibee, Popeyes)
-- `"grab_go"` — delivery, quick counters, online order brands (Starbucks, Toast Box, LiHo, KOI)
+- `"grab_go"` — delivery brands, quick counters, cafes, bubble tea (Starbucks, Toast Box, LiHo, KOI)
 
-### Valid `source` values:
-- `"official_sg"` — brand's own SG website or PDF
-- `"hpb"` — Health Promotion Board Singapore
-- `"community"` — MyNetDiary, Carb Manager user submissions
-- `"ai_estimate"` — only if estimating from USDA ingredient data
+### `source` + `sourceUrl`
+| `source` | When to use | `verified` | `sourceUrl` example |
+|----------|-------------|------------|---------------------|
+| `"official_sg"` | Brand's own SG website or PDF | `true` | `https://starbucks.com.sg/en/nutrition` |
+| `"hpb"` | Health Promotion Board Singapore | `true` | `https://www.healthhub.sg/...` |
+| `"community"` | MyNetDiary, Carb Manager, other user submissions | `false` | `https://www.mynetdiary.com/food/...` |
 
-### `verified` flag:
-- `true` — only for `official_sg` or `hpb` sources
-- `false` — for `community` or `ai_estimate` sources
+`sourceUrl` must be the **exact page URL** where data was found — not the brand homepage. If all items came from the same page, all items share the same `sourceUrl`. If from a PDF, use the PDF's direct download URL.
 
-### `compatibleWith` — valid values:
-`"halal"`, `"vegetarian"`, `"vegan"`, `"gluten_free"`, `"dairy_free"`, `"nut_free"`, `"low_carb"`, `"high_protein"`
+### `priceRange`
+- `"$"` — under $10/meal  ·  `"$$"` — $10–20  ·  `"$$$"` — $20–40  ·  `"$$$$"` — over $40
 
-Apply only if the item genuinely meets the criteria for that diet flag.
+### `compatibleWith` (item-level dietary flags)
+`"halal"` · `"vegetarian"` · `"vegan"` · `"gluten_free"` · `"dairy_free"` · `"nut_free"` · `"low_carb"` · `"high_protein"`
 
-### `dietTags` on the restaurant object:
-Only apply a tag here if the **entire brand** is certified (e.g. a fully halal-certified chain).
+### `dietTags` (restaurant-level)
+Only apply if the **entire brand** is certified (e.g. fully halal-certified chain). Item-level flags go in `compatibleWith`.
 
-### `priceRange`:
-- `"$"` — under $10/meal
-- `"$$"` — $10–20
-- `"$$$"` — $20–40
-- `"$$$$"` — over $40
+### ID slugs
+- Restaurant: `"starbucks"`, `"toast_box"`, `"liho"`
+- Menu item: `{restaurantId}_{item_slug}` — e.g. `"starbucks_caffe_latte_tall"`
+- Slugify: lowercase, spaces/special chars → underscores, strip leading/trailing underscores
+
+### When macros are missing
+- **Calories only:** set `protein`, `carbs`, `fat` to `0`. Add `"(Macros not published — calories only)"` in `description`.
+- **Nothing at all:** set all four to `0`. Add `"(No nutrition data found)"` in `description`. Set `source: "community"`, `verified: false`, `sourceUrl: null`.
 
 ---
 
 ## Step 4 — Save the File
 
-Save the completed JSON to the exact path listed in `outputFile` from `_index.json`.
-
-Full path format:
+Full path:
 ```
 /sessions/pensive-laughing-hopper/mnt/Fitness App/docs/food-data/{outputFile}
 ```
 
-Example for Starbucks:
+Example — if `outputFile` is `"grab-and-go/starbucks_sg.json"`:
 ```
 /sessions/pensive-laughing-hopper/mnt/Fitness App/docs/food-data/grab-and-go/starbucks_sg.json
 ```
@@ -166,48 +181,52 @@ Example for Starbucks:
 
 ## Step 5 — Update `_index.json`
 
-Update the restaurant's entry in `_index.json`:
+Update the restaurant's entry:
 
-```json
+```jsonc
 {
   "status": "ready",
   "assignee": null,
-  "itemCount": 24,
-  "macroCompleteness": "high",
+  "itemCount": 24,              // actual count of menu items in your file
+  "macroCompleteness": "high",  // "high" | "medium" | "low" | "none"
   "priceAvailable": true,
+  "dataSource": "official_sg",  // primary source used: "official_sg" | "hpb" | "community"
+  "sourceUrl": "https://...",   // exact URL where data was found (or null)
   "lastChecked": "2026-04-19"
 }
 ```
 
-Set `macroCompleteness`:
-- `"high"` — protein/carbs/fat all populated from official source
-- `"medium"` — macros populated from community source OR some items missing macros
+`macroCompleteness`:
+- `"high"` — protein/carbs/fat all populated from official or HPB source
+- `"medium"` — macros from community source, or some items missing macros
 - `"low"` — calories only, no macros
+- `"none"` — no nutrition data found at all
 
 ---
 
-## Step 6 — Verify Before Finishing
-
-Run these checks on your output file before marking `status: ready`:
+## Step 6 — Self-Verify
 
 - [ ] Every menu item has a unique `id`
-- [ ] No `price` is `0.00` unless the item genuinely has no price (note it in `description`)
-- [ ] No `calories` of `0` unless the item is genuinely zero-calorie
-- [ ] `protein + carbs + fat` total ≈ `calories / 4` (rough sanity check — within 20% is fine)
-- [ ] All `id` values follow the `brandslug_item_slug` format
-- [ ] `tab` is either `"restaurant"` or `"grab_go"` (not `"grab & go"` or `"takeaway"`)
-- [ ] `source` and `verified` are consistent with each other
+- [ ] Every menu item has a `sourceUrl` field (or explicitly `null`)
+- [ ] `source` matches what `sourceUrl` points to
+- [ ] `verified` is `true` only for `official_sg` / `hpb` sources
+- [ ] No `price` is `0.00` unless genuinely free (note it in description)
+- [ ] `tab` is exactly `"restaurant"` or `"grab_go"` — no other values
 - [ ] File is valid JSON (no trailing commas, no comments)
 
 ---
 
-## Example: Completed Entry
+## Examples
 
-See `docs/food-data/grab-and-go/grain_sg.json` for a real example with full macros from an official source.
-See `docs/food-data/grab-and-go/saladbox_sg.json` for an example with calories-only data.
+| File | What it shows |
+|------|---------------|
+| `grab-and-go/grain_sg.json` | Full macros from official source (`source: "official_sg"`) |
+| `grab-and-go/saladbox_sg.json` | Calories only — macros set to `0` with note in description |
+| `grab-and-go/saladstop_sg.json` | Community macros (`source: "community"`, `verified: false`) |
+| `_template.restaurant.json` | Blank template — copy this as your starting point |
 
 ---
 
 ## What Happens Next
 
-Once a file is marked `status: "ready"` in `_index.json`, it will be manually merged into `src/lib/sgFoodDb.ts` in the next sprint. The JSON format is identical to the data structure in that file, so merging is a direct copy of the menu array into the `SG_RESTAURANTS` export.
+Files marked `status: "ready"` in `_index.json` are merged into `src/lib/sgFoodDb.ts` in the next sprint. The JSON format is identical to the `SG_RESTAURANTS` entries in that file — merging is a direct copy of the menu array.
