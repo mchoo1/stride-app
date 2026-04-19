@@ -72,9 +72,12 @@ export default function MovePage() {
   const [customCalories, setCustomCalories] = useState('');
   const [actLogged,      setActLogged]      = useState(false);
 
-  const [places,   setPlaces]   = useState<NearbyPlace[]>([]);
-  const [locState, setLocState] = useState<'locating' | 'fetching' | 'done' | 'error' | 'no_key'>('locating');
-  const [locError, setLocError] = useState('');
+  const [places,        setPlaces]        = useState<NearbyPlace[]>([]);
+  const [locState,      setLocState]      = useState<'locating' | 'fetching' | 'done' | 'error' | 'no_key'>('locating');
+  const [locError,      setLocError]      = useState('');
+  const [showAllPlaces, setShowAllPlaces] = useState(false);
+
+  const PLACES_LIMIT = 5;
 
   const burned = store.getTodayCaloriesBurned();
 
@@ -147,10 +150,13 @@ export default function MovePage() {
     <div style={{ background: BG, minHeight: '100vh' }}>
 
       {/* ── Header ── */}
-      <div style={{ padding: '52px 20px 20px' }}>
+      <div style={{ padding: '52px 20px 8px' }}>
+        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: FG3, textTransform: 'uppercase', margin: '0 0 4px' }}>
+          STAY ACTIVE
+        </p>
         <h1 style={{
-          color: FG1, fontSize: 24, fontWeight: 900, margin: '0 0 10px',
-          fontFamily: "'Anton', Impact, sans-serif", letterSpacing: '-0.3px',
+          color: FG1, fontSize: 40, lineHeight: 1, margin: '0 0 10px',
+          fontFamily: "'Anton', Impact, sans-serif",
         }}>
           MOVE
         </h1>
@@ -161,10 +167,7 @@ export default function MovePage() {
           border: `1px solid ${burned > 0 ? 'rgba(30,127,92,0.20)' : 'rgba(242,169,59,0.20)'}`,
         }}>
           <span style={{ fontSize: 16 }}>🔥</span>
-          <span style={{
-            color: burned > 0 ? GREEN : '#C98A2E',
-            fontSize: 14, fontWeight: 700,
-          }}>
+          <span style={{ color: burned > 0 ? GREEN : '#C98A2E', fontSize: 14, fontWeight: 700 }}>
             {burned > 0 ? `${burned} kcal burned today` : 'Log an activity to start burning'}
           </span>
         </div>
@@ -224,39 +227,56 @@ export default function MovePage() {
 
         {/* Places list */}
         {locState === 'done' && places.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 28 }}>
-            {places.map(p => (
-              <div key={p.id} style={{
-                background: CARD, borderRadius: 18, padding: 14,
-                border: `1px solid ${BORDER}`, boxShadow: SHADOW,
-                display: 'flex', alignItems: 'center', gap: 12,
-              }}>
-                <div style={{
-                  width: 50, height: 50, borderRadius: 16, flexShrink: 0,
-                  background: 'rgba(30,127,92,0.08)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24,
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {(showAllPlaces ? places : places.slice(0, PLACES_LIMIT)).map(p => (
+                <div key={p.id} style={{
+                  background: CARD, borderRadius: 14, padding: '10px 12px',
+                  border: `1px solid ${BORDER}`, boxShadow: SHADOW,
+                  display: 'flex', alignItems: 'center', gap: 10,
                 }}>
-                  {p.emoji}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: FG1, marginBottom: 2 }}>{p.name}</div>
-                  <div style={{ fontSize: 12, color: FG3, marginBottom: 5 }}>
-                    {p.type} · {p.distance}{p.rating ? ` · ⭐ ${p.rating.toFixed(1)}` : ''}
-                  </div>
                   <div style={{
-                    display: 'inline-block',
-                    background: p.hours === 'Open now' ? 'rgba(30,127,92,0.08)' : 'rgba(139,149,167,0.10)',
-                    borderRadius: 8, padding: '2px 8px', fontSize: 11, fontWeight: 700,
-                    color: p.hours === 'Open now' ? GREEN : FG3,
-                  }}>{p.hours}</div>
+                    width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+                    background: 'rgba(30,127,92,0.08)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
+                  }}>
+                    {p.emoji}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: FG1, marginBottom: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                    <div style={{ fontSize: 11, color: FG3, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span>{p.type}</span>
+                      <span>·</span>
+                      <span>{p.distance}</span>
+                      {p.rating && <><span>·</span><span>⭐ {p.rating.toFixed(1)}</span></>}
+                      <span style={{
+                        background: p.hours === 'Open now' ? 'rgba(30,127,92,0.08)' : 'rgba(139,149,167,0.10)',
+                        borderRadius: 6, padding: '1px 6px', fontWeight: 700, marginLeft: 2,
+                        color: p.hours === 'Open now' ? GREEN : FG3,
+                      }}>{p.hours}</span>
+                    </div>
+                  </div>
+                  <a href={p.mapsUrl} target="_blank" rel="noopener noreferrer" style={{
+                    flexShrink: 0, background: GREEN, color: '#fff',
+                    borderRadius: 10, padding: '6px 12px', fontSize: 11, fontWeight: 700,
+                    textDecoration: 'none', boxShadow: '0 2px 6px rgba(30,127,92,0.20)',
+                    whiteSpace: 'nowrap',
+                  }}>Map →</a>
                 </div>
-                <a href={p.mapsUrl} target="_blank" rel="noopener noreferrer" style={{
-                  flexShrink: 0, background: GREEN, color: '#fff',
-                  borderRadius: 12, padding: '8px 14px', fontSize: 12, fontWeight: 700,
-                  textDecoration: 'none', boxShadow: '0 2px 8px rgba(30,127,92,0.22)',
-                }}>Map →</a>
-              </div>
-            ))}
+              ))}
+            </div>
+            {places.length > PLACES_LIMIT && (
+              <button onClick={() => setShowAllPlaces(v => !v)} style={{
+                width: '100%', marginTop: 8, padding: '9px 0',
+                background: CARD, border: `1px solid ${BORDER}`,
+                borderRadius: 12, fontSize: 13, fontWeight: 600, color: FG2,
+                cursor: 'pointer', boxShadow: SHADOW,
+              }}>
+                {showAllPlaces
+                  ? `Show fewer places ▲`
+                  : `Show all ${places.length} places ▼`}
+              </button>
+            )}
           </div>
         )}
 

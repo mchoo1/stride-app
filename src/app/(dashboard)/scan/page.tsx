@@ -71,8 +71,11 @@ export default function ScanPage() {
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: BG }}>
 
       {/* ── Header ── */}
-      <div style={{ padding: '52px 20px 16px' }}>
-        <h1 style={{ color: FG1, fontSize: 24, fontWeight: 900, margin: '0 0 4px', fontFamily: "'Anton', Impact, sans-serif", letterSpacing: '-0.3px' }}>
+      <div style={{ padding: '52px 20px 8px' }}>
+        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: FG3, textTransform: 'uppercase', margin: '0 0 4px' }}>
+          AI-POWERED NUTRITION
+        </p>
+        <h1 style={{ color: FG1, fontSize: 40, lineHeight: 1, margin: '0 0 8px', fontFamily: "'Anton', Impact, sans-serif" }}>
           SCAN FOOD
         </h1>
         <p style={{ color: FG3, fontSize: 14, margin: 0 }}>
