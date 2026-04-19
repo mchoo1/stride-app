@@ -249,58 +249,64 @@ function LogInner() {
     }, 1600);
   };
 
+  // ── Design tokens ──
+  const BG     = '#F7F8FB';
+  const CARD   = '#FFFFFF';
+  const BORDER = '#E5E9F2';
+  const FG1    = '#0F1B2D';
+  const FG2    = '#5B6576';
+  const FG3    = '#8B95A7';
+  const GREEN  = '#1E7F5C';
+  const SHADOW = '0 1px 2px rgba(15,27,45,0.04), 0 2px 6px rgba(15,27,45,0.05)';
+
   // ── Styles ───────────────────────────────────────────────────────────────────
   const cardStyle = {
-    background: '#161622', borderRadius: 20, padding: 16,
-    border: '1px solid rgba(255,255,255,0.06)',
+    background: CARD, borderRadius: 20, padding: 16,
+    border: `1px solid ${BORDER}`, boxShadow: SHADOW,
   };
 
-  // White input with dark font for visibility
   const inputStyle: React.CSSProperties = {
-    width: '100%', background: '#FFFFFF',
-    border: '1.5px solid #E0E0EC',
+    width: '100%', background: BG,
+    border: `1.5px solid ${BORDER}`,
     borderRadius: 12, padding: '11px 14px',
-    fontSize: 15, color: '#1A1A2E', outline: 'none',
+    fontSize: 15, color: FG1, outline: 'none',
     fontFamily: 'Inter, sans-serif',
     transition: 'border-color .15s',
+    boxSizing: 'border-box',
   };
 
-  const tabBtnStyle = (active: boolean, color: string): React.CSSProperties => ({
+  const tabBtnStyle = (active: boolean): React.CSSProperties => ({
     flex: 1, padding: '10px 0', borderRadius: 12, border: 'none',
     fontSize: 13, fontWeight: 700, cursor: 'pointer',
-    background: active ? `${color}20` : 'transparent',
-    color: active ? color : '#6E6E90',
+    background: active ? 'rgba(30,127,92,0.12)' : 'transparent',
+    color: active ? GREEN : FG3,
     transition: 'all .2s',
   });
 
   return (
-    <div style={{ background: '#0C0C14', minHeight: '100vh' }}>
+    <div style={{ background: BG, minHeight: '100vh' }}>
 
       {/* ── Header ── */}
       <div style={{ padding: '52px 20px 0', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
         <button onClick={() => router.back()} style={{
-          background: '#1E1E2E', border: '1px solid rgba(255,255,255,0.07)',
-          borderRadius: 10, width: 36, height: 36, color: '#A8A8C8',
+          background: CARD, border: `1px solid ${BORDER}`,
+          borderRadius: 10, width: 36, height: 36, color: FG2,
           fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: SHADOW,
         }}>←</button>
-        <h1 style={{ fontSize: 20, fontWeight: 800, color: '#F0F0F8', margin: 0, flex: 1 }}>Log</h1>
+        <h1 style={{ fontSize: 20, fontWeight: 800, color: FG1, margin: 0, flex: 1 }}>Log</h1>
       </div>
 
       {/* ── Tab Switcher ── */}
       <div style={{ padding: '0 16px', marginBottom: 16 }}>
         <div style={{
-          background: '#161622', borderRadius: 16, padding: 4,
-          display: 'flex', gap: 4, border: '1px solid rgba(255,255,255,0.06)',
+          background: CARD, borderRadius: 16, padding: 4,
+          display: 'flex', gap: 4, border: `1px solid ${BORDER}`,
+          boxShadow: SHADOW,
         }}>
-          <button style={tabBtnStyle(tab === 'food',     '#00E676')} onClick={() => setTab('food')}>
-            🍽 Food
-          </button>
-          <button style={tabBtnStyle(tab === 'scan',     '#4A9EFF')} onClick={() => setTab('scan')}>
-            📷 Scan
-          </button>
-          <button style={tabBtnStyle(tab === 'activity', '#FF6B35')} onClick={() => setTab('activity')}>
-            ⚡ Activity
-          </button>
+          <button style={tabBtnStyle(tab === 'food')}     onClick={() => setTab('food')}>🍽 Food</button>
+          <button style={tabBtnStyle(tab === 'scan')}     onClick={() => setTab('scan')}>📷 Scan</button>
+          <button style={tabBtnStyle(tab === 'activity')} onClick={() => setTab('activity')}>⚡ Activity</button>
         </div>
       </div>
 
@@ -314,10 +320,11 @@ function LogInner() {
             <div style={{ display: 'flex', gap: 8 }}>
               {MEAL_TYPES.map(m => (
                 <button key={m} onClick={() => setMealType(m)} style={{
-                  flex: 1, padding: '8px 0', borderRadius: 12, border: 'none',
+                  flex: 1, padding: '8px 0', borderRadius: 12,
                   fontSize: 11, fontWeight: 700, cursor: 'pointer', textTransform: 'capitalize',
-                  background: mealType === m ? 'rgba(0,230,118,0.15)' : '#1E1E2E',
-                  color:      mealType === m ? '#00E676' : '#6E6E90',
+                  background: mealType === m ? 'rgba(30,127,92,0.10)' : CARD,
+                  color:      mealType === m ? GREEN : FG3,
+                  border: `1px solid ${mealType === m ? 'rgba(30,127,92,0.28)' : BORDER}`,
                   transition: 'all .2s',
                 }}>{m}</button>
               ))}
@@ -327,7 +334,7 @@ function LogInner() {
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <button onClick={() => setManualMode(!manualMode)} style={{
                 background: 'none', border: 'none', cursor: 'pointer',
-                fontSize: 12, fontWeight: 700, color: '#6E6E90', padding: 0,
+                fontSize: 12, fontWeight: 700, color: FG3, padding: 0,
               }}>
                 {manualMode ? '← Search foods' : '✏️ Manual entry'}
               </button>
@@ -335,7 +342,7 @@ function LogInner() {
 
             {manualMode ? (
               <div style={cardStyle}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#F0F0F8', marginBottom: 12 }}>Manual Entry</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: FG1, marginBottom: 12 }}>Manual Entry</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <input style={inputStyle} placeholder="Food name"
                     value={manual.name} onChange={e => setManual(v => ({ ...v, name: e.target.value }))}/>
@@ -350,10 +357,12 @@ function LogInner() {
                       value={manual.f} onChange={e => setManual(v => ({ ...v, f: e.target.value }))}/>
                   </div>
                   <button onClick={logManual} disabled={!manual.name || !manual.cal} style={{
-                    background: foodLogged ? '#00c864' : '#00E676', color: '#000',
+                    background: foodLogged ? 'rgba(30,127,92,0.10)' : GREEN,
+                    color: foodLogged ? GREEN : '#fff',
                     border: 'none', borderRadius: 14, padding: '13px 0',
                     fontSize: 14, fontWeight: 800, cursor: 'pointer', transition: 'all .2s',
                     opacity: (!manual.name || !manual.cal) ? 0.4 : 1,
+                    boxShadow: foodLogged ? 'none' : '0 4px 14px rgba(30,127,92,0.25)',
                   }}>
                     {foodLogged ? '✓ Logged!' : 'Log Food'}
                   </button>
@@ -369,7 +378,7 @@ function LogInner() {
                   {query && !selectedFood && (
                     <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 2, maxHeight: 240, overflowY: 'auto' }}>
                       {filtered.length === 0 ? (
-                        <div style={{ padding: '12px 0', textAlign: 'center', fontSize: 13, color: '#6E6E90' }}>No results</div>
+                        <div style={{ padding: '12px 0', textAlign: 'center', fontSize: 13, color: FG3 }}>No results</div>
                       ) : filtered.map(f => (
                         <button key={f.id}
                           onClick={() => { setSelectedFood(f); setQuery(f.name); setPortion(100); setCustomPortion(''); }}
@@ -378,14 +387,13 @@ function LogInner() {
                             display: 'flex', alignItems: 'center', gap: 10,
                             padding: '10px 8px', borderRadius: 10, textAlign: 'left',
                           }}
-                          onMouseOver={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.04)')}
+                          onMouseOver={e => (e.currentTarget.style.background = 'rgba(15,27,45,0.04)')}
                           onMouseOut={e  => (e.currentTarget.style.background = 'none')}
                         >
                           <span style={{ fontSize: 20 }}>{f.emoji}</span>
                           <div style={{ flex: 1 }}>
-                            {/* Bug 5 fix: bright white for food name, light grey for macros */}
-                            <div style={{ fontSize: 13, fontWeight: 700, color: '#F0F0F8' }}>{f.name}</div>
-                            <div style={{ fontSize: 11, color: '#A8A8C8', marginTop: 1 }}>{f.cal} kcal · P{f.p}g · C{f.c}g · F{f.f}g</div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: FG1 }}>{f.name}</div>
+                            <div style={{ fontSize: 11, color: FG3, marginTop: 1 }}>{f.cal} kcal · P{f.p}g · C{f.c}g · F{f.f}g</div>
                           </div>
                         </button>
                       ))}
@@ -397,14 +405,15 @@ function LogInner() {
                   <>
                     {/* Portion picker */}
                     <div style={cardStyle}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: '#A8A8C8', marginBottom: 10 }}>Portion (g)</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: FG2, marginBottom: 10 }}>Portion (g)</div>
                       <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
                         {PORTION_PRESETS.map(p => (
                           <button key={p} onClick={() => { setPortion(p); setCustomPortion(''); }} style={{
-                            flex: 1, padding: '9px 0', borderRadius: 12, border: 'none',
+                            flex: 1, padding: '9px 0', borderRadius: 12,
                             fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                            background: portion === p && !customPortion ? 'rgba(0,230,118,0.15)' : '#1E1E2E',
-                            color:      portion === p && !customPortion ? '#00E676' : '#A8A8C8',
+                            background: portion === p && !customPortion ? 'rgba(30,127,92,0.10)' : BG,
+                            color:      portion === p && !customPortion ? GREEN : FG3,
+                            border: `1px solid ${portion === p && !customPortion ? 'rgba(30,127,92,0.25)' : BORDER}`,
                             transition: 'all .2s',
                           }}>{p}</button>
                         ))}
@@ -414,34 +423,35 @@ function LogInner() {
                     </div>
 
                     {/* Macro preview */}
-                    <div style={{ ...cardStyle, background: 'rgba(0,230,118,0.06)', border: '1px solid rgba(0,230,118,0.15)' }}>
+                    <div style={{ ...cardStyle, background: 'rgba(30,127,92,0.04)', border: '1px solid rgba(30,127,92,0.15)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <span style={{ fontSize: 24 }}>{selectedFood.emoji}</span>
-                          <span style={{ fontSize: 14, fontWeight: 700, color: '#F0F0F8' }}>{selectedFood.name}</span>
+                          <span style={{ fontSize: 14, fontWeight: 700, color: FG1 }}>{selectedFood.name}</span>
                         </div>
-                        <span style={{ fontSize: 11, color: '#6E6E90' }}>{effectivePortion}g</span>
+                        <span style={{ fontSize: 11, color: FG3 }}>{effectivePortion}g</span>
                       </div>
                       <div style={{ display: 'flex', gap: 8 }}>
                         {[
-                          { label: 'CAL',  val: previewCal,  color: '#FF5A5A' },
-                          { label: 'PRO',  val: previewProt, color: '#4A9EFF' },
-                          { label: 'CARB', val: previewCarb, color: '#FFD166' },
-                          { label: 'FAT',  val: previewFat,  color: '#00E676' },
+                          { label: 'CAL',  val: previewCal,  color: '#D04E36', bg: 'rgba(208,78,54,0.08)'   },
+                          { label: 'PRO',  val: previewProt, color: '#2E6FB8', bg: 'rgba(46,111,184,0.08)'  },
+                          { label: 'CARB', val: previewCarb, color: '#C98A2E', bg: 'rgba(201,138,46,0.08)'  },
+                          { label: 'FAT',  val: previewFat,  color: GREEN,     bg: 'rgba(30,127,92,0.08)'   },
                         ].map(m => (
-                          <div key={m.label} style={{ flex: 1, borderRadius: 12, padding: '8px 4px', textAlign: 'center', background: '#161622' }}>
+                          <div key={m.label} style={{ flex: 1, borderRadius: 12, padding: '8px 4px', textAlign: 'center', background: m.bg }}>
                             <div style={{ fontSize: 16, fontWeight: 800, color: m.color }}>{m.val}</div>
-                            <div style={{ fontSize: 9, fontWeight: 700, color: '#6E6E90', marginTop: 2 }}>{m.label}</div>
+                            <div style={{ fontSize: 9, fontWeight: 700, color: FG3, marginTop: 2 }}>{m.label}</div>
                           </div>
                         ))}
                       </div>
                     </div>
 
                     <button onClick={logFood} style={{
-                      background: foodLogged ? '#00c864' : '#00E676', color: '#000',
+                      background: foodLogged ? 'rgba(30,127,92,0.10)' : GREEN,
+                      color: foodLogged ? GREEN : '#fff',
                       border: 'none', borderRadius: 16, padding: '15px 0',
                       fontSize: 15, fontWeight: 800, cursor: 'pointer', width: '100%',
-                      transition: 'all .2s', boxShadow: '0 0 24px rgba(0,230,118,0.30)',
+                      transition: 'all .2s', boxShadow: foodLogged ? 'none' : '0 4px 16px rgba(30,127,92,0.28)',
                     }}>
                       {foodLogged ? '✓ Logged!' : `Log ${effectivePortion}g of ${selectedFood.name}`}
                     </button>
@@ -462,17 +472,17 @@ function LogInner() {
 
             {!scanImg ? (
               <button onClick={() => fileRef.current?.click()} style={{
-                background: '#161622', border: '2px dashed rgba(74,158,255,0.25)',
+                background: CARD, border: `2px dashed ${BORDER}`,
                 borderRadius: 24, minHeight: 200, cursor: 'pointer',
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
-                justifyContent: 'center', gap: 12, color: '#6E6E90', transition: 'all .2s',
+                justifyContent: 'center', gap: 12, color: FG3, transition: 'all .2s',
               }}
-              onMouseOver={e => (e.currentTarget.style.borderColor = 'rgba(74,158,255,0.6)')}
-              onMouseOut={e  => (e.currentTarget.style.borderColor = 'rgba(74,158,255,0.25)')}
+              onMouseOver={e => (e.currentTarget.style.borderColor = GREEN)}
+              onMouseOut={e  => (e.currentTarget.style.borderColor = BORDER)}
               >
                 <span style={{ fontSize: 44 }}>📷</span>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#A8A8C8' }}>Take a photo or upload</div>
-                <div style={{ fontSize: 12, color: '#6E6E90' }}>AI will identify the food &amp; macros</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: FG2 }}>Take a photo or upload</div>
+                <div style={{ fontSize: 12, color: FG3 }}>AI will identify the food &amp; macros</div>
               </button>
             ) : (
               <div style={{ position: 'relative', borderRadius: 20, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.06)' }}>
@@ -489,43 +499,44 @@ function LogInner() {
 
             {scanning && (
               <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                <div className="spinner" style={{ margin: '0 auto 12px' }}/>
-                <div style={{ fontSize: 13, color: '#A8A8C8' }}>Analysing with AI…</div>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', border: `3px solid ${BORDER}`, borderTopColor: GREEN, animation: 'spin 1s linear infinite', margin: '0 auto 12px' }} />
+                <div style={{ fontSize: 13, color: FG3 }}>Analysing with AI…</div>
               </div>
             )}
 
             {scanError && (
-              <div style={{ background: 'rgba(255,90,90,0.10)', border: '1px solid rgba(255,90,90,0.2)', borderRadius: 14, padding: '12px 14px' }}>
-                <div style={{ fontSize: 13, color: '#FF5A5A' }}>⚠️ {scanError}</div>
+              <div style={{ background: 'rgba(208,78,54,0.06)', border: '1px solid rgba(208,78,54,0.18)', borderRadius: 14, padding: '12px 14px' }}>
+                <div style={{ fontSize: 13, color: '#D04E36' }}>⚠️ {scanError}</div>
               </div>
             )}
 
             {scanResult && (
               <>
-                <div style={{ ...cardStyle, background: 'rgba(74,158,255,0.06)', border: '1px solid rgba(74,158,255,0.15)' }}>
+                <div style={{ ...cardStyle, background: 'rgba(30,127,92,0.04)', border: '1px solid rgba(30,127,92,0.15)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                     <span style={{ fontSize: 28 }}>{scanResult.emoji || '🍽️'}</span>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: '#F0F0F8' }}>{scanResult.name}</div>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: FG1 }}>{scanResult.name}</div>
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     {[
-                      { label: 'CAL',  val: scanResult.calories, color: '#FF5A5A' },
-                      { label: 'PRO',  val: scanResult.protein,  color: '#4A9EFF' },
-                      { label: 'CARB', val: scanResult.carbs,    color: '#FFD166' },
-                      { label: 'FAT',  val: scanResult.fat,      color: '#00E676' },
+                      { label: 'CAL',  val: scanResult.calories, color: '#D04E36', bg: 'rgba(208,78,54,0.08)'  },
+                      { label: 'PRO',  val: scanResult.protein,  color: '#2E6FB8', bg: 'rgba(46,111,184,0.08)' },
+                      { label: 'CARB', val: scanResult.carbs,    color: '#C98A2E', bg: 'rgba(201,138,46,0.08)' },
+                      { label: 'FAT',  val: scanResult.fat,      color: GREEN,     bg: 'rgba(30,127,92,0.08)'  },
                     ].map(m => (
-                      <div key={m.label} style={{ flex: 1, borderRadius: 12, padding: '8px 4px', textAlign: 'center', background: '#161622' }}>
+                      <div key={m.label} style={{ flex: 1, borderRadius: 12, padding: '8px 4px', textAlign: 'center', background: m.bg }}>
                         <div style={{ fontSize: 16, fontWeight: 800, color: m.color }}>{m.val}</div>
-                        <div style={{ fontSize: 9, fontWeight: 700, color: '#6E6E90', marginTop: 2 }}>{m.label}</div>
+                        <div style={{ fontSize: 9, fontWeight: 700, color: FG3, marginTop: 2 }}>{m.label}</div>
                       </div>
                     ))}
                   </div>
                 </div>
                 <button onClick={logScanResult} style={{
-                  background: scanLogged ? '#00c864' : '#4A9EFF', color: '#fff',
+                  background: scanLogged ? 'rgba(30,127,92,0.10)' : GREEN,
+                  color: scanLogged ? GREEN : '#fff',
                   border: 'none', borderRadius: 16, padding: '15px 0',
                   fontSize: 15, fontWeight: 800, cursor: 'pointer', width: '100%',
-                  transition: 'all .2s', boxShadow: '0 0 24px rgba(74,158,255,0.30)',
+                  transition: 'all .2s', boxShadow: scanLogged ? 'none' : '0 4px 16px rgba(30,127,92,0.28)',
                 }}>
                   {scanLogged ? '✓ Logged!' : 'Log This Food'}
                 </button>
@@ -533,12 +544,12 @@ function LogInner() {
             )}
 
             <div style={{
-              background: 'rgba(74,158,255,0.06)', borderRadius: 14, padding: '12px 14px',
-              display: 'flex', gap: 8, border: '1px solid rgba(74,158,255,0.12)',
+              background: 'rgba(46,111,184,0.06)', borderRadius: 14, padding: '12px 14px',
+              display: 'flex', gap: 8, border: '1px solid rgba(46,111,184,0.14)',
             }}>
               <span style={{ fontSize: 14 }}>💡</span>
-              <span style={{ fontSize: 12, color: '#4A9EFF', lineHeight: 1.6 }}>
-                AI scan uses <strong>Claude Haiku</strong> vision. Add <code style={{ background: '#1E1E2E', borderRadius: 4, padding: '1px 4px', color: '#F0F0F8' }}>ANTHROPIC_API_KEY</code> to enable.
+              <span style={{ fontSize: 12, color: '#2E6FB8', lineHeight: 1.6 }}>
+                AI scan uses <strong>Claude Haiku</strong> vision. Add <code style={{ background: BORDER, borderRadius: 4, padding: '1px 4px', color: FG1 }}>ANTHROPIC_API_KEY</code> to enable.
               </span>
             </div>
           </div>
@@ -550,9 +561,9 @@ function LogInner() {
             {ACTIVITY_LIST.map(a => {
               const isSel     = selectedAct?.id === a.id;
               const kcalMin   = Math.round(a.met * (weight) / 60);
-              const intensity = a.met >= 9   ? { label: 'High',   dot: '#FF5A5A', badge: 'rgba(255,90,90,0.15)',   text: '#FF5A5A' }
-                              : a.met >= 5.5 ? { label: 'Medium', dot: '#FFD166', badge: 'rgba(255,209,102,0.15)', text: '#FFD166' }
-                              :                { label: 'Low',    dot: '#00E676', badge: 'rgba(0,230,118,0.15)',   text: '#00E676' };
+              const intensity = a.met >= 9   ? { label: 'High',   dot: '#D04E36', badge: 'rgba(208,78,54,0.10)',   text: '#D04E36' }
+                              : a.met >= 5.5 ? { label: 'Medium', dot: '#C98A2E', badge: 'rgba(201,138,46,0.10)', text: '#C98A2E' }
+                              :                { label: 'Low',    dot: GREEN,     badge: 'rgba(30,127,92,0.10)',  text: GREEN     };
               return (
                 <div key={a.id}>
                   {/* Row button */}
@@ -564,8 +575,8 @@ function LogInner() {
                     style={{
                       width: '100%', display: 'flex', alignItems: 'center', gap: 12,
                       padding: '13px 14px', cursor: 'pointer', textAlign: 'left',
-                      background: isSel ? 'rgba(167,139,250,0.08)' : '#161622',
-                      border: `1px solid ${isSel ? 'rgba(167,139,250,0.30)' : 'rgba(255,255,255,0.06)'}`,
+                      background: isSel ? 'rgba(30,127,92,0.05)' : CARD,
+                      border: `1px solid ${isSel ? 'rgba(30,127,92,0.28)' : BORDER}`,
                       borderRadius: isSel ? '16px 16px 0 0' : 16,
                       transition: 'all .15s',
                     }}
@@ -576,7 +587,7 @@ function LogInner() {
                       background: intensity.dot,
                     }}/>
                     {/* Name */}
-                    <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: isSel ? '#F0F0F8' : '#C8C8E0' }}>
+                    <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: isSel ? FG1 : FG2 }}>
                       {a.name}
                     </span>
                     {/* Intensity badge */}
@@ -587,11 +598,11 @@ function LogInner() {
                       {intensity.label}
                     </span>
                     {/* kcal/min */}
-                    <span style={{ fontSize: 11, color: '#6E6E90', flexShrink: 0, minWidth: 70, textAlign: 'right' }}>
+                    <span style={{ fontSize: 11, color: FG3, flexShrink: 0, minWidth: 70, textAlign: 'right' }}>
                       ~{kcalMin} kcal/min
                     </span>
                     {/* Chevron */}
-                    <span style={{ fontSize: 11, color: isSel ? '#A78BFA' : '#6E6E90', flexShrink: 0 }}>
+                    <span style={{ fontSize: 11, color: isSel ? GREEN : FG3, flexShrink: 0 }}>
                       {isSel ? '▲' : '▼'}
                     </span>
                   </button>
@@ -599,8 +610,8 @@ function LogInner() {
                   {/* Expanded panel */}
                   {isSel && (
                     <div style={{
-                      background: '#161622',
-                      border: '1px solid rgba(167,139,250,0.30)', borderTop: 'none',
+                      background: CARD,
+                      border: `1px solid rgba(30,127,92,0.25)`, borderTop: 'none',
                       borderRadius: '0 0 16px 16px', padding: '16px 14px',
                       display: 'flex', flexDirection: 'column', gap: 12,
                     }}>
@@ -608,8 +619,8 @@ function LogInner() {
                       {/* Distance — run / walk / cycle / swim / hike */}
                       {a.hasDistance && (
                         <div>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: '#A8A8C8', marginBottom: 7 }}>
-                            Distance (km) <span style={{ fontWeight: 400, color: '#6E6E90' }}>— optional</span>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: FG2, marginBottom: 7 }}>
+                            Distance (km) <span style={{ fontWeight: 400, color: FG3 }}>— optional</span>
                           </div>
                           <input
                             style={inputStyle} type="number" min="0" step="0.1"
@@ -623,7 +634,7 @@ function LogInner() {
                       {/* Activity type — "Other" free text */}
                       {a.hasType && (
                         <div>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: '#A8A8C8', marginBottom: 7 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: FG2, marginBottom: 7 }}>
                             Activity type
                           </div>
                           <input
@@ -637,14 +648,14 @@ function LogInner() {
 
                       {/* Duration */}
                       <div>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: '#A8A8C8', marginBottom: 7 }}>Duration (min)</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: FG2, marginBottom: 7 }}>Duration (min)</div>
                         <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
                           {DURATION_PRESETS.map(d => (
                             <button key={d} onClick={() => { setDuration(d); setCustomDuration(''); }} style={{
                               flex: 1, padding: '9px 0', borderRadius: 10, border: 'none',
                               fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                              background: duration === d && !customDuration ? 'rgba(167,139,250,0.18)' : '#1E1E2E',
-                              color:      duration === d && !customDuration ? '#A78BFA' : '#6E6E90',
+                              background: duration === d && !customDuration ? 'rgba(30,127,92,0.12)' : BG,
+                              color:      duration === d && !customDuration ? GREEN : FG3,
                               transition: 'all .15s',
                             }}>{d}</button>
                           ))}
@@ -659,25 +670,25 @@ function LogInner() {
 
                       {/* Preview card */}
                       <div style={{
-                        background: '#0C0C14', borderRadius: 14, padding: '12px 14px',
+                        background: BG, borderRadius: 14, padding: '12px 14px',
                         display: 'flex', alignItems: 'center',
-                        border: '1px solid rgba(255,255,255,0.04)',
+                        border: `1px solid ${BORDER}`,
                       }}>
                         <span style={{ fontSize: 30, marginRight: 12 }}>{a.emoji}</span>
                         <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 14, fontWeight: 800, color: '#F0F0F8' }}>
+                          <div style={{ fontSize: 14, fontWeight: 800, color: FG1 }}>
                             {effectiveAct?.name}
                           </div>
-                          <div style={{ fontSize: 11, color: '#6E6E90', marginTop: 2 }}>
+                          <div style={{ fontSize: 11, color: FG3, marginTop: 2 }}>
                             {effectiveDuration} min · {weight} kg
                             {distance ? ` · ${distance} km` : ''}
                           </div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: 28, fontWeight: 900, color: '#A78BFA', lineHeight: 1 }}>
+                          <div style={{ fontSize: 28, fontWeight: 900, color: GREEN, lineHeight: 1, fontFamily: "'Anton', Impact, sans-serif" }}>
                             {autoBurnEstimate}
                           </div>
-                          <div style={{ fontSize: 10, color: '#6E6E90' }}>kcal</div>
+                          <div style={{ fontSize: 10, color: FG3 }}>kcal</div>
                         </div>
                       </div>
 
@@ -691,7 +702,7 @@ function LogInner() {
                       {customCalories && (
                         <button onClick={() => setCustomCalories('')} style={{
                           background: 'none', border: 'none', cursor: 'pointer',
-                          fontSize: 11, color: '#6E6E90', padding: 0, marginTop: -6,
+                          fontSize: 11, color: FG3, padding: 0, marginTop: -6,
                         }}>
                           ↩ Reset to auto-estimate ({autoBurnEstimate} kcal)
                         </button>
@@ -700,11 +711,12 @@ function LogInner() {
                       {/* Log button */}
                       <button onClick={logActivity} style={{
                         width: '100%', padding: '14px 0',
-                        background: actLogged ? 'rgba(0,230,118,0.15)' : '#A78BFA',
-                        color: actLogged ? '#00E676' : '#fff',
-                        border: 'none', borderRadius: 14,
+                        background: actLogged ? 'rgba(30,127,92,0.12)' : GREEN,
+                        color: actLogged ? GREEN : '#fff',
+                        border: actLogged ? `1px solid rgba(30,127,92,0.3)` : 'none',
+                        borderRadius: 14,
                         fontSize: 14, fontWeight: 800, cursor: 'pointer', transition: 'all .2s',
-                        boxShadow: actLogged ? 'none' : '0 0 20px rgba(167,139,250,0.35)',
+                        boxShadow: actLogged ? 'none' : '0 4px 14px rgba(30,127,92,0.28)',
                       }}>
                         {actLogged ? '✓ Activity Logged!' : `Log ${effectiveAct?.name}`}
                       </button>
@@ -725,8 +737,8 @@ function LogInner() {
 export default function LogPage() {
   return (
     <Suspense fallback={
-      <div style={{ background: '#0C0C14', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div className="spinner"/>
+      <div style={{ background: '#F7F8FB', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid #E5E9F2', borderTopColor: '#1E7F5C', animation: 'spin 1s linear infinite' }} />
       </div>
     }>
       <LogInner />

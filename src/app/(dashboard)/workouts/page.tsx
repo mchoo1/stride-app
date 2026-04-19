@@ -78,16 +78,16 @@ const WORKOUTS = [
 ];
 
 const DIFF_COLORS: Record<string, string> = {
-  Beginner:     '#00D68F',
-  Intermediate: '#FFD166',
-  Advanced:     '#FF5A5A',
+  Beginner:     '#1E7F5C',
+  Intermediate: '#C98A2E',
+  Advanced:     '#D04E36',
 };
 
 const TYPE_COLORS: Record<string, string> = {
-  Strength: '#4E9BFF',
-  HIIT:     '#FF5A5A',
-  Cardio:   '#00D68F',
-  Yoga:     '#9D7BFF',
+  Strength: '#2E6FB8',
+  HIIT:     '#D04E36',
+  Cardio:   '#1E7F5C',
+  Yoga:     '#7A4BC2',
 };
 
 export default function WorkoutsPage() {
@@ -113,15 +113,13 @@ export default function WorkoutsPage() {
     <div className="animate-fade-in">
       {/* Header */}
       <div className="relative overflow-hidden px-5 pb-4 pt-14">
-        <div className="pointer-events-none absolute inset-0"
-          style={{ background: 'radial-gradient(ellipse 80% 50% at 50% 0%,rgba(78,155,255,.18) 0%,transparent 70%)' }}/>
         <div className="relative flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-black" style={{ color: '#EEEEF8' }}>Workout Library 🏋️</h1>
-            <p className="text-sm" style={{ color: '#8888A8' }}>Shareable plans with calorie burn estimates</p>
+            <h1 className="text-2xl font-black" style={{ color: '#0F1B2D', fontFamily: "'Anton', Impact, sans-serif" }}>WORKOUT LIBRARY</h1>
+            <p className="text-sm" style={{ color: '#8B95A7' }}>Shareable plans with calorie burn estimates</p>
           </div>
           <button className="flex h-10 w-10 items-center justify-center rounded-full text-xl font-black"
-            style={{ background: '#4E9BFF', color: '#fff' }}>+</button>
+            style={{ background: '#1E7F5C', color: '#fff' }}>+</button>
         </div>
       </div>
 
@@ -136,13 +134,13 @@ export default function WorkoutsPage() {
       {/* Quick stats */}
       <div className="grid grid-cols-3 gap-2 px-4 mb-3">
         {[
-          { label: 'Plans', val: '50+', col: '#4E9BFF', bg: 'rgba(78,155,255,.12)' },
-          { label: 'Saved', val: savedIds.size.toString(), col: '#FFD166', bg: 'rgba(255,209,102,.12)' },
-          { label: 'Completed', val: '0', col: '#00D68F', bg: 'rgba(0,214,143,.12)' },
+          { label: 'Plans', val: '50+', col: '#2E6FB8', bg: 'rgba(46,111,184,0.10)' },
+          { label: 'Saved', val: savedIds.size.toString(), col: '#C98A2E', bg: 'rgba(201,138,46,0.10)' },
+          { label: 'Completed', val: '0', col: '#1E7F5C', bg: 'rgba(30,127,92,0.10)' },
         ].map(s => (
           <div key={s.label} className="card-raised text-center py-2">
             <p className="text-lg font-black" style={{ color: s.col }}>{s.val}</p>
-            <p className="text-[10px]" style={{ color: '#55556A' }}>{s.label}</p>
+            <p className="text-[10px]" style={{ color: '#8B95A7' }}>{s.label}</p>
           </div>
         ))}
       </div>
@@ -157,7 +155,7 @@ export default function WorkoutsPage() {
                 style={{ background: TYPE_COLORS[w.type] + '22' }}>{w.emoji}</div>
               <div className="flex-1">
                 <div className="flex items-start justify-between">
-                  <p className="text-sm font-black" style={{ color: '#EEEEF8' }}>{w.title}</p>
+                  <p className="text-sm font-black" style={{ color: '#0F1B2D' }}>{w.title}</p>
                   <button onClick={() => toggleSave(w.id)} className="text-lg ml-2">
                     {savedIds.has(w.id) ? '🔖' : '📌'}
                   </button>
@@ -169,7 +167,7 @@ export default function WorkoutsPage() {
                     style={{ background: DIFF_COLORS[w.difficulty] + '22', color: DIFF_COLORS[w.difficulty] }}>{w.difficulty}</span>
                 </div>
                 <div className="flex items-center gap-1 mt-1">
-                  <span className="text-[11px]" style={{ color: '#55556A' }}>by {w.creator}</span>
+                  <span className="text-[11px]" style={{ color: '#8B95A7' }}>by {w.creator}</span>
                   {w.creatorBadge && <span className="text-xs">{w.creatorBadge}</span>}
                 </div>
               </div>
@@ -184,7 +182,7 @@ export default function WorkoutsPage() {
               ].map(s => (
                 <div key={s.v} className="flex items-center gap-1">
                   <span className="text-xs">{s.e}</span>
-                  <span className="text-xs font-semibold" style={{ color: '#8888A8' }}>{s.v}</span>
+                  <span className="text-xs font-semibold" style={{ color: '#8B95A7' }}>{s.v}</span>
                 </div>
               ))}
             </div>
@@ -193,7 +191,7 @@ export default function WorkoutsPage() {
             <div className="flex gap-1.5 mb-3 flex-wrap">
               {w.muscles.map(m => (
                 <span key={m} className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
-                  style={{ background: '#1E1E30', color: '#8888A8' }}>🎯 {m}</span>
+                  style={{ background: '#F7F8FB', color: '#8B95A7', border: '1px solid #E5E9F2' }}>🎯 {m}</span>
               ))}
             </div>
 
@@ -201,28 +199,28 @@ export default function WorkoutsPage() {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-1">
                 <span className="text-xs">⭐</span>
-                <span className="text-xs font-bold" style={{ color: '#FFD166' }}>{w.rating}</span>
-                <span className="text-[10px]" style={{ color: '#55556A' }}>· {w.saves.toLocaleString()} saves</span>
+                <span className="text-xs font-bold" style={{ color: '#C98A2E' }}>{w.rating}</span>
+                <span className="text-[10px]" style={{ color: '#8B95A7' }}>· {w.saves.toLocaleString()} saves</span>
               </div>
               <button onClick={() => setExpanded(expanded === w.id ? null : w.id)}
-                className="text-xs font-bold" style={{ color: '#4E9BFF' }}>
+                className="text-xs font-bold" style={{ color: '#2E6FB8' }}>
                 {expanded === w.id ? '▲ Hide exercises' : '▾ View exercises'}
               </button>
             </div>
 
             {/* Exercises list */}
             {expanded === w.id && (
-              <div className="mb-3 rounded-xl overflow-hidden" style={{ border: '1px solid #252538' }}>
+              <div className="mb-3 rounded-xl overflow-hidden" style={{ border: '1px solid #E5E9F2' }}>
                 {w.exercises_list.map((ex, i) => (
                   <div key={ex.name}
                     className="flex items-center justify-between px-3 py-2"
-                    style={{ background: i % 2 === 0 ? '#1E1E30' : '#111120' }}>
+                    style={{ background: i % 2 === 0 ? '#F7F8FB' : '#FFFFFF' }}>
                     <div>
-                      <p className="text-xs font-semibold" style={{ color: '#EEEEF8' }}>{ex.name}</p>
-                      <p className="text-[10px]" style={{ color: '#55556A' }}>{ex.sets} sets × {ex.reps}</p>
+                      <p className="text-xs font-semibold" style={{ color: '#0F1B2D' }}>{ex.name}</p>
+                      <p className="text-[10px]" style={{ color: '#8B95A7' }}>{ex.sets} sets × {ex.reps}</p>
                     </div>
                     {ex.rest !== '—' && (
-                      <span className="text-[10px] font-semibold" style={{ color: '#55556A' }}>Rest: {ex.rest}</span>
+                      <span className="text-[10px] font-semibold" style={{ color: '#8B95A7' }}>Rest: {ex.rest}</span>
                     )}
                   </div>
                 ))}
@@ -233,7 +231,7 @@ export default function WorkoutsPage() {
             <div className="flex flex-wrap gap-1.5 mb-3">
               {w.tags.map(t => (
                 <span key={t} className="text-[10px] font-semibold rounded-full px-2 py-0.5"
-                  style={{ background: '#1E1E30', color: '#55556A' }}>{t}</span>
+                  style={{ background: '#F7F8FB', color: '#8B95A7', border: '1px solid #E5E9F2' }}>{t}</span>
               ))}
             </div>
 
@@ -246,7 +244,7 @@ export default function WorkoutsPage() {
         ))}
 
         {filtered.length === 0 && (
-          <div className="flex flex-col items-center py-16" style={{ color: '#55556A' }}>
+          <div className="flex flex-col items-center py-16" style={{ color: '#8B95A7' }}>
             <span className="text-5xl mb-3">🏋️</span>
             <p className="text-sm font-semibold">No saved workouts yet</p>
             <p className="text-xs mt-1">Tap 📌 on any plan to save it here</p>

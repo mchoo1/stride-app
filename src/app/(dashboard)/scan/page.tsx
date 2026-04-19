@@ -3,6 +3,16 @@ import { useState, useRef, ChangeEvent } from 'react';
 import { useStrideStore } from '@/lib/store';
 import { useRouter } from 'next/navigation';
 
+/* ── Design tokens ── */
+const BG     = '#F7F8FB';
+const CARD   = '#FFFFFF';
+const BORDER = '#E5E9F2';
+const FG1    = '#0F1B2D';
+const FG2    = '#5B6576';
+const FG3    = '#8B95A7';
+const GREEN  = '#1E7F5C';
+const SHADOW = '0 1px 2px rgba(15,27,45,0.04), 0 2px 6px rgba(15,27,45,0.05)';
+
 const MOCK_SCANS = [
   { name: 'Grilled Chicken & Veg', cal: 320, protein: 38, carbs: 14, fat: 9,  conf: 91 },
   { name: 'Caesar Salad',          cal: 280, protein: 8,  carbs: 18, fat: 20, conf: 85 },
@@ -20,10 +30,10 @@ export default function ScanPage() {
   const store  = useStrideStore();
   const router = useRouter();
 
-  const [phase, setPhase]         = useState<'idle' | 'scanning' | 'result' | 'logged'>('idle');
-  const [preview, setPreview]     = useState<string | null>(null);
-  const [result, setResult]       = useState<ScanResult | null>(null);
-  const [toast, setToast]         = useState('');
+  const [phase,   setPhase]   = useState<'idle' | 'scanning' | 'result' | 'logged'>('idle');
+  const [preview, setPreview] = useState<string | null>(null);
+  const [result,  setResult]  = useState<ScanResult | null>(null);
+  const [toast,   setToast]   = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
   const showToast = (msg: string) => {
@@ -58,41 +68,52 @@ export default function ScanPage() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--bg-base)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: BG }}>
 
-      {/* ── Blue header ── */}
-      <div style={{
-        background: 'linear-gradient(160deg, #4A90D9 0%, #2e78c7 100%)',
-        padding: '44px 20px 16px',
-        display: 'flex', alignItems: 'center',
-      }}>
-        <div style={{ flex: 1 }}>
-          <h1 style={{ color: '#fff', fontSize: 20, fontWeight: 700, margin: 0 }}>Scan Food</h1>
-        </div>
+      {/* ── Header ── */}
+      <div style={{ padding: '52px 20px 16px' }}>
+        <h1 style={{ color: FG1, fontSize: 24, fontWeight: 900, margin: '0 0 4px', fontFamily: "'Anton', Impact, sans-serif", letterSpacing: '-0.3px' }}>
+          SCAN FOOD
+        </h1>
+        <p style={{ color: FG3, fontSize: 14, margin: 0 }}>
+          Snap a photo to get instant macro estimates
+        </p>
       </div>
 
       {/* ── Content ── */}
-      <div style={{ flex: 1, padding: 16, display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 100 }}>
+      <div style={{ flex: 1, padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 100 }}>
 
         {/* Drop zone (idle) */}
         {phase === 'idle' && (
           <>
-            <div className="drop-zone" onClick={() => fileRef.current?.click()}>
-              <span style={{ fontSize: 56 }}>📷</span>
-              <h3 style={{ fontSize: 17, fontWeight: 700, color: '#555', margin: 0 }}>Upload a food photo</h3>
-              <p style={{ fontSize: 13, color: '#bbb', textAlign: 'center', lineHeight: 1.5, margin: 0 }}>
-                Click here to select a photo<br/>from your device
-              </p>
-            </div>
-            <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFile}/>
+            <button
+              onClick={() => fileRef.current?.click()}
+              style={{
+                width: '100%', padding: '40px 20px',
+                background: CARD, border: `2px dashed ${BORDER}`,
+                borderRadius: 20, cursor: 'pointer',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+                transition: 'border-color .15s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.borderColor = GREEN)}
+              onMouseLeave={e => (e.currentTarget.style.borderColor = BORDER)}
+            >
+              <span style={{ fontSize: 52 }}>📷</span>
+              <span style={{ fontSize: 17, fontWeight: 700, color: FG1 }}>Upload a food photo</span>
+              <span style={{ fontSize: 13, color: FG3, textAlign: 'center', lineHeight: 1.5 }}>
+                Click here to select a photo<br />from your device
+              </span>
+            </button>
+            <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFile} />
 
             {/* Tip */}
             <div style={{
-              background: '#FFF8E7', borderRadius: 14, padding: '12px 14px',
-              display: 'flex', gap: 8, alignItems: 'flex-start',
+              background: 'rgba(242,169,59,0.08)', borderRadius: 14, padding: '12px 14px',
+              border: '1px solid rgba(242,169,59,0.20)',
+              display: 'flex', gap: 10, alignItems: 'flex-start',
             }}>
               <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>💡</span>
-              <span style={{ fontSize: 12, color: '#8B7355', lineHeight: 1.6 }}>
+              <span style={{ fontSize: 13, color: '#8B6914', lineHeight: 1.6 }}>
                 For best results, use a clear top-down photo with the food filling most of the frame.
               </span>
             </div>
@@ -103,20 +124,25 @@ export default function ScanPage() {
         {preview && phase !== 'idle' && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={preview} alt="food" style={{
-            width: '100%', height: 200, objectFit: 'cover',
-            borderRadius: 18, background: '#eee',
-          }}/>
+            width: '100%', height: 220, objectFit: 'cover',
+            borderRadius: 18, border: `1px solid ${BORDER}`,
+          }} />
         )}
 
         {/* Scanning spinner */}
         {phase === 'scanning' && (
           <div style={{
-            background: '#fff', borderRadius: 20, padding: 28,
-            textAlign: 'center', boxShadow: '0 4px 16px rgba(0,0,0,.07)',
+            background: CARD, borderRadius: 20, padding: 28,
+            textAlign: 'center', border: `1px solid ${BORDER}`, boxShadow: SHADOW,
           }}>
-            <div className="spinner" style={{ margin: '0 auto 14px' }}/>
-            <div style={{ fontSize: 16, fontWeight: 700, color: '#333' }}>Analyzing your food…</div>
-            <div style={{ fontSize: 13, color: '#aaa', marginTop: 4 }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: '50%',
+              border: `3px solid ${BORDER}`, borderTopColor: GREEN,
+              animation: 'spin 1s linear infinite',
+              margin: '0 auto 16px',
+            }} />
+            <div style={{ fontSize: 16, fontWeight: 700, color: FG1 }}>Analyzing your food…</div>
+            <div style={{ fontSize: 13, color: FG3, marginTop: 4 }}>
               Identifying ingredients and estimating nutrients
             </div>
           </div>
@@ -125,47 +151,58 @@ export default function ScanPage() {
         {/* Result card */}
         {phase === 'result' && result && (
           <div style={{
-            background: '#fff', borderRadius: 20, padding: 18,
-            boxShadow: '0 4px 16px rgba(0,0,0,.07)',
+            background: CARD, borderRadius: 20, padding: 18,
+            border: `1px solid ${BORDER}`, boxShadow: SHADOW,
           }}>
             {/* Header row */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 16 }}>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 17, fontWeight: 700, color: '#1a1a2e' }}>{result.name}</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 3 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#4CAF82' }}/>
-                  <span style={{ fontSize: 12, color: '#4CAF82', fontWeight: 600 }}>{result.conf}% confidence</span>
+                <div style={{ fontSize: 17, fontWeight: 700, color: FG1 }}>{result.name}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 4 }}>
+                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: GREEN }} />
+                  <span style={{ fontSize: 12, color: GREEN, fontWeight: 600 }}>{result.conf}% confidence</span>
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 32, fontWeight: 800, color: '#FF6B6B', lineHeight: 1 }}>{result.cal}</div>
-                <div style={{ fontSize: 13, color: '#aaa' }}>kcal</div>
+                <div style={{ fontSize: 36, fontWeight: 900, color: FG1, lineHeight: 1, fontFamily: "'Anton', Impact, sans-serif" }}>{result.cal}</div>
+                <div style={{ fontSize: 13, color: FG3 }}>kcal</div>
               </div>
             </div>
 
             {/* Macro boxes */}
-            <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-              <div className="macro-box macro-box-pro">
-                <div className="val" style={{ fontSize: 18, fontWeight: 800 }}>{result.protein}g</div>
-                <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>Protein</div>
-              </div>
-              <div className="macro-box macro-box-carb">
-                <div className="val" style={{ fontSize: 18, fontWeight: 800 }}>{result.carbs}g</div>
-                <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>Carbs</div>
-              </div>
-              <div className="macro-box macro-box-fat">
-                <div className="val" style={{ fontSize: 18, fontWeight: 800 }}>{result.fat}g</div>
-                <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>Fat</div>
-              </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 12 }}>
+              {[
+                { label: 'Protein', value: `${result.protein}g`, bg: 'rgba(46,111,184,0.08)', color: '#2E6FB8' },
+                { label: 'Carbs',   value: `${result.carbs}g`,  bg: 'rgba(201,138,46,0.08)', color: '#C98A2E' },
+                { label: 'Fat',     value: `${result.fat}g`,    bg: 'rgba(30,127,92,0.08)',  color: GREEN     },
+              ].map(m => (
+                <div key={m.label} style={{ background: m.bg, borderRadius: 12, padding: '10px 0', textAlign: 'center' }}>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: m.color }}>{m.value}</div>
+                  <div style={{ fontSize: 11, color: FG3, marginTop: 2 }}>{m.label}</div>
+                </div>
+              ))}
             </div>
 
-            <div style={{ fontSize: 11, color: '#bbb', textAlign: 'center', marginBottom: 12 }}>
+            <div style={{ fontSize: 11, color: FG3, textAlign: 'center', marginBottom: 14 }}>
               * Estimates based on typical serving sizes. Adjust as needed.
             </div>
 
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={reset} className="btn-secondary" style={{ flex: 1 }}>Try again</button>
-              <button onClick={logMeal} className="btn-primary" style={{ flex: 2 }}>＋ Log This Meal</button>
+              <button onClick={reset} style={{
+                flex: 1, padding: '12px 0', borderRadius: 12,
+                background: CARD, border: `1.5px solid ${BORDER}`,
+                color: FG2, fontSize: 14, fontWeight: 600, cursor: 'pointer',
+              }}>
+                Try again
+              </button>
+              <button onClick={logMeal} style={{
+                flex: 2, padding: '12px 0', borderRadius: 12,
+                background: GREEN, border: 'none',
+                color: '#FFFFFF', fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                boxShadow: '0 4px 14px rgba(30,127,92,0.28)',
+              }}>
+                + Log This Meal
+              </button>
             </div>
           </div>
         )}
@@ -173,12 +210,12 @@ export default function ScanPage() {
         {/* Logged success */}
         {phase === 'logged' && (
           <div style={{
-            background: '#fff', borderRadius: 20, padding: 28,
-            textAlign: 'center', boxShadow: '0 4px 16px rgba(0,0,0,.07)',
+            background: CARD, borderRadius: 20, padding: 32,
+            textAlign: 'center', border: `1px solid ${BORDER}`, boxShadow: SHADOW,
           }}>
-            <div style={{ fontSize: 48, marginBottom: 10 }}>✅</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: '#4CAF82' }}>Logged successfully!</div>
-            <div style={{ fontSize: 13, color: '#aaa', marginTop: 6 }}>Redirecting to dashboard…</div>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: GREEN }}>Logged successfully!</div>
+            <div style={{ fontSize: 13, color: FG3, marginTop: 6 }}>Redirecting to dashboard…</div>
           </div>
         )}
       </div>
@@ -187,8 +224,9 @@ export default function ScanPage() {
       {toast && (
         <div style={{
           position: 'fixed', bottom: 90, left: '50%', transform: 'translateX(-50%)',
-          background: '#1a1a2e', color: '#fff', padding: '10px 20px', borderRadius: 20,
+          background: FG1, color: '#fff', padding: '10px 20px', borderRadius: 20,
           fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', zIndex: 300,
+          boxShadow: '0 4px 20px rgba(15,27,45,0.18)',
         }}>{toast}</div>
       )}
     </div>

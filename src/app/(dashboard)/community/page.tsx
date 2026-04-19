@@ -75,9 +75,9 @@ const POSTS = [
 
 function MacroBadge({ label, val, color }: { label: string; val: number; color: string }) {
   return (
-    <div className="flex flex-col items-center rounded-lg px-2 py-1" style={{ background: color + '22' }}>
+    <div className="flex flex-col items-center rounded-lg px-2 py-1" style={{ background: color + '18' }}>
       <span className="text-xs font-black" style={{ color }}>{val}g</span>
-      <span className="text-[9px]" style={{ color: '#55556A' }}>{label}</span>
+      <span className="text-[9px]" style={{ color: '#8B95A7' }}>{label}</span>
     </div>
   );
 }
@@ -98,17 +98,15 @@ export default function CommunityPage() {
     <div className="animate-fade-in">
       {/* Header */}
       <div className="relative overflow-hidden px-5 pb-4 pt-14">
-        <div className="pointer-events-none absolute inset-0"
-          style={{ background: 'radial-gradient(ellipse 80% 50% at 50% 0%,rgba(157,123,255,.18) 0%,transparent 70%)' }}/>
         <div className="relative flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-black" style={{ color: '#EEEEF8' }}>Community 🌐</h1>
-            <p className="text-sm" style={{ color: '#8888A8' }}>Meals, workouts & restaurant finds</p>
+            <h1 className="text-2xl font-black" style={{ color: '#0F1B2D', fontFamily: "'Anton', Impact, sans-serif" }}>COMMUNITY</h1>
+            <p className="text-sm" style={{ color: '#8B95A7' }}>Meals, workouts & restaurant finds</p>
           </div>
           <button
             onClick={() => setNewPost(true)}
             className="flex h-10 w-10 items-center justify-center rounded-full text-xl font-black"
-            style={{ background: '#9D7BFF', color: '#fff' }}>+</button>
+            style={{ background: '#1E7F5C', color: '#fff' }}>+</button>
         </div>
       </div>
 
@@ -127,13 +125,13 @@ export default function CommunityPage() {
 
       {/* New post prompt */}
       {newPost && (
-        <div className="mx-4 mb-3 card" style={{ borderColor: '#9D7BFF' }}>
-          <p className="text-sm font-bold mb-2" style={{ color: '#9D7BFF' }}>Share something 📤</p>
+        <div className="mx-4 mb-3 card" style={{ borderColor: '#1E7F5C' }}>
+          <p className="text-sm font-bold mb-2" style={{ color: '#1E7F5C' }}>Share something 📤</p>
           <div className="flex gap-2">
             {['🍽️ Meal', '🏋️ Workout', '🍜 Restaurant', '📦 Grocery'].map(t => (
               <button key={t} onClick={() => setNewPost(false)}
                 className="flex-1 rounded-xl py-2 text-[11px] font-bold"
-                style={{ background: '#1E1E30', color: '#8888A8', border: '1px solid #252538' }}>{t}</button>
+                style={{ background: '#F7F8FB', color: '#5B6576', border: '1px solid #E5E9F2' }}>{t}</button>
             ))}
           </div>
         </div>
@@ -146,22 +144,22 @@ export default function CommunityPage() {
             {/* Post header */}
             <div className="flex items-center gap-3 mb-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full text-2xl"
-                style={{ background: '#1E1E30' }}>{post.avatar}</div>
+                style={{ background: '#F7F8FB', border: '1px solid #E5E9F2' }}>{post.avatar}</div>
               <div className="flex-1">
                 <div className="flex items-center gap-1">
-                  <span className="text-sm font-bold" style={{ color: '#EEEEF8' }}>{post.user}</span>
+                  <span className="text-sm font-bold" style={{ color: '#0F1B2D' }}>{post.user}</span>
                   {post.badge && <span className="text-xs">{post.badge}</span>}
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[11px]" style={{ color: '#55556A' }}>{post.handle}</span>
-                  <span className="text-[9px]" style={{ color: '#55556A' }}>·</span>
-                  <span className="text-[11px]" style={{ color: '#55556A' }}>{post.time}</span>
+                  <span className="text-[11px]" style={{ color: '#8B95A7' }}>{post.handle}</span>
+                  <span className="text-[9px]" style={{ color: '#8B95A7' }}>·</span>
+                  <span className="text-[11px]" style={{ color: '#8B95A7' }}>{post.time}</span>
                 </div>
               </div>
               <div className="rounded-full px-2 py-0.5 text-[10px] font-bold"
                 style={{
                   background: post.type === 'workout' ? 'rgba(157,123,255,.15)' : post.type === 'restaurant' ? 'rgba(255,140,66,.15)' : 'rgba(0,214,143,.15)',
-                  color: post.type === 'workout' ? '#9D7BFF' : post.type === 'restaurant' ? '#FF8C42' : '#00D68F',
+                  color: post.type === 'workout' ? '#7A4BC2' : post.type === 'restaurant' ? '#C98A2E' : '#1E7F5C',
                 }}>
                 {post.type === 'workout' ? '🏋️ Workout' : post.type === 'restaurant' ? '🍜 Restaurant' : '🍽️ Meal'}
               </div>
@@ -169,32 +167,32 @@ export default function CommunityPage() {
 
             {/* Image / emoji banner */}
             <div className="mb-3 flex h-32 items-center justify-center rounded-xl text-7xl"
-              style={{ background: 'linear-gradient(135deg,#1E1E30,#111120)' }}>
+              style={{ background: '#F7F8FB', border: '1px solid #E5E9F2' }}>
               {post.image}
             </div>
 
             {/* Title + price */}
             <div className="flex items-start justify-between mb-2">
-              <p className="text-sm font-bold flex-1" style={{ color: '#EEEEF8' }}>{post.title}</p>
-              {post.price && <span className="text-xs font-bold ml-2" style={{ color: '#FFD166' }}>{post.price}</span>}
+              <p className="text-sm font-bold flex-1" style={{ color: '#0F1B2D' }}>{post.title}</p>
+              {post.price && <span className="text-xs font-bold ml-2" style={{ color: '#C98A2E' }}>{post.price}</span>}
             </div>
 
             {/* Macros */}
             {post.macros && (
               <div className="mb-2">
                 <div className="flex items-center gap-2 mb-1.5">
-                  <span className="text-sm font-black" style={{ color: '#FF5A5A' }}>{post.macros.cal} kcal</span>
+                  <span className="text-sm font-black" style={{ color: '#D04E36' }}>{post.macros.cal} kcal</span>
                   {post.accuracy && (
                     <span className="rounded-full px-2 py-0.5 text-[9px] font-bold"
-                      style={{ background: 'rgba(0,214,143,.12)', color: '#00D68F' }}>
+                      style={{ background: 'rgba(0,214,143,.12)', color: '#1E7F5C' }}>
                       ✓ {post.accuracy} ({post.accuracyCount})
                     </span>
                   )}
                 </div>
                 <div className="flex gap-2">
-                  <MacroBadge label="Protein" val={post.macros.p} color="#4E9BFF"/>
-                  <MacroBadge label="Carbs"   val={post.macros.c} color="#FFD166"/>
-                  <MacroBadge label="Fat"     val={post.macros.f} color="#00D68F"/>
+                  <MacroBadge label="Protein" val={post.macros.p} color="#2E6FB8"/>
+                  <MacroBadge label="Carbs"   val={post.macros.c} color="#C98A2E"/>
+                  <MacroBadge label="Fat"     val={post.macros.f} color="#1E7F5C"/>
                 </div>
               </div>
             )}
@@ -203,21 +201,21 @@ export default function CommunityPage() {
             {post.type === 'workout' && (
               <div className="flex gap-3 mb-2">
                 {post.caloriesBurned && (
-                  <div className="rounded-xl px-3 py-1.5 text-center" style={{ background: 'rgba(157,123,255,.12)' }}>
-                    <p className="text-sm font-black" style={{ color: '#9D7BFF' }}>{post.caloriesBurned}</p>
-                    <p className="text-[9px]" style={{ color: '#55556A' }}>kcal burned</p>
+                  <div className="rounded-xl px-3 py-1.5 text-center" style={{ background: 'rgba(30,127,92,0.08)' }}>
+                    <p className="text-sm font-black" style={{ color: '#1E7F5C' }}>{post.caloriesBurned}</p>
+                    <p className="text-[9px]" style={{ color: '#8B95A7' }}>kcal burned</p>
                   </div>
                 )}
                 {post.duration && (
-                  <div className="rounded-xl px-3 py-1.5 text-center" style={{ background: 'rgba(157,123,255,.12)' }}>
-                    <p className="text-sm font-black" style={{ color: '#9D7BFF' }}>{post.duration}</p>
-                    <p className="text-[9px]" style={{ color: '#55556A' }}>duration</p>
+                  <div className="rounded-xl px-3 py-1.5 text-center" style={{ background: 'rgba(30,127,92,0.08)' }}>
+                    <p className="text-sm font-black" style={{ color: '#1E7F5C' }}>{post.duration}</p>
+                    <p className="text-[9px]" style={{ color: '#8B95A7' }}>duration</p>
                   </div>
                 )}
                 {post.distance && (
-                  <div className="rounded-xl px-3 py-1.5 text-center" style={{ background: 'rgba(157,123,255,.12)' }}>
-                    <p className="text-sm font-black" style={{ color: '#9D7BFF' }}>{post.distance}</p>
-                    <p className="text-[9px]" style={{ color: '#55556A' }}>distance</p>
+                  <div className="rounded-xl px-3 py-1.5 text-center" style={{ background: 'rgba(30,127,92,0.08)' }}>
+                    <p className="text-sm font-black" style={{ color: '#1E7F5C' }}>{post.distance}</p>
+                    <p className="text-[9px]" style={{ color: '#8B95A7' }}>distance</p>
                   </div>
                 )}
               </div>
@@ -225,7 +223,7 @@ export default function CommunityPage() {
 
             {/* Tip */}
             {post.tip && (
-              <div className="mb-2 rounded-xl px-3 py-2 text-xs" style={{ background: 'rgba(255,209,102,.08)', color: '#FFD166' }}>
+              <div className="mb-2 rounded-xl px-3 py-2 text-xs" style={{ background: 'rgba(255,209,102,.08)', color: '#C98A2E' }}>
                 💡 Pro tip: {post.tip}
               </div>
             )}
@@ -234,33 +232,33 @@ export default function CommunityPage() {
             <div className="mb-3 flex flex-wrap gap-1.5">
               {post.tags.map(tag => (
                 <span key={tag} className="text-[10px] font-semibold rounded-full px-2 py-0.5"
-                  style={{ background: '#1E1E30', color: '#8888A8' }}>{tag}</span>
+                  style={{ background: '#F7F8FB', color: '#8B95A7', border: '1px solid #E5E9F2' }}>{tag}</span>
               ))}
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-3 pt-2" style={{ borderTop: '1px solid #1C1C2E' }}>
+            <div className="flex items-center gap-3 pt-2" style={{ borderTop: '1px solid #E5E9F2' }}>
               <button onClick={() => toggleLike(post.id)} className="flex items-center gap-1.5 text-xs font-bold transition"
-                style={{ color: '#8888A8' }}>
+                style={{ color: '#8B95A7' }}>
                 <span>❤️</span> {post.likes}
               </button>
-              <button className="flex items-center gap-1.5 text-xs font-bold" style={{ color: '#8888A8' }}>
+              <button className="flex items-center gap-1.5 text-xs font-bold" style={{ color: '#8B95A7' }}>
                 <span>💬</span> {post.comments}
               </button>
               <button onClick={() => toggleSave(post.id)} className="flex items-center gap-1.5 text-xs font-bold transition"
-                style={{ color: post.saved ? '#FFD166' : '#8888A8' }}>
+                style={{ color: post.saved ? '#C98A2E' : '#8B95A7' }}>
                 <span>{post.saved ? '🔖' : '📌'}</span> {post.saved ? 'Saved' : 'Save'}
               </button>
               <div className="flex-1"/>
               {post.macros && (
                 <button className="rounded-xl px-3 py-1.5 text-xs font-bold"
-                  style={{ background: 'rgba(0,214,143,.15)', color: '#00D68F' }}>
+                  style={{ background: 'rgba(0,214,143,.15)', color: '#1E7F5C' }}>
                   📋 Log This
                 </button>
               )}
               {post.type === 'workout' && (
                 <button className="rounded-xl px-3 py-1.5 text-xs font-bold"
-                  style={{ background: 'rgba(157,123,255,.15)', color: '#9D7BFF' }}>
+                  style={{ background: 'rgba(30,127,92,0.10)', color: '#1E7F5C' }}>
                   📋 Copy Plan
                 </button>
               )}
