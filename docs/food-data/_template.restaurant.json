@@ -1,0 +1,39 @@
+{
+  "_instructions": "1. Remove this _instructions field before saving. 2. Fill in every field. 3. Delete optional fields (fibre/sugar/sodium) only if data is truly unavailable. 4. See CONTRIBUTING.md for all valid values.",
+
+  "id": "brand_slug",
+  "name": "Brand Name",
+  "emoji": "🍽️",
+  "cuisine": "Healthy Bowls",
+  "tab": "grab_go",
+  "aliases": [
+    "brand name",
+    "brand"
+  ],
+  "dietTags": [],
+  "priceRange": "$",
+  "nutritionUrl": "https://brand.com.sg/nutrition",
+  "lastUpdated": "2026-04-19",
+  "menu": [
+    {
+      "id": "brand_item_name",
+      "name": "Item Name",
+      "emoji": "🍽️",
+      "price": 0.00,
+      "calories": 0,
+      "protein": 0,
+      "carbs": 0,
+      "fat": 0,
+      "fibre": 0,
+      "sugar": 0,
+      "sodium": 0,
+      "category": "Mains",
+      "compatibleWith": [],
+      "isPopular": false,
+      "description": "One-line description",
+      "source": "official_sg",
+      "verified": true,
+      "lastVerified": "2026-04-19"
+    }
+  ]
+}

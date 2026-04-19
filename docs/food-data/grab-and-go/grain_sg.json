@@ -1,0 +1,402 @@
+{
+  "id": "grain",
+  "name": "Grain",
+  "emoji": "\ud83e\udd58",
+  "cuisine": "Healthy Meals",
+  "tab": "grab_go",
+  "aliases": [
+    "grain",
+    "grain sg",
+    "grain.com.sg"
+  ],
+  "dietTags": [],
+  "priceRange": "$$",
+  "nutritionUrl": "https://grain.com.sg",
+  "lastUpdated": "2026-04-19",
+  "menu": [
+    {
+      "id": "grain_grain_s_curry_chicken_stew_and_buns",
+      "name": "Grain's Curry Chicken Stew (and Buns)",
+      "emoji": "\ud83c\udf57",
+      "price": 15.0,
+      "calories": 832,
+      "protein": 39,
+      "carbs": 70,
+      "fat": 44,
+      "category": "Mains",
+      "compatibleWith": [],
+      "isPopular": true,
+      "description": "nyonya curry paste, mini bread roll, roasted potato",
+      "source": "official_sg",
+      "verified": true,
+      "lastVerified": "2026-04-19"
+    },
+    {
+      "id": "grain_marinara_fish_pasta",
+      "name": "Marinara Fish Pasta",
+      "emoji": "\ud83d\udc1f",
+      "price": 16.0,
+      "calories": 831,
+      "protein": 43,
+      "carbs": 68,
+      "fat": 43,
+      "category": "Mains",
+      "compatibleWith": [],
+      "isPopular": true,
+      "description": "oven-baked dory, onion and fennel-infused tomato sauce, linguine",
+      "source": "official_sg",
+      "verified": true,
+      "lastVerified": "2026-04-19"
+    },
+    {
+      "id": "grain_ayam_kampung_masak_merah",
+      "name": "Ayam Kampung Masak Merah",
+      "emoji": "\ud83e\udd58",
+      "price": 15.5,
+      "calories": 887,
+      "protein": 41,
+      "carbs": 75,
+      "fat": 47,
+      "category": "Mains",
+      "compatibleWith": [
+        "high_protein"
+      ],
+      "isPopular": true,
+      "description": "housemade sambal marinated chicken, nyonya achar, butterfly blue pea rice",
+      "source": "official_sg",
+      "verified": true,
+      "lastVerified": "2026-04-19"
+    },
+    {
+      "id": "grain_grilled_farm_fresh_chicken",
+      "name": "Grilled Farm Fresh Chicken",
+      "emoji": "\ud83c\udf57",
+      "price": 15.0,
+      "calories": 772,
+      "protein": 51,
+      "carbs": 79,
+      "fat": 28,
+      "category": "Mains",
+      "compatibleWith": [
+        "high_protein"
+      ],
+      "isPopular": true,
+      "description": "indian inspired cajun chicken, housemade pesto, spiced black rice, charred broccoli",
+      "source": "official_sg",
+      "verified": true,
+      "lastVerified": "2026-04-19"
+    },
+    {
+      "id": "grain_honey_duo_mustard_chicken",
+      "name": "Honey Duo Mustard Chicken",
+      "emoji": "\ud83c\udf57",
+      "price": 15.5,
+      "calories": 941,
+      "protein": 56,
+      "carbs": 87,
+      "fat": 41,
+      "category": "Mains",
+      "compatibleWith": [
+        "high_protein"
+      ],
+      "isPopular": true,
+      "description": "house-blend mustard, maple soy baked potato, linguine, cherry tomato",
+      "source": "official_sg",
+      "verified": true,
+      "lastVerified": "2026-04-19"
+    },
+    {
+      "id": "grain_mentai_mayonnaise_aburi_salmon",
+      "name": "Mentai Mayonnaise Aburi Salmon",
+      "emoji": "\ud83d\udc1f",
+      "price": 20.0,
+      "calories": 796,
+      "protein": 41,
+      "carbs": 50,
+      "fat": 48,
+      "category": "Mains",
+      "compatibleWith": [],
+      "isPopular": true,
+      "description": "sous vide norwegian salmon, mentaiko, balsamic glazed sweet potato",
+      "source": "official_sg",
+      "verified": true,
+      "lastVerified": "2026-04-19"
+    },
+    {
+      "id": "grain_basil_thunder_tea_rice",
+      "name": "Basil Thunder Tea Rice",
+      "emoji": "\ud83c\udf75",
+      "price": 14.0,
+      "calories": 627,
+      "protein": 27,
+      "carbs": 69,
+      "fat": 27,
+      "category": "Mains",
+      "compatibleWith": [
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "description": "basil scented multigrain rice, braised celery mushroom cabbage, hanjuku egg",
+      "source": "official_sg",
+      "verified": true,
+      "lastVerified": "2026-04-19"
+    },
+    {
+      "id": "grain_thai_fiesta_salad",
+      "name": "Thai Fiesta Salad",
+      "emoji": "\ud83e\udd57",
+      "price": 15.5,
+      "calories": 541,
+      "protein": 16,
+      "carbs": 81,
+      "fat": 17,
+      "category": "Mains",
+      "compatibleWith": [
+        "vegan",
+        "vegetarian",
+        "low_carb"
+      ],
+      "isPopular": true,
+      "description": "accented with lemongrass, kaffir lime leaf, red chilli",
+      "source": "official_sg",
+      "verified": true,
+      "lastVerified": "2026-04-19"
+    },
+    {
+      "id": "grain_impossible_ground_beef_hamburg_with_japanese_curry",
+      "name": "Impossible Ground Beef Hamburg with Japanese Curry",
+      "emoji": "\ud83e\udd58",
+      "price": 21.5,
+      "calories": 747,
+      "protein": 30,
+      "carbs": 69,
+      "fat": 39,
+      "category": "Mains",
+      "compatibleWith": [
+        "vegan",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "description": "baked Impossible hamburg, Japanese curry, poached okra and carrots",
+      "source": "official_sg",
+      "verified": true,
+      "lastVerified": "2026-04-19"
+    },
+    {
+      "id": "grain_grilled_forest_mushroom_salad",
+      "name": "Grilled Forest Mushroom Salad",
+      "emoji": "\ud83e\udd57",
+      "price": 7.0,
+      "calories": 103,
+      "protein": 4,
+      "carbs": 16,
+      "fat": 5,
+      "category": "Sides",
+      "compatibleWith": [
+        "vegan",
+        "vegetarian",
+        "low_carb"
+      ],
+      "isPopular": false,
+      "description": "grilled forest mushrooms, leafy greens",
+      "source": "official_sg",
+      "verified": true,
+      "lastVerified": "2026-04-19"
+    },
+    {
+      "id": "grain_piri_piri_chicken_bites",
+      "name": "Piri-piri Chicken Bites",
+      "emoji": "\ud83c\udf57",
+      "price": 8.0,
+      "calories": 199,
+      "protein": 27,
+      "carbs": 7,
+      "fat": 6,
+      "category": "Sides",
+      "compatibleWith": [
+        "low_carb",
+        "high_protein"
+      ],
+      "isPopular": false,
+      "description": "piri-piri marinated chicken bites",
+      "source": "official_sg",
+      "verified": true,
+      "lastVerified": "2026-04-19"
+    },
+    {
+      "id": "grain_ondeh_ondeh_pandan_cake",
+      "name": "Ondeh Ondeh Pandan Cake",
+      "emoji": "\ud83c\udf70",
+      "price": 6.5,
+      "calories": 358,
+      "protein": 7,
+      "carbs": 46,
+      "fat": 18,
+      "category": "Desserts",
+      "compatibleWith": [
+        "vegetarian"
+      ],
+      "isPopular": false,
+      "description": "fragrant gula melaka, pandan sponge",
+      "source": "official_sg",
+      "verified": true,
+      "lastVerified": "2026-04-19"
+    },
+    {
+      "id": "grain_greek_yoghurt_granola_cup",
+      "name": "Greek Yoghurt Granola Cup",
+      "emoji": "\ud83c\udf70",
+      "price": 7.0,
+      "calories": 475,
+      "protein": 14,
+      "carbs": 44,
+      "fat": 28,
+      "category": "Desserts",
+      "compatibleWith": [
+        "vegetarian"
+      ],
+      "isPopular": false,
+      "description": "nutrient-rich greek yogurt, crunchy granola",
+      "source": "official_sg",
+      "verified": true,
+      "lastVerified": "2026-04-19"
+    },
+    {
+      "id": "grain_seasonal_fruit_parcel",
+      "name": "Seasonal Fruit Parcel",
+      "emoji": "\ud83c\udf70",
+      "price": 7.0,
+      "calories": 93,
+      "protein": 1,
+      "carbs": 20,
+      "fat": 1,
+      "category": "Desserts",
+      "compatibleWith": [
+        "vegan",
+        "vegetarian"
+      ],
+      "isPopular": false,
+      "description": "fruits of the season",
+      "source": "official_sg",
+      "verified": true,
+      "lastVerified": "2026-04-19"
+    },
+    {
+      "id": "grain_bandung_gao",
+      "name": "Bandung Gao",
+      "emoji": "\ud83c\udf75",
+      "price": 5.5,
+      "calories": 107,
+      "protein": 4,
+      "carbs": 12,
+      "fat": 4,
+      "category": "Drinks",
+      "compatibleWith": [
+        "vegetarian"
+      ],
+      "isPopular": false,
+      "description": "bandung, milk, gao",
+      "source": "official_sg",
+      "verified": true,
+      "lastVerified": "2026-04-19"
+    },
+    {
+      "id": "grain_teh_c_floral",
+      "name": "Teh C Floral",
+      "emoji": "\ud83c\udf75",
+      "price": 5.5,
+      "calories": 103,
+      "protein": 2,
+      "carbs": 15,
+      "fat": 3,
+      "category": "Drinks",
+      "compatibleWith": [
+        "vegetarian"
+      ],
+      "isPopular": false,
+      "description": "tea, evaporated milk, floral",
+      "source": "official_sg",
+      "verified": true,
+      "lastVerified": "2026-04-19"
+    },
+    {
+      "id": "grain_honey_yuzu_tea",
+      "name": "Honey Yuzu Tea",
+      "emoji": "\ud83c\udf75",
+      "price": 5.5,
+      "calories": 100,
+      "protein": 0,
+      "carbs": 25,
+      "fat": 0,
+      "category": "Drinks",
+      "compatibleWith": [
+        "vegetarian"
+      ],
+      "isPopular": false,
+      "description": "honey, yuzu, tea",
+      "source": "official_sg",
+      "verified": true,
+      "lastVerified": "2026-04-19"
+    },
+    {
+      "id": "grain_white_cold_brew",
+      "name": "White Cold Brew",
+      "emoji": "\ud83c\udf75",
+      "price": 6.0,
+      "calories": 91,
+      "protein": 0,
+      "carbs": 15,
+      "fat": 3,
+      "category": "Drinks",
+      "compatibleWith": [
+        "vegan",
+        "vegetarian"
+      ],
+      "isPopular": false,
+      "description": "cold brew coffee, milk",
+      "source": "official_sg",
+      "verified": true,
+      "lastVerified": "2026-04-19"
+    },
+    {
+      "id": "grain_straight_guava_oj",
+      "name": "Straight Guava OJ",
+      "emoji": "\ud83c\udf75",
+      "price": 6.5,
+      "calories": 118,
+      "protein": 2,
+      "carbs": 27,
+      "fat": 0,
+      "category": "Drinks",
+      "compatibleWith": [
+        "vegan",
+        "vegetarian"
+      ],
+      "isPopular": false,
+      "description": "guava, orange juice",
+      "source": "official_sg",
+      "verified": true,
+      "lastVerified": "2026-04-19"
+    },
+    {
+      "id": "grain_watermelime_crush",
+      "name": "Watermelime Crush",
+      "emoji": "\ud83c\udf75",
+      "price": 6.5,
+      "calories": 99,
+      "protein": 0,
+      "carbs": 24,
+      "fat": 0,
+      "category": "Drinks",
+      "compatibleWith": [
+        "vegan",
+        "vegetarian"
+      ],
+      "isPopular": false,
+      "description": "watermelon, lime",
+      "source": "official_sg",
+      "verified": true,
+      "lastVerified": "2026-04-19"
+    }
+  ]
+}

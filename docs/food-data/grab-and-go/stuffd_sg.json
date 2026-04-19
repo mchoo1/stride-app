@@ -1,0 +1,167 @@
+{
+  "id": "stuffd",
+  "name": "Stuffd",
+  "emoji": "\ud83c\udf2f",
+  "cuisine": "Kebabs & Wraps",
+  "tab": "grab_go",
+  "aliases": [
+    "stuffd",
+    "stuffd sg"
+  ],
+  "dietTags": [
+    "halal"
+  ],
+  "priceRange": "$",
+  "nutritionUrl": "https://stuffd.com.sg",
+  "lastUpdated": "2026-04-19",
+  "_note": "Build-your-own concept. Menu items are standard combination estimates calculated from official per-ingredient nutrition data. Ingredient-level data is in docs/reference/stuffd_sg.json.",
+  "menu": [
+    {
+      "id": "stuffd_chicken_kebab",
+      "name": "Chicken Kebab",
+      "emoji": "\ud83c\udf2f",
+      "price": 9.9,
+      "calories": 442,
+      "protein": 21,
+      "carbs": 41,
+      "fat": 20,
+      "fibre": 4.7,
+      "sodium": 954,
+      "category": "Kebabs",
+      "compatibleWith": [
+        "halal"
+      ],
+      "isPopular": true,
+      "description": "Chicken, garlic sauce, salad in a tortilla wrap. Estimates based on standard combination.",
+      "source": "official_sg",
+      "verified": true,
+      "lastVerified": "2026-04-19"
+    },
+    {
+      "id": "stuffd_chicken_rendang_kebab",
+      "name": "Chicken Rendang Kebab",
+      "emoji": "\ud83c\udf2f",
+      "price": 9.9,
+      "calories": 428,
+      "protein": 28,
+      "carbs": 40,
+      "fat": 15,
+      "fibre": 2.0,
+      "sodium": 1078,
+      "category": "Kebabs",
+      "compatibleWith": [
+        "halal"
+      ],
+      "isPopular": false,
+      "description": "Chicken rendang, mixed salad in a tortilla wrap. Estimates based on standard combination.",
+      "source": "official_sg",
+      "verified": true,
+      "lastVerified": "2026-04-19"
+    },
+    {
+      "id": "stuffd_beef_kebab",
+      "name": "Beef Kebab",
+      "emoji": "\ud83c\udf2f",
+      "price": 9.9,
+      "calories": 409,
+      "protein": 16,
+      "carbs": 39,
+      "fat": 6,
+      "fibre": 2.4,
+      "sodium": 875,
+      "category": "Kebabs",
+      "compatibleWith": [
+        "halal"
+      ],
+      "isPopular": false,
+      "description": "Beef, garlic sauce, salad in a tortilla wrap. Estimates based on standard combination.",
+      "source": "official_sg",
+      "verified": true,
+      "lastVerified": "2026-04-19"
+    },
+    {
+      "id": "stuffd_chicken_burrito",
+      "name": "Chicken Burrito",
+      "emoji": "\ud83c\udf2f",
+      "price": 12.9,
+      "calories": 633,
+      "protein": 25,
+      "carbs": 79,
+      "fat": 23,
+      "fibre": 5.6,
+      "sodium": 1278,
+      "category": "Burritos",
+      "compatibleWith": [
+        "halal"
+      ],
+      "isPopular": true,
+      "description": "Chicken, cilantro rice, beans, salsa in a large tortilla. Estimates based on standard combination.",
+      "source": "official_sg",
+      "verified": true,
+      "lastVerified": "2026-04-19"
+    },
+    {
+      "id": "stuffd_beef_burrito",
+      "name": "Beef Burrito",
+      "emoji": "\ud83c\udf2f",
+      "price": 12.9,
+      "calories": 633,
+      "protein": 25,
+      "carbs": 79,
+      "fat": 23,
+      "fibre": 5.6,
+      "sodium": 1278,
+      "category": "Burritos",
+      "compatibleWith": [
+        "halal"
+      ],
+      "isPopular": false,
+      "description": "Beef (or chicken), cilantro rice, toppings in a large tortilla. Estimates based on standard combination.",
+      "source": "official_sg",
+      "verified": true,
+      "lastVerified": "2026-04-19"
+    },
+    {
+      "id": "stuffd_chicken_rendang_daily_bowl",
+      "name": "Chicken Rendang Daily Bowl",
+      "emoji": "\ud83e\udd63",
+      "price": 10.9,
+      "calories": 255,
+      "protein": 23,
+      "carbs": 8,
+      "fat": 13,
+      "fibre": 0.5,
+      "sodium": 725,
+      "category": "Daily Bowls",
+      "compatibleWith": [
+        "halal"
+      ],
+      "isPopular": false,
+      "description": "Chicken rendang, rice, toppings. Estimates based on standard combination.",
+      "source": "official_sg",
+      "verified": true,
+      "lastVerified": "2026-04-19"
+    },
+    {
+      "id": "stuffd_chicken_daily_bowl",
+      "name": "Chicken Daily Bowl",
+      "emoji": "\ud83e\udd63",
+      "price": 10.9,
+      "calories": 255,
+      "protein": 23,
+      "carbs": 8,
+      "fat": 13,
+      "fibre": 0.5,
+      "sodium": 725,
+      "category": "Daily Bowls",
+      "compatibleWith": [
+        "halal"
+      ],
+      "isPopular": false,
+      "description": "Grilled chicken, rice, toppings. Estimates based on standard combination.",
+      "source": "official_sg",
+      "verified": true,
+      "lastVerified": "2026-04-19"
+    }
+  ]
+}
