@@ -27,6 +27,11 @@ interface NearbyPlace {
   hours: string; emoji: string; mapsUrl: string;
 }
 
+/* ── Enriched place type ── */
+interface EnrichedPlace extends NearbyPlace {
+  dbMatch: SGRestaurant | null;
+}
+
 /* ── Cuisine-type fallback ── */
 interface FallbackDish {
   dish: string; emoji: string; price: number;
@@ -140,7 +145,7 @@ function SortBar({ active, onChange, showDistance }: {
     ...(showDistance ? [{ key: 'distance' as SortKey, label: '📍 Nearest' }] : []),
   ];
   return (
-    <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2, marginBottom: 14 }}>
+    <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2, marginBottom: 14, scrollbarWidth: 'none' }}>
       {opts.map(o => (
         <button key={o.key} onClick={() => onChange(o.key)} style={{
           flexShrink: 0, borderRadius: 999, padding: '6px 14px',
@@ -151,6 +156,77 @@ function SortBar({ active, onChange, showDistance }: {
           transition: 'all .2s',
         }}>{o.label}</button>
       ))}
+    </div>
+  );
+}
+
+/* ── FilterBar (Restaurant GPS tab only) ── */
+function FilterBar({
+  filterOpenNow, setFilterOpenNow,
+  filterMaxDist, setFilterMaxDist,
+  filterCuisine, setFilterCuisine,
+  cuisineOptions,
+}: {
+  filterOpenNow: boolean; setFilterOpenNow: (v: boolean) => void;
+  filterMaxDist: null | 0.5 | 1 | 2; setFilterMaxDist: (v: null | 0.5 | 1 | 2) => void;
+  filterCuisine: string; setFilterCuisine: (v: string) => void;
+  cuisineOptions: string[];
+}) {
+  const chipStyle = (active: boolean): React.CSSProperties => ({
+    flexShrink: 0, borderRadius: 999, padding: '5px 12px',
+    fontSize: 11, fontWeight: 700, cursor: 'pointer',
+    border: `1px solid ${active ? 'rgba(30,127,92,0.30)' : BORDER}`,
+    background: active ? 'rgba(30,127,92,0.10)' : CARD,
+    color: active ? GREEN : FG3,
+    transition: 'all .15s',
+    whiteSpace: 'nowrap' as const,
+  });
+
+  const distOpts: { val: null | 0.5 | 1 | 2; label: string }[] = [
+    { val: null,  label: 'All' },
+    { val: 0.5,   label: '< 500m' },
+    { val: 1,     label: '< 1km' },
+    { val: 2,     label: '< 2km' },
+  ];
+
+  return (
+    <div style={{ marginBottom: 14, display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {/* Row 1: Open Now + Distance */}
+      <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2 }}>
+        <button
+          onClick={() => setFilterOpenNow(!filterOpenNow)}
+          style={{
+            ...chipStyle(filterOpenNow),
+            background: filterOpenNow ? 'rgba(30,127,92,0.10)' : CARD,
+            color: filterOpenNow ? GREEN : FG3,
+          }}
+        >
+          🟢 Open Now
+        </button>
+        {distOpts.map(d => (
+          <button
+            key={String(d.val)}
+            onClick={() => setFilterMaxDist(d.val)}
+            style={chipStyle(filterMaxDist === d.val)}
+          >
+            {d.label}
+          </button>
+        ))}
+      </div>
+      {/* Row 2: Cuisine types */}
+      {cuisineOptions.length > 0 && (
+        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2 }}>
+          {['All', ...cuisineOptions].map(c => (
+            <button
+              key={c}
+              onClick={() => setFilterCuisine(c)}
+              style={chipStyle(filterCuisine === c)}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -292,6 +368,7 @@ function RestaurantMenuPanel({
   );
 }
 
+/* ── RestaurantCard with menu preview ── */
 function RestaurantCard({
   restaurant, isExpanded, onToggle, userFlags, remaining, onLog, logged,
   badge, distanceLabel, rating,
@@ -306,8 +383,18 @@ function RestaurantCard({
   distanceLabel?: string;
   rating?: number | null;
 }) {
-  const dietFit  = getDietFit(restaurant.dietTags, userFlags);
+  const dietFit   = getDietFit(restaurant.dietTags, userFlags);
   const itemCount = restaurant.menu.length;
+
+  /* Top 2 items by macro match score for preview */
+  const previewItems = useMemo(() => {
+    if (itemCount === 0) return [];
+    return [...restaurant.menu]
+      .sort((a, b) => macroMatchScore(b, remaining) - macroMatchScore(a, remaining))
+      .slice(0, 2);
+  }, [restaurant.menu, remaining, itemCount]);
+
+  const showPreview = itemCount > 0 && !isExpanded;
 
   return (
     <div style={{ marginBottom: 10 }}>
@@ -316,8 +403,8 @@ function RestaurantCard({
         padding: '13px 14px', cursor: 'pointer', textAlign: 'left',
         background: isExpanded ? 'rgba(30,127,92,0.04)' : CARD,
         border: `1px solid ${isExpanded ? 'rgba(30,127,92,0.25)' : BORDER}`,
-        borderRadius: isExpanded ? '18px 18px 0 0' : 18,
-        boxShadow: isExpanded ? 'none' : SHADOW,
+        borderRadius: isExpanded ? '18px 18px 0 0' : (showPreview ? '18px 18px 0 0' : 18),
+        boxShadow: (isExpanded || showPreview) ? 'none' : SHADOW,
         transition: 'all .15s',
       }}>
         <div style={{
@@ -350,6 +437,56 @@ function RestaurantCard({
           {isExpanded ? '▲' : '▼'}
         </span>
       </button>
+
+      {/* Collapsed preview: top 2 items */}
+      {showPreview && (
+        <div style={{
+          borderRadius: '0 0 18px 18px',
+          border: `1px solid ${BORDER}`,
+          borderTop: 'none',
+          background: CARD,
+          padding: '8px 14px 12px',
+          boxShadow: SHADOW,
+        }}>
+          {previewItems.map(item => {
+            const ppd = proteinPerDollar(item.protein, item.price);
+            const ppdC = ppdColor(ppd);
+            const isLogged = logged.has(item.id);
+            return (
+              <div key={item.id} style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '5px 0',
+                borderBottom: previewItems.indexOf(item) < previewItems.length - 1 ? `1px solid ${BORDER}` : 'none',
+              }}>
+                <span style={{ fontSize: 16, flexShrink: 0 }}>{item.emoji}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: FG1, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {item.name}
+                </span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: GREEN, flexShrink: 0 }}>${item.price.toFixed(2)}</span>
+                <span style={{ fontSize: 10, color: FG3, flexShrink: 0 }}>·</span>
+                <span style={{ fontSize: 10, color: '#2E6FB8', flexShrink: 0 }}>P{item.protein}g</span>
+                <span style={{ fontSize: 10, color: FG3, flexShrink: 0 }}>·</span>
+                <span style={{ fontSize: 10, color: FG3, flexShrink: 0 }}>{item.calories}kcal</span>
+                <span style={{ fontSize: 10, color: FG3, flexShrink: 0 }}>·</span>
+                <span style={{ fontSize: 10, fontWeight: 700, color: ppdC, flexShrink: 0 }}>{ppd}g/$</span>
+                <button
+                  onClick={e => { e.stopPropagation(); onLog(item, restaurant); }}
+                  style={{
+                    flexShrink: 0, borderRadius: 8, padding: '4px 8px',
+                    fontSize: 10, fontWeight: 800, cursor: 'pointer',
+                    border: `1px solid ${isLogged ? 'rgba(30,127,92,0.25)' : BORDER}`,
+                    background: isLogged ? 'rgba(30,127,92,0.10)' : CARD,
+                    color: isLogged ? GREEN : FG2,
+                    transition: 'all .2s',
+                  }}
+                >
+                  {isLogged ? '✓' : '+ Log'}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {isExpanded && itemCount > 0 && (
         <RestaurantMenuPanel
@@ -507,7 +644,15 @@ export default function EatPage() {
   const [logged,       setLogged      ] = useState<Set<string>>(new Set());
   const [recipeLogged, setRecipeLogged] = useState<Set<string>>(new Set());
 
-  const switchTab = (t: typeof tab) => { setTab(t); setQuery(''); setExpandedId(null); };
+  /* ── Filter state (Restaurant GPS tab) ── */
+  const [filterOpenNow,  setFilterOpenNow ] = useState(false);
+  const [filterMaxDist,  setFilterMaxDist ] = useState<null | 0.5 | 1 | 2>(null);
+  const [filterCuisine,  setFilterCuisine ] = useState('All');
+
+  const switchTab = (t: typeof tab) => {
+    setTab(t); setQuery(''); setExpandedId(null);
+    setFilterOpenNow(false); setFilterMaxDist(null); setFilterCuisine('All');
+  };
 
   const [places,   setPlaces  ] = useState<NearbyPlace[]>([]);
   const [locState, setLocState] = useState<'locating' | 'fetching' | 'done' | 'error' | 'no_key'>('locating');
@@ -539,10 +684,91 @@ export default function EatPage() {
     );
   }, [fetchPlaces]);
 
-  const enrichedPlaces = useMemo(() =>
+  const enrichedPlaces = useMemo((): EnrichedPlace[] =>
     places.map(p => ({ ...p, dbMatch: matchRestaurant(p.name) })),
     [places],
   );
+
+  /* ── Cuisine options for FilterBar derived from enrichedPlaces ── */
+  const cuisineOptions = useMemo(() => {
+    const seen = new Set<string>();
+    enrichedPlaces.forEach(p => {
+      const raw = p.dbMatch ? p.dbMatch.cuisine : p.type;
+      if (raw) {
+        const label = raw.charAt(0).toUpperCase() + raw.slice(1);
+        seen.add(label);
+      }
+    });
+    return Array.from(seen).sort();
+  }, [enrichedPlaces]);
+
+  /* ── Sorted + filtered GPS places ── */
+  const sortedFilteredPlaces = useMemo(() => {
+    let list = [...enrichedPlaces];
+
+    // Apply filters
+    if (filterOpenNow) {
+      list = list.filter(p => p.hours === 'Open now');
+    }
+    if (filterMaxDist !== null) {
+      list = list.filter(p => (p.distKm ?? 999) <= filterMaxDist);
+    }
+    if (filterCuisine !== 'All') {
+      list = list.filter(p => {
+        const cuisine = p.dbMatch ? p.dbMatch.cuisine : p.type;
+        return cuisine.toLowerCase().includes(filterCuisine.toLowerCase());
+      });
+    }
+
+    // Apply sort
+    list.sort((a, b) => {
+      if (sortBy === 'distance') {
+        return (a.distKm ?? 999) - (b.distKm ?? 999);
+      }
+      if (sortBy === 'protein_dollar') {
+        const getMaxPpd = (p: EnrichedPlace) => {
+          if (p.dbMatch && p.dbMatch.menu.length > 0) {
+            return Math.max(...p.dbMatch.menu.map(i => proteinPerDollar(i.protein, i.price)));
+          }
+          const fb = CUISINE_FALLBACK[p.type] ?? FALLBACK_DEFAULT;
+          return proteinPerDollar(fb.protein, fb.price);
+        };
+        return getMaxPpd(b) - getMaxPpd(a);
+      }
+      if (sortBy === 'price') {
+        const getMinPrice = (p: EnrichedPlace) => {
+          if (p.dbMatch && p.dbMatch.menu.length > 0) {
+            return Math.min(...p.dbMatch.menu.map(i => i.price));
+          }
+          const fb = CUISINE_FALLBACK[p.type] ?? FALLBACK_DEFAULT;
+          return fb.price;
+        };
+        return getMinPrice(a) - getMinPrice(b);
+      }
+      // best_match: DB-matched places first, sorted by best macroMatchScore; then non-DB by PPD
+      const aHasDb = !!a.dbMatch;
+      const bHasDb = !!b.dbMatch;
+      if (aHasDb && !bHasDb) return -1;
+      if (!aHasDb && bHasDb) return 1;
+      if (aHasDb && bHasDb) {
+        const aScore = a.dbMatch!.menu.length > 0
+          ? Math.max(...a.dbMatch!.menu.map(i => macroMatchScore(i, macroRem)))
+          : 0;
+        const bScore = b.dbMatch!.menu.length > 0
+          ? Math.max(...b.dbMatch!.menu.map(i => macroMatchScore(i, macroRem)))
+          : 0;
+        return bScore - aScore;
+      }
+      // Both non-DB: sort by fallback PPD
+      const aFb = CUISINE_FALLBACK[a.type] ?? FALLBACK_DEFAULT;
+      const bFb = CUISINE_FALLBACK[b.type] ?? FALLBACK_DEFAULT;
+      return proteinPerDollar(bFb.protein, bFb.price) - proteinPerDollar(aFb.protein, aFb.price);
+    });
+
+    return list;
+  }, [enrichedPlaces, sortBy, filterOpenNow, filterMaxDist, filterCuisine, macroRem]);
+
+  const anyFilterActive = filterOpenNow || filterMaxDist !== null || filterCuisine !== 'All';
 
   const searchResults = useMemo(() => {
     if (!query.trim()) return null;
@@ -557,18 +783,25 @@ export default function EatPage() {
     const base = SG_RESTAURANTS.filter(r => r.tab === 'grab_go');
     return [...base].sort((a, b) => {
       if (sortBy === 'protein_dollar') {
-        const aBest = Math.max(...(a.menu.map(i => proteinPerDollar(i.protein, i.price))), 0);
-        const bBest = Math.max(...(b.menu.map(i => proteinPerDollar(i.protein, i.price))), 0);
+        const aBest = a.menu.length > 0 ? Math.max(...a.menu.map(i => proteinPerDollar(i.protein, i.price))) : 0;
+        const bBest = b.menu.length > 0 ? Math.max(...b.menu.map(i => proteinPerDollar(i.protein, i.price))) : 0;
         return bBest - aBest;
       }
       if (sortBy === 'price') {
-        const aMin = Math.min(...(a.menu.map(i => i.price)), Infinity);
-        const bMin = Math.min(...(b.menu.map(i => i.price)), Infinity);
+        const aMin = a.menu.length > 0 ? Math.min(...a.menu.map(i => i.price)) : Infinity;
+        const bMin = b.menu.length > 0 ? Math.min(...b.menu.map(i => i.price)) : Infinity;
         return aMin - bMin;
       }
-      return a.name.localeCompare(b.name);
+      // best_match: sort by best macroMatchScore of top item
+      const aScore = a.menu.length > 0
+        ? Math.max(...a.menu.map(i => macroMatchScore(i, macroRem)))
+        : 0;
+      const bScore = b.menu.length > 0
+        ? Math.max(...b.menu.map(i => macroMatchScore(i, macroRem)))
+        : 0;
+      return bScore - aScore;
     });
-  }, [sortBy]);
+  }, [sortBy, macroRem]);
 
   const logMenuItem = useCallback((item: SGMenuItem, restaurant: SGRestaurant) => {
     store.addFoodEntry({
@@ -687,6 +920,16 @@ export default function EatPage() {
           <SortBar active={sortBy} onChange={setSortBy} showDistance={tab === 'restaurant'} />
         )}
 
+        {/* ── Filter bar (Restaurant tab, GPS done, no search) ── */}
+        {tab === 'restaurant' && !query && locState === 'done' && (
+          <FilterBar
+            filterOpenNow={filterOpenNow}   setFilterOpenNow={setFilterOpenNow}
+            filterMaxDist={filterMaxDist}   setFilterMaxDist={setFilterMaxDist}
+            filterCuisine={filterCuisine}   setFilterCuisine={setFilterCuisine}
+            cuisineOptions={cuisineOptions}
+          />
+        )}
+
         {/* ══════════ RESTAURANT TAB ══════════ */}
         {tab === 'restaurant' && (
           <>
@@ -762,13 +1005,17 @@ export default function EatPage() {
                 {/* GPS list */}
                 {locState === 'done' && (
                   <>
+                    {/* Count line */}
                     <div style={{ fontSize: 12, fontWeight: 700, color: FG3, marginBottom: 10 }}>
-                      {enrichedPlaces.length} places near you · {enrichedPlaces.filter(p => p.dbMatch).length} with full menu data
+                      {enrichedPlaces.length} places · {enrichedPlaces.filter(p => p.dbMatch).length} with full menu data
+                      {anyFilterActive ? ` · ${sortedFilteredPlaces.length} shown after filters` : ''}
                     </div>
-                    {enrichedPlaces.length === 0 && (
-                      <EmptyState emoji="🗺️" title="No restaurants found nearby" subtitle="Try moving to a different area or check your location settings." />
+
+                    {sortedFilteredPlaces.length === 0 && (
+                      <EmptyState emoji="🗺️" title="No restaurants match your filters" subtitle="Try adjusting your filters or clearing them to see all nearby places." />
                     )}
-                    {enrichedPlaces.map(place => {
+
+                    {sortedFilteredPlaces.map(place => {
                       const fallback = CUISINE_FALLBACK[place.type] ?? FALLBACK_DEFAULT;
 
                       if (place.dbMatch) {
@@ -787,35 +1034,58 @@ export default function EatPage() {
                       }
 
                       const fit = getDietFit(fallback.compatibleWith, userFlags);
+                      const fallbackPpd = proteinPerDollar(fallback.protein, fallback.price);
+                      const fallbackPpdColor = ppdColor(fallbackPpd);
                       return (
                         <div key={place.id} style={{
                           background: CARD, borderRadius: 18, padding: 14,
                           border: `1px solid ${BORDER}`, marginBottom: 10,
-                          display: 'flex', alignItems: 'center', gap: 12,
                           boxShadow: SHADOW,
                         }}>
-                          <div style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(30,127,92,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>
-                            {place.emoji}
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                            <div style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(30,127,92,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>
+                              {place.emoji}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2, flexWrap: 'wrap' }}>
+                                <span style={{ fontSize: 14, fontWeight: 800, color: FG1 }}>{place.name}</span>
+                                <span style={{
+                                  fontSize: 9, fontWeight: 800, padding: '2px 6px', borderRadius: 6,
+                                  background: 'rgba(139,149,167,0.10)', border: `1px solid ${BORDER}`,
+                                  color: FG3,
+                                }}>
+                                  ⚡ Estimated
+                                </span>
+                              </div>
+                              <div style={{ fontSize: 11, color: FG3, marginBottom: 6 }}>
+                                {place.type} · {place.distance}{place.rating ? ` · ⭐ ${place.rating.toFixed(1)}` : ''} · {place.hours}
+                              </div>
+                              {/* Fallback dish info */}
+                              <div style={{ marginBottom: 6 }}>
+                                <div style={{ fontSize: 12, fontWeight: 700, color: FG1, marginBottom: 2 }}>
+                                  {fallback.emoji} {fallback.dish}
+                                </div>
+                                <div style={{ fontSize: 11, color: FG2 }}>
+                                  ~${fallback.price.toFixed(2)} · P{fallback.protein}g · C{fallback.carbs}g · F{fallback.fat}g · {fallback.calories}kcal
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
+                                <span style={{
+                                  fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 6,
+                                  background: `${fallbackPpdColor}14`, border: `1px solid ${fallbackPpdColor}30`, color: fallbackPpdColor,
+                                }}>
+                                  {fallbackPpd}g/$
+                                </span>
+                                <DietBadge fit={fit} />
+                              </div>
+                            </div>
+                            <a href={place.mapsUrl} target="_blank" rel="noopener noreferrer" style={{
+                              flexShrink: 0, background: GREEN, color: '#fff',
+                              borderRadius: 10, padding: '8px 12px', fontSize: 11, fontWeight: 700,
+                              textDecoration: 'none', boxShadow: '0 2px 8px rgba(30,127,92,0.22)',
+                              alignSelf: 'flex-start',
+                            }}>Map →</a>
                           </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 14, fontWeight: 800, color: FG1, marginBottom: 2 }}>{place.name}</div>
-                            <div style={{ fontSize: 11, color: FG3, marginBottom: 4 }}>
-                              {place.type} · {place.distance}{place.rating ? ` · ⭐ ${place.rating.toFixed(1)}` : ''} · {place.hours}
-                            </div>
-                            <div style={{ fontSize: 11, color: FG2, marginBottom: 5 }}>
-                              Try: <strong style={{ color: FG1 }}>{fallback.dish}</strong> · ~${fallback.price.toFixed(2)} · P{fallback.protein}g · {fallback.calories}kcal
-                            </div>
-                            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
-                              <PpdBadge protein={fallback.protein} price={fallback.price} />
-                              <DietBadge fit={fit} />
-                              <span style={{ fontSize: 9, color: FG3, fontStyle: 'italic' }}>estimated · not in DB</span>
-                            </div>
-                          </div>
-                          <a href={place.mapsUrl} target="_blank" rel="noopener noreferrer" style={{
-                            flexShrink: 0, background: GREEN, color: '#fff',
-                            borderRadius: 10, padding: '8px 12px', fontSize: 11, fontWeight: 700,
-                            textDecoration: 'none', boxShadow: '0 2px 8px rgba(30,127,92,0.22)',
-                          }}>Map →</a>
                         </div>
                       );
                     })}
