@@ -1,7 +1,12 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import {
+  AreaChart, Area, XAxis, YAxis, Tooltip,
+  ResponsiveContainer, ReferenceLine,
+} from 'recharts';
 import { useStrideStore } from '@/lib/store';
+import { api } from '@/lib/apiClient';
 
 // ── Design tokens ──────────────────────────────────────────────────────────
 const T = {
@@ -19,6 +24,36 @@ const T = {
   blue:          '#2E6FB8',
   fontDisplay:   "'Anton', Impact, sans-serif",
 } as const;
+
+// ── Types ──────────────────────────────────────────────────────────────────
+interface DaySummary {
+  date:            string;
+  totalCalories:   number;
+  totalProteinG:   number;
+  totalCarbsG:     number;
+  totalFatG:       number;
+  totalWaterMl:    number;
+  caloriesBurned:  number;
+  activeMins:      number;
+  netCalories:     number;
+  targetCalories:  number | null;
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function getLast7Dates(): string[] {
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    return d.toISOString().slice(0, 10);
+  });
+}
+
+function dayLabel(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00');
+  const today = new Date().toISOString().slice(0, 10);
+  if (dateStr === today) return 'Today';
+  return d.toLocaleDateString('en-US', { weekday: 'short' });
+}
 
 // ── Status chip ────────────────────────────────────────────────────────────
 function StatusChip({ state }: { state: 'on_track' | 'close' | 'over' }) {
@@ -43,7 +78,7 @@ function StatusChip({ state }: { state: 'on_track' | 'close' | 'over' }) {
 function CalorieHeroCard({
   net, goal, consumed, burned,
 }: { net: number; goal: number; consumed: number; burned: number }) {
-  const remaining  = goal - net;          // positive = left, negative = over
+  const remaining  = goal - net;
   const over       = remaining < -50;
   const close      = !over && remaining < goal * 0.10;
   const chipState: 'on_track' | 'close' | 'over' = over ? 'over' : close ? 'close' : 'on_track';
@@ -61,7 +96,6 @@ function CalorieHeroCard({
       padding: '20px 20px 18px',
       marginBottom: 12,
     }}>
-      {/* Top row: label + chip */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <span style={{
           fontSize: 11, fontWeight: 700, letterSpacing: '0.08em',
@@ -72,7 +106,6 @@ function CalorieHeroCard({
         <StatusChip state={chipState} />
       </div>
 
-      {/* Big numeral */}
       <div style={{
         fontFamily: T.fontDisplay,
         fontSize: 96,
@@ -84,12 +117,10 @@ function CalorieHeroCard({
         {Math.abs(remaining)}
       </div>
 
-      {/* Sub-label */}
       <div style={{ fontSize: 13, color: T.textMuted, marginBottom: 14 }}>
         {consumed} in &nbsp;·&nbsp; {burned} out &nbsp;·&nbsp; {goal} goal
       </div>
 
-      {/* Progress bar */}
       <div>
         <div style={{
           height: 8, background: T.border, borderRadius: 4, overflow: 'hidden', marginBottom: 6,
@@ -107,6 +138,260 @@ function CalorieHeroCard({
           <span style={{ fontSize: 12, color: T.textMuted }}>{goal} kcal</span>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── 7-day trend chart ──────────────────────────────────────────────────────
+function WeeklyTrendCard({
+  history, goal, loading,
+}: { history: DaySummary[]; goal: number; loading: boolean }) {
+  const chartData = history.map(d => ({
+    day:      dayLabel(d.date),
+    calories: d.totalCalories,
+    burned:   d.caloriesBurned,
+    goal,
+    hasData:  d.totalCalories > 0,
+  }));
+
+  const avgCalories = history.length
+    ? Math.round(history.reduce((s, d) => s + d.totalCalories, 0) / history.length)
+    : 0;
+  const totalBurned = history.reduce((s, d) => s + d.caloriesBurned, 0);
+  const activeDays  = history.filter(d => d.caloriesBurned > 0 || d.totalCalories > 0).length;
+
+  return (
+    <div style={{
+      background: T.card,
+      borderRadius: 20,
+      border: `1px solid ${T.border}`,
+      boxShadow: T.shadowCard,
+      padding: '16px 16px 12px',
+      marginBottom: 12,
+    }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+        <span style={{
+          fontSize: 11, fontWeight: 700, letterSpacing: '0.08em',
+          color: T.textMuted, textTransform: 'uppercase',
+        }}>
+          7-Day History
+        </span>
+        <Link href="/me" style={{ fontSize: 13, fontWeight: 600, color: T.blue, textDecoration: 'none' }}>
+          Full log →
+        </Link>
+      </div>
+
+      {/* Stats row */}
+      <div style={{ display: 'flex', gap: 0, marginBottom: 16 }}>
+        {[
+          { label: 'Avg calories', value: loading ? '–' : `${avgCalories}`, unit: 'kcal/day', color: T.textPrimary },
+          { label: 'Total burned', value: loading ? '–' : `${totalBurned}`,  unit: 'kcal',     color: T.amber },
+          { label: 'Active days',  value: loading ? '–' : `${activeDays}`,   unit: '/ 7',       color: T.green },
+        ].map((s, i) => (
+          <div key={s.label} style={{
+            flex: 1,
+            borderLeft: i > 0 ? `1px solid ${T.border}` : 'none',
+            paddingLeft: i > 0 ? 12 : 0,
+            marginLeft:  i > 0 ? 12 : 0,
+          }}>
+            <div style={{ fontSize: 11, color: T.textMuted, fontWeight: 600, marginBottom: 2 }}>
+              {s.label}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
+              <span style={{ fontSize: 20, fontWeight: 700, fontFamily: T.fontDisplay, color: s.color }}>
+                {s.value}
+              </span>
+              <span style={{ fontSize: 10, color: T.textMuted }}>{s.unit}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Chart */}
+      {loading ? (
+        <div style={{ height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontSize: 12, color: T.textMuted }}>Loading history…</span>
+        </div>
+      ) : (
+        <ResponsiveContainer width="100%" height={100}>
+          <AreaChart data={chartData} margin={{ top: 4, right: 0, left: -32, bottom: 0 }}>
+            <defs>
+              <linearGradient id="calGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%"  stopColor={T.green} stopOpacity={0.18} />
+                <stop offset="95%" stopColor={T.green} stopOpacity={0} />
+              </linearGradient>
+              <linearGradient id="burnGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%"  stopColor={T.amber} stopOpacity={0.18} />
+                <stop offset="95%" stopColor={T.amber} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <XAxis
+              dataKey="day"
+              tick={{ fontSize: 10, fill: T.textMuted }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis hide domain={[0, Math.max(goal * 1.2, 500)]} />
+            <Tooltip
+              contentStyle={{
+                background: T.card, border: `1px solid ${T.border}`,
+                borderRadius: 10, fontSize: 11, boxShadow: T.shadowCard,
+              }}
+              formatter={(val: number, name: string) => [
+                `${val} kcal`,
+                name === 'calories' ? 'Consumed' : 'Burned',
+              ]}
+              labelStyle={{ color: T.textPrimary, fontWeight: 700, marginBottom: 2 }}
+            />
+            <ReferenceLine
+              y={goal}
+              stroke={T.textMuted}
+              strokeDasharray="4 3"
+              strokeWidth={1}
+            />
+            <Area
+              type="monotone"
+              dataKey="calories"
+              stroke={T.green}
+              strokeWidth={2}
+              fill="url(#calGrad)"
+              dot={false}
+              activeDot={{ r: 4, fill: T.green, strokeWidth: 0 }}
+            />
+            <Area
+              type="monotone"
+              dataKey="burned"
+              stroke={T.amber}
+              strokeWidth={1.5}
+              fill="url(#burnGrad)"
+              strokeDasharray="4 3"
+              dot={false}
+              activeDot={{ r: 4, fill: T.amber, strokeWidth: 0 }}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      )}
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 14, justifyContent: 'center', marginTop: 6 }}>
+        {[
+          { color: T.green, label: 'Consumed', dash: false },
+          { color: T.amber, label: 'Burned',   dash: true  },
+          { color: T.textMuted, label: 'Goal', dash: true  },
+        ].map(l => (
+          <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div style={{
+              width: 16, height: 2,
+              background: l.dash
+                ? `repeating-linear-gradient(90deg,${l.color} 0 3px,transparent 3px 6px)`
+                : l.color,
+            }} />
+            <span style={{ fontSize: 10, color: T.textMuted }}>{l.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Activity summary ───────────────────────────────────────────────────────
+function ActivitySummaryCard({
+  entries, weekBurned, weekMins,
+}: {
+  entries: Array<{ id: string; emoji: string; name: string; caloriesBurned: number; durationMins: number }>;
+  weekBurned: number;
+  weekMins: number;
+}) {
+  const todayBurned = entries.reduce((s, e) => s + e.caloriesBurned, 0);
+  const todayMins   = entries.reduce((s, e) => s + e.durationMins, 0);
+
+  return (
+    <div style={{
+      background: T.card,
+      borderRadius: 20,
+      border: `1px solid ${T.border}`,
+      boxShadow: T.shadowCard,
+      padding: 16,
+      marginBottom: 12,
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+        <span style={{
+          fontSize: 11, fontWeight: 700, letterSpacing: '0.08em',
+          color: T.textMuted, textTransform: 'uppercase',
+        }}>
+          Activity
+        </span>
+        <Link href="/log?tab=activity" style={{
+          fontSize: 13, fontWeight: 600, color: T.amber, textDecoration: 'none',
+        }}>
+          + Log
+        </Link>
+      </div>
+
+      {/* Stats */}
+      <div style={{ display: 'flex', gap: 0, marginBottom: entries.length > 0 ? 14 : 0 }}>
+        {[
+          { label: 'Today burned', value: todayBurned,  unit: 'kcal', color: T.amber },
+          { label: 'Active mins',  value: todayMins,    unit: 'min',  color: T.blue  },
+          { label: '7-day burned', value: weekBurned,   unit: 'kcal', color: T.green },
+        ].map((s, i) => (
+          <div key={s.label} style={{
+            flex: 1,
+            borderLeft: i > 0 ? `1px solid ${T.border}` : 'none',
+            paddingLeft: i > 0 ? 12 : 0,
+            marginLeft:  i > 0 ? 12 : 0,
+          }}>
+            <div style={{ fontSize: 10, color: T.textMuted, fontWeight: 600, marginBottom: 2 }}>
+              {s.label}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
+              <span style={{ fontSize: 20, fontWeight: 700, fontFamily: T.fontDisplay, color: s.color }}>
+                {s.value}
+              </span>
+              <span style={{ fontSize: 10, color: T.textMuted }}>{s.unit}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Today's activity list */}
+      {entries.length > 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {entries.map(e => (
+            <div key={e.id} style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '6px 8px',
+              background: 'rgba(242,169,59,0.05)',
+              borderRadius: 10,
+              border: `1px solid rgba(242,169,59,0.12)`,
+            }}>
+              <span style={{ fontSize: 18 }}>{e.emoji}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: T.textPrimary }}>{e.name}</div>
+                <div style={{ fontSize: 11, color: T.textMuted }}>{e.durationMins} min</div>
+              </div>
+              <span style={{ fontSize: 13, fontWeight: 700, color: T.amber }}>
+                -{e.caloriesBurned} kcal
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <Link href="/log?tab=activity" style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          padding: '14px 0', textDecoration: 'none',
+          background: 'rgba(242,169,59,0.05)',
+          borderRadius: 12,
+          border: `1px dashed rgba(242,169,59,0.25)`,
+          marginTop: 2,
+        }}>
+          <span style={{ fontSize: 20 }}>⚡</span>
+          <span style={{ fontSize: 13, color: T.amber, fontWeight: 600 }}>
+            Log today&apos;s activity
+          </span>
+        </Link>
+      )}
     </div>
   );
 }
@@ -178,19 +463,68 @@ export default function DashboardPage() {
   const challenges = store.getDailyChallenges();
   const streak     = store.streak;
 
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletingId,  setDeletingId]  = useState<string | null>(null);
+  const [history,     setHistory]     = useState<DaySummary[]>([]);
+  const [histLoading, setHistLoading] = useState(true);
+
+  // ── On mount: pull live data from Firestore ────────────────────────────
+  useEffect(() => {
+    // 1. Sync today's logs (food, activity, water, streak) into the Zustand store
+    store.loadTodayFromServer().catch(() => {/* offline — local state serves fine */});
+
+    // 2. Fetch the last 7 days of daily summaries for the trend chart
+    const dates = getLast7Dates();
+    Promise.all(dates.map(d => api.summary.getByDate(d).catch(() => null)))
+      .then(results => {
+        const filled: DaySummary[] = dates.map((date, i) => {
+          const r = results[i] as DaySummary | null;
+          return r
+            ? { ...r, date }
+            : {
+                date,
+                totalCalories:  0,
+                totalProteinG:  0,
+                totalCarbsG:    0,
+                totalFatG:      0,
+                totalWaterMl:   0,
+                caloriesBurned: 0,
+                activeMins:     0,
+                netCalories:    0,
+                targetCalories: profile.targetCalories ?? null,
+              };
+        });
+        setHistory(filled);
+      })
+      .finally(() => setHistLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const consumed = totals.calories;
   const net      = Math.max(0, consumed - burned);
 
   const h = new Date().getHours();
-  const greet = h < 5 ? 'NIGHT OWL' : h < 12 ? 'GOOD MORNING' : h < 17 ? 'GOOD AFTERNOON' : 'GOOD EVENING';
+  // greet is declared but used as a potential future feature — keeping for now
+  const _greet = h < 5 ? 'NIGHT OWL' : h < 12 ? 'GOOD MORNING' : h < 17 ? 'GOOD AFTERNOON' : 'GOOD EVENING';
 
   const doneCount = challenges.filter(c => c.done).length;
 
+  // Week-level stats derived from history
+  const weekBurned = history.reduce((s, d) => s + d.caloriesBurned, 0);
+  const weekMins   = history.reduce((s, d) => s + d.activeMins, 0);
+
   const handleDeleteFood = (id: string) => {
     setDeletingId(id);
-    setTimeout(() => { store.removeFoodEntry(id); setDeletingId(null); }, 280);
+    setTimeout(() => {
+      store.removeFoodEntry(id);
+      setDeletingId(null);
+      // Recompute summary so history reflects the deletion
+      api.summary.recompute().then(updated => {
+        if (!updated) return;
+        setHistory(prev => prev.map(d =>
+          d.date === updated.date ? { ...d, ...updated } : d
+        ));
+      }).catch(() => {/* silently ignore */});
+    }, 280);
   };
 
   const dateLabel = new Date().toLocaleDateString('en-US', {
@@ -206,14 +540,12 @@ export default function DashboardPage() {
         display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
       }}>
         <div>
-          {/* Eyebrow */}
           <p style={{
             fontSize: 11, fontWeight: 700, letterSpacing: '0.08em',
             color: T.textMuted, textTransform: 'uppercase', margin: '0 0 4px',
           }}>
             {dateLabel}
           </p>
-          {/* Title */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <h1 style={{
               fontFamily: T.fontDisplay,
@@ -232,10 +564,7 @@ export default function DashboardPage() {
                 display: 'inline-flex', alignItems: 'center', gap: 4,
               }}>
                 <span style={{ fontSize: 14 }}>🔥</span>
-                <span style={{
-                  fontSize: 13, fontWeight: 700,
-                  color: T.amber, lineHeight: 1,
-                }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: T.amber, lineHeight: 1 }}>
                   {streak}d
                 </span>
               </div>
@@ -243,7 +572,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Avatar */}
         <Link href="/me" style={{
           width: 40, height: 40, borderRadius: '50%',
           background: 'rgba(15,27,45,0.06)',
@@ -302,6 +630,13 @@ export default function DashboardPage() {
           />
         </div>
 
+        {/* ── 7-day trend chart ── */}
+        <WeeklyTrendCard
+          history={history}
+          goal={profile.targetCalories}
+          loading={histLoading}
+        />
+
         {/* ── Macros card ── */}
         <Card>
           <SectionLabel>Today&apos;s Macros</SectionLabel>
@@ -339,18 +674,13 @@ export default function DashboardPage() {
                       {m.label}
                     </span>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
-                      <span style={{
-                        fontSize: 15, fontWeight: 700,
-                        color: over ? T.red : m.color,
-                      }}>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: over ? T.red : m.color }}>
                         {m.val}
                       </span>
                       <span style={{ fontSize: 12, color: T.textMuted }}>&nbsp;/ {m.goal} g</span>
                     </div>
                   </div>
-                  <div style={{
-                    height: 8, background: T.border, borderRadius: 4, overflow: 'hidden',
-                  }}>
+                  <div style={{ height: 8, background: T.border, borderRadius: 4, overflow: 'hidden' }}>
                     <div style={{
                       height: '100%',
                       width: `${pct * 100}%`,
@@ -365,10 +695,17 @@ export default function DashboardPage() {
           </div>
         </Card>
 
-        {/* ── Today's Food card ── */}
+        {/* ── Activity summary (always shown) ── */}
+        <ActivitySummaryCard
+          entries={todayAct}
+          weekBurned={weekBurned}
+          weekMins={weekMins}
+        />
+
+        {/* ── Today's Food log ── */}
         <Card>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-            <SectionLabel>Recent</SectionLabel>
+            <SectionLabel>Today&apos;s Food</SectionLabel>
             <Link href="/log" style={{
               fontSize: 13, fontWeight: 600, color: T.green, textDecoration: 'none', marginTop: -4,
             }}>
@@ -377,12 +714,18 @@ export default function DashboardPage() {
           </div>
 
           {todayFood.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '18px 0' }}>
-              <div style={{ fontSize: 32, marginBottom: 8 }}>🍽️</div>
-              <div style={{ fontSize: 13, color: T.textMuted, fontWeight: 500 }}>
-                Nothing logged yet
-              </div>
-            </div>
+            <Link href="/log" style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              padding: '14px 0', textDecoration: 'none',
+              background: 'rgba(30,127,92,0.04)',
+              borderRadius: 12,
+              border: `1px dashed rgba(30,127,92,0.20)`,
+            }}>
+              <span style={{ fontSize: 20 }}>🍽️</span>
+              <span style={{ fontSize: 13, color: T.green, fontWeight: 600 }}>
+                Log your first meal
+              </span>
+            </Link>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {todayFood.slice(-5).map(e => (
@@ -434,33 +777,6 @@ export default function DashboardPage() {
           )}
         </Card>
 
-        {/* ── Today's Activity card ── */}
-        {todayAct.length > 0 && (
-          <Card>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-              <SectionLabel>Activity</SectionLabel>
-              <Link href="/log?tab=activity" style={{
-                fontSize: 13, fontWeight: 600, color: T.amber, textDecoration: 'none', marginTop: -4,
-              }}>
-                + Add
-              </Link>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {todayAct.map(e => (
-                <div key={e.id} style={{
-                  display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0',
-                }}>
-                  <span style={{ fontSize: 20 }}>{e.emoji}</span>
-                  <span style={{ flex: 1, fontSize: 14, color: T.textPrimary }}>{e.name}</span>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: T.amber }}>
-                    -{e.caloriesBurned} kcal
-                  </span>
-                </div>
-              ))}
-            </div>
-          </Card>
-        )}
-
         {/* ── Daily Challenges card ── */}
         <Card>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
@@ -492,9 +808,7 @@ export default function DashboardPage() {
                   }}>
                     {ch.label}
                   </div>
-                  <div style={{
-                    height: 4, background: T.border, borderRadius: 2, overflow: 'hidden',
-                  }}>
+                  <div style={{ height: 4, background: T.border, borderRadius: 2, overflow: 'hidden' }}>
                     <div style={{
                       height: '100%',
                       borderRadius: 2,
@@ -507,12 +821,7 @@ export default function DashboardPage() {
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
                   {ch.done
                     ? <span style={{ fontSize: 18 }}>✅</span>
-                    : <span style={{
-                        fontSize: 11, fontWeight: 700,
-                        color: T.textMuted,
-                      }}>
-                        +{ch.xp} XP
-                      </span>
+                    : <span style={{ fontSize: 11, fontWeight: 700, color: T.textMuted }}>+{ch.xp} XP</span>
                   }
                 </div>
               </div>
