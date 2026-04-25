@@ -55,6 +55,11 @@ function dayLabel(dateStr: string): string {
   return d.toLocaleDateString('en-US', { weekday: 'short' });
 }
 
+// ── Thin divider ───────────────────────────────────────────────────────────
+function Divider() {
+  return <div style={{ height: 1, background: T.border, margin: '16px 0' }} />;
+}
+
 // ── Status chip ────────────────────────────────────────────────────────────
 function StatusChip({ state }: { state: 'on_track' | 'close' | 'over' }) {
   const map = {
@@ -74,7 +79,196 @@ function StatusChip({ state }: { state: 'on_track' | 'close' | 'over' }) {
   );
 }
 
-// ── Hero calorie card ──────────────────────────────────────────────────────
+// ── Consolidated today card ────────────────────────────────────────────────
+function TodayStatsCard({
+  consumed, burned, goal,
+  protein, proteinGoal,
+  carbs, carbsGoal,
+  fat, fatGoal,
+  actEntries, weekBurned,
+}: {
+  consumed: number; burned: number; goal: number;
+  protein: number;  proteinGoal: number;
+  carbs: number;    carbsGoal: number;
+  fat: number;      fatGoal: number;
+  actEntries: Array<{ id: string; emoji: string; name: string; caloriesBurned: number; durationMins: number }>;
+  weekBurned: number;
+}) {
+  const net       = Math.max(0, consumed - burned);
+  const remaining = goal - net;
+  const over      = remaining < -50;
+  const close     = !over && remaining < goal * 0.10;
+  const chipState: 'on_track' | 'close' | 'over' = over ? 'over' : close ? 'close' : 'on_track';
+  const pct       = Math.min(net / Math.max(goal, 1), 1);
+  const barColor  = over ? T.red : close ? T.amber : T.green;
+  const numColor  = over ? T.red : T.textPrimary;
+
+  const todayBurned = actEntries.reduce((s, e) => s + e.caloriesBurned, 0);
+  const todayMins   = actEntries.reduce((s, e) => s + e.durationMins,   0);
+
+  const macros = [
+    { label: 'Protein', val: protein, goal: proteinGoal, color: T.blue     },
+    { label: 'Carbs',   val: carbs,   goal: carbsGoal,   color: '#C98A2E'  },
+    { label: 'Fat',     val: fat,     goal: fatGoal,      color: T.green    },
+  ];
+
+  return (
+    <div style={{
+      background: T.card,
+      borderRadius: 24,
+      border: `1px solid ${T.border}`,
+      boxShadow: T.shadowHero,
+      padding: '20px 20px 16px',
+      marginBottom: 12,
+    }}>
+      {/* ── Calories section ── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: T.textMuted, textTransform: 'uppercase' }}>
+          Calories Today
+        </span>
+        <StatusChip state={chipState} />
+      </div>
+
+      {/* Big remaining number */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, marginBottom: 6 }}>
+        <div style={{
+          fontFamily: T.fontDisplay, fontSize: 72, lineHeight: 0.92,
+          color: numColor, fontVariantNumeric: 'tabular-nums',
+        }}>
+          {Math.abs(remaining)}
+        </div>
+        <div style={{ paddingBottom: 6 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: numColor }}>kcal</div>
+          <div style={{ fontSize: 11, color: T.textMuted }}>{remaining >= 0 ? 'remaining' : 'over goal'}</div>
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div style={{ height: 7, background: T.border, borderRadius: 4, overflow: 'hidden', marginBottom: 6 }}>
+        <div style={{
+          height: '100%', width: `${pct * 100}%`,
+          background: barColor, borderRadius: 4,
+          transition: 'width 0.8s cubic-bezier(.4,0,.2,1)',
+        }} />
+      </div>
+
+      {/* Eaten · Burned · Goal */}
+      <div style={{ display: 'flex', gap: 0, marginBottom: 0 }}>
+        {[
+          { label: 'Eaten',  value: consumed, color: T.textPrimary },
+          { label: 'Burned', value: burned,   color: T.amber       },
+          { label: 'Goal',   value: goal,     color: T.textMuted   },
+        ].map((s, i) => (
+          <div key={s.label} style={{
+            flex: 1, textAlign: i === 0 ? 'left' : i === 2 ? 'right' : 'center',
+          }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: s.color }}>{s.value}</span>
+            <span style={{ fontSize: 11, color: T.textMuted }}> {s.label}</span>
+          </div>
+        ))}
+      </div>
+
+      <Divider />
+
+      {/* ── Macros section ── */}
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: T.textMuted, textTransform: 'uppercase', marginBottom: 12 }}>
+        Macros
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {macros.map(m => {
+          const pct  = Math.min(m.val / Math.max(m.goal, 1), 1);
+          const over = m.val > m.goal;
+          return (
+            <div key={m.label}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 5 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: T.textSecondary }}>{m.label}</span>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: over ? T.red : m.color }}>{m.val}</span>
+                  <span style={{ fontSize: 11, color: T.textMuted }}>&nbsp;/ {m.goal} g</span>
+                </div>
+              </div>
+              <div style={{ height: 7, background: T.border, borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%', width: `${pct * 100}%`,
+                  background: over ? T.red : m.color, borderRadius: 4,
+                  transition: 'width 0.6s cubic-bezier(.4,0,.2,1)',
+                }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <Divider />
+
+      {/* ── Activity section ── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: T.textMuted, textTransform: 'uppercase' }}>
+          Activity
+        </div>
+        <Link href="/log?tab=activity" style={{ fontSize: 13, fontWeight: 600, color: T.amber, textDecoration: 'none' }}>
+          + Log
+        </Link>
+      </div>
+
+      {/* Always-visible stats row */}
+      <div style={{ display: 'flex', gap: 0, marginBottom: actEntries.length > 0 ? 12 : 0 }}>
+        {[
+          { label: 'Burned today', value: todayBurned, unit: 'kcal', color: todayBurned > 0 ? T.amber : T.textMuted },
+          { label: 'Active mins',  value: todayMins,   unit: 'min',  color: todayMins   > 0 ? T.blue  : T.textMuted },
+          { label: '7-day burned', value: weekBurned,  unit: 'kcal', color: weekBurned  > 0 ? T.green : T.textMuted },
+        ].map((s, i) => (
+          <div key={s.label} style={{
+            flex: 1,
+            borderLeft: i > 0 ? `1px solid ${T.border}` : 'none',
+            paddingLeft: i > 0 ? 12 : 0,
+            marginLeft:  i > 0 ? 12 : 0,
+          }}>
+            <div style={{ fontSize: 10, color: T.textMuted, fontWeight: 600, marginBottom: 2 }}>{s.label}</div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
+              <span style={{ fontSize: 18, fontWeight: 700, fontFamily: T.fontDisplay, color: s.color }}>
+                {s.value}
+              </span>
+              <span style={{ fontSize: 10, color: T.textMuted }}>{s.unit}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Activity entries or CTA */}
+      {actEntries.length > 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {actEntries.map(e => (
+            <div key={e.id} style={{
+              display: 'flex', alignItems: 'center', gap: 10, padding: '6px 8px',
+              background: 'rgba(242,169,59,0.05)', borderRadius: 10,
+              border: `1px solid rgba(242,169,59,0.12)`,
+            }}>
+              <span style={{ fontSize: 18 }}>{e.emoji}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: T.textPrimary }}>{e.name}</div>
+                <div style={{ fontSize: 11, color: T.textMuted }}>{e.durationMins} min</div>
+              </div>
+              <span style={{ fontSize: 13, fontWeight: 700, color: T.amber }}>-{e.caloriesBurned} kcal</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <Link href="/log?tab=activity" style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          padding: '12px 0', marginTop: 10, textDecoration: 'none',
+          background: 'rgba(242,169,59,0.05)', borderRadius: 12,
+          border: `1px dashed rgba(242,169,59,0.25)`,
+        }}>
+          <span style={{ fontSize: 18 }}>⚡</span>
+          <span style={{ fontSize: 13, color: T.amber, fontWeight: 600 }}>Log today&apos;s activity</span>
+        </Link>
+      )}
+    </div>
+  );
+}
+
+// ── (legacy — kept for ref, not used in JSX) ───────────────────────────────
 function CalorieHeroCard({
   net, goal, consumed, burned,
 }: { net: number; goal: number; consumed: number; burned: number }) {
@@ -641,12 +835,19 @@ export default function DashboardPage() {
 
       <div style={{ padding: '16px 16px 100px' }}>
 
-        {/* ── Hero Calorie Card ── */}
-        <CalorieHeroCard
-          net={net}
-          goal={profile.targetCalories}
+        {/* ── Consolidated today card ── */}
+        <TodayStatsCard
           consumed={consumed}
           burned={burned}
+          goal={profile.targetCalories}
+          protein={totals.protein}
+          proteinGoal={profile.targetProtein || Math.round((profile.targetCalories * 0.30) / 4)}
+          carbs={totals.carbs}
+          carbsGoal={profile.targetCarbs || Math.round((profile.targetCalories * 0.45) / 4)}
+          fat={totals.fat}
+          fatGoal={profile.targetFat || Math.round((profile.targetCalories * 0.25) / 9)}
+          actEntries={todayAct}
+          weekBurned={weekBurned}
         />
 
         {/* ── Quick action row ── */}
@@ -692,104 +893,6 @@ export default function DashboardPage() {
           history={history}
           goal={profile.targetCalories}
           loading={histLoading}
-        />
-
-        {/* ── Macros card ── */}
-        <Card>
-          <SectionLabel>Today&apos;s Macros</SectionLabel>
-
-          {totals.protein === 0 && totals.carbs === 0 && totals.fat === 0 ? (
-            /* Empty state — targets overview with greyed bars */
-            <div>
-              <div style={{
-                display: 'flex', gap: 8, marginBottom: 14,
-              }}>
-                {[
-                  { label: 'Protein', goal: profile.targetProtein || Math.round((profile.targetCalories * 0.30) / 4), color: T.blue, unit: 'g' },
-                  { label: 'Carbs',   goal: profile.targetCarbs   || Math.round((profile.targetCalories * 0.45) / 4), color: '#C98A2E', unit: 'g' },
-                  { label: 'Fat',     goal: profile.targetFat     || Math.round((profile.targetCalories * 0.25) / 9), color: T.green, unit: 'g' },
-                ].map(m => (
-                  <div key={m.label} style={{
-                    flex: 1, textAlign: 'center',
-                    background: T.canvas, borderRadius: 14, padding: '10px 6px',
-                    border: `1px solid ${T.border}`,
-                  }}>
-                    <div style={{ fontSize: 16, fontWeight: 800, color: T.textMuted }}>–</div>
-                    <div style={{ fontSize: 9, fontWeight: 700, color: T.textMuted, marginTop: 2 }}>/ {m.goal}{m.unit}</div>
-                    <div style={{ fontSize: 9, color: T.textMuted, marginTop: 1 }}>{m.label}</div>
-                  </div>
-                ))}
-              </div>
-              <div style={{
-                textAlign: 'center', padding: '4px 0 2px',
-                fontSize: 12, color: T.textMuted,
-              }}>
-                Log food to see your macro breakdown
-              </div>
-            </div>
-          ) : (
-            /* Active state — filled progress bars */
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {[
-                {
-                  label: 'Protein',
-                  val:   totals.protein,
-                  goal:  profile.targetProtein || Math.round((profile.targetCalories * 0.30) / 4),
-                  color: T.blue,
-                },
-                {
-                  label: 'Carbs',
-                  val:   totals.carbs,
-                  goal:  profile.targetCarbs || Math.round((profile.targetCalories * 0.45) / 4),
-                  color: '#C98A2E',
-                },
-                {
-                  label: 'Fat',
-                  val:   totals.fat,
-                  goal:  profile.targetFat || Math.round((profile.targetCalories * 0.25) / 9),
-                  color: T.green,
-                },
-              ].map(m => {
-                const pct  = Math.min(m.val / Math.max(m.goal, 1), 1);
-                const over = m.val > m.goal;
-                const barColor = over ? T.red : m.color;
-                return (
-                  <div key={m.label}>
-                    <div style={{
-                      display: 'flex', justifyContent: 'space-between',
-                      alignItems: 'baseline', marginBottom: 6,
-                    }}>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: T.textSecondary }}>
-                        {m.label}
-                      </span>
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
-                        <span style={{ fontSize: 15, fontWeight: 700, color: over ? T.red : m.color }}>
-                          {m.val}
-                        </span>
-                        <span style={{ fontSize: 12, color: T.textMuted }}>&nbsp;/ {m.goal} g</span>
-                      </div>
-                    </div>
-                    <div style={{ height: 8, background: T.border, borderRadius: 4, overflow: 'hidden' }}>
-                      <div style={{
-                        height: '100%',
-                        width: `${pct * 100}%`,
-                        background: barColor,
-                        borderRadius: 4,
-                        transition: 'width 0.6s cubic-bezier(.4,0,.2,1)',
-                      }} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </Card>
-
-        {/* ── Activity summary (always shown) ── */}
-        <ActivitySummaryCard
-          entries={todayAct}
-          weekBurned={weekBurned}
-          weekMins={weekMins}
         />
 
         {/* ── Today's Food log ── */}
