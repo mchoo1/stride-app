@@ -177,7 +177,7 @@ function WeeklyTrendCard({
         }}>
           7-Day History
         </span>
-        <Link href="/me" style={{ fontSize: 13, fontWeight: 600, color: T.blue, textDecoration: 'none' }}>
+        <Link href="/log/history" style={{ fontSize: 13, fontWeight: 600, color: T.blue, textDecoration: 'none' }}>
           Full log →
         </Link>
       </div>

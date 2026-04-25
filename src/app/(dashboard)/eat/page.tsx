@@ -879,7 +879,33 @@ export default function EatPage() {
                   </>
                 )}
                 {searchResults.restaurants.length === 0 && searchResults.items.length === 0 && (
-                  <EmptyState emoji="🔍" title="No results" subtitle={`"${query}" not found in the database yet.\nCheck back as more restaurants are added.`} />
+                  query.trim().length > 0 ? (
+                    <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, padding: '28px 20px', textAlign: 'center', boxShadow: SHADOW }}>
+                      <div style={{ fontSize: 40, marginBottom: 10 }}>🔍</div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: FG2, marginBottom: 8 }}>Not in our database yet</div>
+                      <a
+                        href={`https://www.google.com/maps/search/${encodeURIComponent(query)}+Singapore`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: 'inline-block',
+                          background: 'rgba(46,111,184,0.08)',
+                          color: '#2E6FB8',
+                          borderRadius: 12,
+                          padding: '10px 16px',
+                          fontSize: 13,
+                          fontWeight: 700,
+                          textDecoration: 'none',
+                          marginBottom: 8,
+                        }}
+                      >
+                        📍 Search on Google Maps →
+                      </a>
+                      <div style={{ fontSize: 11, color: '#8B95A7' }}>Opens Google Maps for nearby options</div>
+                    </div>
+                  ) : (
+                    <EmptyState emoji="🔍" title="No results" subtitle={`"${query}" not found in the database yet.\nCheck back as more restaurants are added.`} />
+                  )
                 )}
               </>
             )}
@@ -979,7 +1005,33 @@ export default function EatPage() {
           <>
             {searchResults?.type === 'food' && (
               searchResults.restaurants.length === 0 && searchResults.items.length === 0 ? (
-                <EmptyState emoji="🔍" title="No results" subtitle={`"${query}" not found yet. More brands coming soon.`} />
+                query.trim().length > 0 ? (
+                  <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, padding: '28px 20px', textAlign: 'center', boxShadow: SHADOW }}>
+                    <div style={{ fontSize: 40, marginBottom: 10 }}>🔍</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: FG2, marginBottom: 8 }}>Not in our database yet</div>
+                    <a
+                      href={`https://www.google.com/maps/search/${encodeURIComponent(query)}+Singapore`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'inline-block',
+                        background: 'rgba(46,111,184,0.08)',
+                        color: '#2E6FB8',
+                        borderRadius: 12,
+                        padding: '10px 16px',
+                        fontSize: 13,
+                        fontWeight: 700,
+                        textDecoration: 'none',
+                        marginBottom: 8,
+                      }}
+                    >
+                      📍 Search on Google Maps →
+                    </a>
+                    <div style={{ fontSize: 11, color: '#8B95A7' }}>Opens Google Maps for nearby options</div>
+                  </div>
+                ) : (
+                  <EmptyState emoji="🔍" title="No results" subtitle={`"${query}" not found yet. More brands coming soon.`} />
+                )
               ) : (
                 <>
                   {searchResults.restaurants.map(r => (

@@ -1,5 +1,6 @@
 'use client';
 import { Suspense, useState, useRef } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useStrideStore } from '@/lib/store';
 
@@ -40,44 +41,44 @@ const FOOD_DB = [
 // ── Activity list ─────────────────────────────────────────────────────────────
 const ACTIVITY_LIST = [
   // Distance-based
-  { id: 'run',        name: 'Running',        emoji: '🏃', met: 9.8,  hasDistance: true,  hasType: false },
-  { id: 'walk',       name: 'Walking',        emoji: '🚶', met: 3.5,  hasDistance: true,  hasType: false },
-  { id: 'cycle',      name: 'Cycling',        emoji: '🚴', met: 7.5,  hasDistance: true,  hasType: false },
-  { id: 'swim',       name: 'Swimming',       emoji: '🏊', met: 8.0,  hasDistance: true,  hasType: false },
-  { id: 'hike',       name: 'Hiking',         emoji: '🥾', met: 6.0,  hasDistance: true,  hasType: false },
+  { id: 'run',        name: 'Running',        emoji: '🏃', met: 9.8,  hasDistance: true,  hasTreadmill: true,  hasType: false },
+  { id: 'walk',       name: 'Walking',        emoji: '🚶', met: 3.5,  hasDistance: true,  hasTreadmill: true,  hasType: false },
+  { id: 'cycle',      name: 'Cycling',        emoji: '🚴', met: 7.5,  hasDistance: true,  hasTreadmill: false, hasType: false },
+  { id: 'swim',       name: 'Swimming',       emoji: '🏊', met: 8.0,  hasDistance: true,  hasTreadmill: false, hasType: false },
+  { id: 'hike',       name: 'Hiking',         emoji: '🥾', met: 6.0,  hasDistance: true,  hasTreadmill: false, hasType: false },
   // Gym / Studio
-  { id: 'gym',        name: 'Weight Training',emoji: '🏋️', met: 5.0,  hasDistance: false, hasType: false },
-  { id: 'hiit',       name: 'HIIT',           emoji: '⚡', met: 10.0, hasDistance: false, hasType: false },
-  { id: 'yoga',       name: 'Yoga',           emoji: '🧘', met: 2.5,  hasDistance: false, hasType: false },
-  { id: 'pilates',    name: 'Pilates',        emoji: '🤸', met: 3.0,  hasDistance: false, hasType: false },
-  { id: 'boxing',     name: 'Boxing',         emoji: '🥊', met: 9.0,  hasDistance: false, hasType: false },
-  { id: 'jumprope',   name: 'Jump Rope',      emoji: '🪢', met: 11.0, hasDistance: false, hasType: false },
-  { id: 'elliptical', name: 'Elliptical',     emoji: '🔄', met: 5.0,  hasDistance: false, hasType: false },
-  { id: 'rowing',     name: 'Rowing',         emoji: '🚣', met: 7.0,  hasDistance: false, hasType: false },
-  { id: 'stair',      name: 'Stair Climbing', emoji: '🪜', met: 8.0,  hasDistance: false, hasType: false },
-  { id: 'stretch',    name: 'Stretching',     emoji: '🙆', met: 2.3,  hasDistance: false, hasType: false },
+  { id: 'gym',        name: 'Weight Training',emoji: '🏋️', met: 5.0,  hasDistance: false, hasTreadmill: false, hasType: false },
+  { id: 'hiit',       name: 'HIIT',           emoji: '⚡', met: 10.0, hasDistance: false, hasTreadmill: false, hasType: false },
+  { id: 'yoga',       name: 'Yoga',           emoji: '🧘', met: 2.5,  hasDistance: false, hasTreadmill: false, hasType: false },
+  { id: 'pilates',    name: 'Pilates',        emoji: '🤸', met: 3.0,  hasDistance: false, hasTreadmill: false, hasType: false },
+  { id: 'boxing',     name: 'Boxing',         emoji: '🥊', met: 9.0,  hasDistance: false, hasTreadmill: false, hasType: false },
+  { id: 'jumprope',   name: 'Jump Rope',      emoji: '🪢', met: 11.0, hasDistance: false, hasTreadmill: false, hasType: false },
+  { id: 'elliptical', name: 'Elliptical',     emoji: '🔄', met: 5.0,  hasDistance: false, hasTreadmill: false, hasType: false },
+  { id: 'rowing',     name: 'Rowing',         emoji: '🚣', met: 7.0,  hasDistance: false, hasTreadmill: false, hasType: false },
+  { id: 'stair',      name: 'Stair Climbing', emoji: '🪜', met: 8.0,  hasDistance: false, hasTreadmill: false, hasType: false },
+  { id: 'stretch',    name: 'Stretching',     emoji: '🙆', met: 2.3,  hasDistance: false, hasTreadmill: false, hasType: false },
   // Racket sports
-  { id: 'tennis',     name: 'Tennis',         emoji: '🎾', met: 8.0,  hasDistance: false, hasType: false },
-  { id: 'badminton',  name: 'Badminton',      emoji: '🏸', met: 5.5,  hasDistance: false, hasType: false },
-  { id: 'squash',     name: 'Squash',         emoji: '🎾', met: 12.0, hasDistance: false, hasType: false },
+  { id: 'tennis',     name: 'Tennis',         emoji: '🎾', met: 8.0,  hasDistance: false, hasTreadmill: false, hasType: false },
+  { id: 'badminton',  name: 'Badminton',      emoji: '🏸', met: 5.5,  hasDistance: false, hasTreadmill: false, hasType: false },
+  { id: 'squash',     name: 'Squash',         emoji: '🎾', met: 12.0, hasDistance: false, hasTreadmill: false, hasType: false },
   // Team sports (user specifies which)
-  { id: 'soccer',     name: 'Soccer',         emoji: '⚽', met: 7.0,  hasDistance: false, hasType: false },
-  { id: 'basketball', name: 'Basketball',     emoji: '🏀', met: 6.5,  hasDistance: false, hasType: false },
-  { id: 'football',   name: 'Football',       emoji: '🏈', met: 8.0,  hasDistance: false, hasType: false },
-  { id: 'rugby',      name: 'Rugby',          emoji: '🏉', met: 8.3,  hasDistance: false, hasType: false },
-  { id: 'volleyball', name: 'Volleyball',     emoji: '🏐', met: 4.0,  hasDistance: false, hasType: false },
-  { id: 'hockey',     name: 'Hockey',         emoji: '🏒', met: 8.0,  hasDistance: false, hasType: false },
-  { id: 'cricket',    name: 'Cricket',        emoji: '🏏', met: 5.0,  hasDistance: false, hasType: false },
-  { id: 'baseball',   name: 'Baseball',       emoji: '⚾', met: 5.0,  hasDistance: false, hasType: false },
-  { id: 'netball',    name: 'Netball',        emoji: '🏐', met: 5.5,  hasDistance: false, hasType: false },
-  { id: 'handball',   name: 'Handball',       emoji: '🤾', met: 8.0,  hasDistance: false, hasType: false },
+  { id: 'soccer',     name: 'Soccer',         emoji: '⚽', met: 7.0,  hasDistance: false, hasTreadmill: false, hasType: false },
+  { id: 'basketball', name: 'Basketball',     emoji: '🏀', met: 6.5,  hasDistance: false, hasTreadmill: false, hasType: false },
+  { id: 'football',   name: 'Football',       emoji: '🏈', met: 8.0,  hasDistance: false, hasTreadmill: false, hasType: false },
+  { id: 'rugby',      name: 'Rugby',          emoji: '🏉', met: 8.3,  hasDistance: false, hasTreadmill: false, hasType: false },
+  { id: 'volleyball', name: 'Volleyball',     emoji: '🏐', met: 4.0,  hasDistance: false, hasTreadmill: false, hasType: false },
+  { id: 'hockey',     name: 'Hockey',         emoji: '🏒', met: 8.0,  hasDistance: false, hasTreadmill: false, hasType: false },
+  { id: 'cricket',    name: 'Cricket',        emoji: '🏏', met: 5.0,  hasDistance: false, hasTreadmill: false, hasType: false },
+  { id: 'baseball',   name: 'Baseball',       emoji: '⚾', met: 5.0,  hasDistance: false, hasTreadmill: false, hasType: false },
+  { id: 'netball',    name: 'Netball',        emoji: '🏐', met: 5.5,  hasDistance: false, hasTreadmill: false, hasType: false },
+  { id: 'handball',   name: 'Handball',       emoji: '🤾', met: 8.0,  hasDistance: false, hasTreadmill: false, hasType: false },
   // Other
-  { id: 'dance',      name: 'Dancing',        emoji: '💃', met: 5.5,  hasDistance: false, hasType: false },
-  { id: 'golf',       name: 'Golf',           emoji: '⛳', met: 4.5,  hasDistance: false, hasType: false },
-  { id: 'surf',       name: 'Surfing',        emoji: '🏄', met: 6.0,  hasDistance: false, hasType: false },
-  { id: 'climb',      name: 'Rock Climbing',  emoji: '🧗', met: 8.0,  hasDistance: false, hasType: false },
-  { id: 'waterpolo',  name: 'Water Polo',     emoji: '🤽', met: 10.0, hasDistance: false, hasType: false },
-  { id: 'other',      name: 'Other',          emoji: '🔥', met: 5.0,  hasDistance: false, hasType: true  },
+  { id: 'dance',      name: 'Dancing',        emoji: '💃', met: 5.5,  hasDistance: false, hasTreadmill: false, hasType: false },
+  { id: 'golf',       name: 'Golf',           emoji: '⛳', met: 4.5,  hasDistance: false, hasTreadmill: false, hasType: false },
+  { id: 'surf',       name: 'Surfing',        emoji: '🏄', met: 6.0,  hasDistance: false, hasTreadmill: false, hasType: false },
+  { id: 'climb',      name: 'Rock Climbing',  emoji: '🧗', met: 8.0,  hasDistance: false, hasTreadmill: false, hasType: false },
+  { id: 'waterpolo',  name: 'Water Polo',     emoji: '🤽', met: 10.0, hasDistance: false, hasTreadmill: false, hasType: false },
+  { id: 'other',      name: 'Other',          emoji: '🔥', met: 5.0,  hasDistance: false, hasTreadmill: false, hasType: true  },
 ];
 
 const DURATION_PRESETS = [15, 30, 45, 60, 90];
@@ -115,10 +116,13 @@ function LogInner() {
   const [scanLogged,setScanLogged]= useState(false);
 
   // ── Activity tab state ──────────────────────────────────────────────────────
+  const [actSearch,     setActSearch]     = useState('');
   const [selectedAct,   setSelectedAct]   = useState<typeof ACTIVITY_LIST[0] | null>(null);
   const [duration,      setDuration]      = useState(30);
   const [customDuration,setCustomDuration]= useState('');
   const [distance,      setDistance]      = useState('');   // km, for run/walk/cycle/swim/hike
+  const [speed,         setSpeed]         = useState('');   // km/h, treadmill
+  const [incline,       setIncline]       = useState('');   // %, treadmill
   const [activityType,  setActivityType]  = useState('');   // free-text, for "Other"
   const [customCalories,setCustomCalories]= useState('');
   const [actLogged,     setActLogged]     = useState(false);
@@ -233,9 +237,11 @@ function LogInner() {
 
   const logActivity = () => {
     if (!effectiveAct) return;
-    const distNote = distance ? ` · ${distance} km` : '';
+    const distNote    = distance ? ` · ${distance} km` : '';
+    const speedNote   = speed   ? ` · ${speed} km/h`   : '';
+    const inclineNote = incline ? ` · ${incline}% incline` : '';
     store.addActivityEntry({
-      name:           effectiveAct.name + distNote,
+      name:           effectiveAct.name + distNote + speedNote + inclineNote,
       emoji:          effectiveAct.emoji,
       durationMins:   effectiveDuration,
       caloriesBurned: burnEstimate,
@@ -245,7 +251,8 @@ function LogInner() {
     setActLogged(true);
     setTimeout(() => {
       setActLogged(false); setSelectedAct(null);
-      setCustomCalories(''); setCustomDuration(''); setDistance(''); setActivityType('');
+      setCustomCalories(''); setCustomDuration(''); setDistance('');
+      setSpeed(''); setIncline(''); setActivityType('');
     }, 1600);
   };
 
@@ -459,6 +466,27 @@ function LogInner() {
                 )}
               </>
             )}
+
+            {/* Eat page discovery banner */}
+            <div style={{
+              background: 'rgba(46,111,184,0.06)',
+              border: '1px solid rgba(46,111,184,0.14)',
+              borderRadius: 16,
+              padding: 14,
+              marginTop: 4,
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#0F1B2D', marginBottom: 2 }}>
+                🍜 Find something to eat
+              </div>
+              <div style={{ fontSize: 11, color: '#8B95A7', marginBottom: 10 }}>
+                Browse Grab &amp; Go options with full macro info
+              </div>
+              <Link href="/eat?tab=grab_go" style={{
+                fontSize: 12, color: '#2E6FB8', fontWeight: 700, textDecoration: 'none',
+              }}>
+                Browse Grab &amp; Go →
+              </Link>
+            </div>
           </div>
         )}
 
@@ -558,7 +586,16 @@ function LogInner() {
         {/* ══════════════════════ ACTIVITY TAB ══════════════════════ */}
         {tab === 'activity' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {ACTIVITY_LIST.map(a => {
+            {/* Activity search */}
+            <input
+              style={{ ...inputStyle, marginBottom: 4 }}
+              placeholder="Search activities…"
+              value={actSearch}
+              onChange={e => setActSearch(e.target.value)}
+            />
+            {ACTIVITY_LIST.filter(a =>
+              a.name.toLowerCase().includes(actSearch.toLowerCase())
+            ).map(a => {
               const isSel     = selectedAct?.id === a.id;
               const kcalMin   = Math.round(a.met * (weight) / 60);
               const intensity = a.met >= 9   ? { label: 'High',   dot: '#D04E36', badge: 'rgba(208,78,54,0.10)',   text: '#D04E36' }
@@ -570,7 +607,8 @@ function LogInner() {
                   <button
                     onClick={() => {
                       setSelectedAct(isSel ? null : a);
-                      setCustomCalories(''); setCustomDuration(''); setDistance(''); setActivityType('');
+                      setCustomCalories(''); setCustomDuration(''); setDistance('');
+                      setSpeed(''); setIncline(''); setActivityType('');
                     }}
                     style={{
                       width: '100%', display: 'flex', alignItems: 'center', gap: 12,
@@ -628,6 +666,38 @@ function LogInner() {
                             value={distance}
                             onChange={e => setDistance(e.target.value)}
                           />
+                        </div>
+                      )}
+
+                      {/* Treadmill inputs — run / walk only */}
+                      {a.hasTreadmill && (
+                        <div>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: FG2, marginBottom: 7 }}>
+                            Treadmill / Track <span style={{ fontWeight: 400, color: FG3 }}>— optional</span>
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                            <input
+                              style={inputStyle} type="number" min="0" step="0.1"
+                              placeholder="e.g. 8.5"
+                              value={speed}
+                              onChange={e => setSpeed(e.target.value)}
+                            />
+                            <input
+                              style={inputStyle} type="number" min="0" step="0.5"
+                              placeholder="e.g. 5"
+                              value={incline}
+                              onChange={e => setIncline(e.target.value)}
+                            />
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 4 }}>
+                            <div style={{ fontSize: 10, color: FG3, textAlign: 'center' }}>Speed (km/h)</div>
+                            <div style={{ fontSize: 10, color: FG3, textAlign: 'center' }}>Incline (%)</div>
+                          </div>
+                          {incline && Number(incline) > 0 && (
+                            <div style={{ fontSize: 11, color: '#2E6FB8', marginTop: 6 }}>
+                              Incline adds ~{Math.round(Number(incline) * 0.5)}% more burn
+                            </div>
+                          )}
                         </div>
                       )}
 
