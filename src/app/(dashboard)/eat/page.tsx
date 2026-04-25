@@ -398,12 +398,12 @@ function RestaurantMenuPanel({
 /* ── RestaurantCard with match bar + preview ── */
 function RestaurantCard({
   restaurant, isExpanded, onToggle, userFlags, remaining, onLog, logged,
-  badge, distanceLabel, rating,
+  badge, distanceLabel, rating, mapsUrl,
 }: {
   restaurant: SGRestaurant; isExpanded: boolean; onToggle: () => void;
   userFlags: DietaryFlag[]; remaining: { protein: number; calories: number; carbs: number };
   onLog: (item: SGMenuItem, restaurant: SGRestaurant) => void; logged: Set<string>;
-  badge?: React.ReactNode; distanceLabel?: string; rating?: number | null;
+  badge?: React.ReactNode; distanceLabel?: string; rating?: number | null; mapsUrl?: string;
 }) {
   const dietFit   = getDietFit(restaurant.dietTags, userFlags);
   const itemCount = restaurant.menu.length;
@@ -424,14 +424,19 @@ function RestaurantCard({
 
   return (
     <div style={{ marginBottom: 10, boxShadow: hasPanel ? 'none' : SHADOW }}>
-      <button onClick={onToggle} style={{
-        width: '100%', display: 'flex', alignItems: 'center', gap: 12,
-        padding: '13px 14px', cursor: 'pointer', textAlign: 'left',
-        background: isExpanded ? 'rgba(30,127,92,0.04)' : CARD,
-        border: `1px solid ${isExpanded ? 'rgba(30,127,92,0.25)' : BORDER}`,
-        borderRadius: hasPanel ? '18px 18px 0 0' : 18,
-        boxShadow: 'none', transition: 'all .15s',
-      }}>
+      <div
+        role="button" tabIndex={0} onClick={onToggle}
+        onKeyDown={e => e.key === 'Enter' && onToggle()}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+          padding: '13px 14px', cursor: 'pointer', textAlign: 'left',
+          background: isExpanded ? 'rgba(30,127,92,0.04)' : CARD,
+          border: `1px solid ${isExpanded ? 'rgba(30,127,92,0.25)' : BORDER}`,
+          borderRadius: hasPanel ? '18px 18px 0 0' : 18,
+          boxShadow: 'none', transition: 'all .15s',
+          boxSizing: 'border-box',
+        }}
+      >
         <div style={{ width: 46, height: 46, borderRadius: 14, flexShrink: 0, background: 'rgba(30,127,92,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>
           {restaurant.emoji}
         </div>
@@ -454,10 +459,25 @@ function RestaurantCard({
           {/* 1. Macro match bar */}
           {bestScore !== null && <MacroMatchBar score={bestScore} />}
         </div>
-        <span style={{ fontSize: 13, color: isExpanded ? GREEN : FG3, flexShrink: 0 }}>
-          {isExpanded ? '▲' : '▼'}
-        </span>
-      </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          {mapsUrl && (
+            <a
+              href={mapsUrl} target="_blank" rel="noopener noreferrer"
+              onClick={e => e.stopPropagation()}
+              style={{
+                fontSize: 11, fontWeight: 700, color: '#2E6FB8',
+                background: 'rgba(46,111,184,0.08)', border: '1px solid rgba(46,111,184,0.18)',
+                borderRadius: 8, padding: '5px 10px', textDecoration: 'none',
+              }}
+            >
+              📍 Map
+            </a>
+          )}
+          <span style={{ fontSize: 13, color: isExpanded ? GREEN : FG3 }}>
+            {isExpanded ? '▲' : '▼'}
+          </span>
+        </div>
+      </div>
 
       {/* Collapsed preview: top 2 macro-matched items */}
       {showPreview && (
@@ -951,6 +971,7 @@ export default function EatPage() {
                             userFlags={userFlags} remaining={macroRem} onLog={logMenuItem} logged={logged}
                             badge={<span style={{ fontSize: 9, fontWeight: 800, background: 'rgba(30,127,92,0.10)', color: GREEN, borderRadius: 5, padding: '1px 5px' }}>✓ FULL MENU</span>}
                             distanceLabel={place.distance} rating={place.rating}
+                            mapsUrl={place.mapsUrl}
                           />
                         );
                       }
@@ -969,23 +990,15 @@ export default function EatPage() {
                                 <span style={{ fontSize: 14, fontWeight: 800, color: FG1 }}>{place.name}</span>
                                 <span style={{ fontSize: 9, fontWeight: 800, padding: '2px 6px', borderRadius: 6, background: 'rgba(139,149,167,0.10)', border: `1px solid ${BORDER}`, color: FG3 }}>⚡ Estimated</span>
                               </div>
-                              <div style={{ fontSize: 11, color: FG3, marginBottom: 6 }}>
+                              <div style={{ fontSize: 11, color: FG3, marginBottom: 8 }}>
                                 {place.type} · {place.distance}{place.rating ? ` · ⭐ ${place.rating.toFixed(1)}` : ''} · {place.hours}
                               </div>
-                              <div style={{ marginBottom: 6 }}>
-                                <div style={{ fontSize: 12, fontWeight: 700, color: FG1, marginBottom: 2 }}>{fallback.emoji} {fallback.dish}</div>
-                                <div style={{ fontSize: 11, color: FG2 }}>~${fallback.price.toFixed(2)} · P{fallback.protein}g · C{fallback.carbs}g · F{fallback.fat}g · {fallback.calories}kcal</div>
-                              </div>
-                              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 }}>
-                                <span style={{ fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 6, background: `${fallbackPpdClr}14`, border: `1px solid ${fallbackPpdClr}30`, color: fallbackPpdClr }}>{fallbackPpd}g/$</span>
-                                <DietBadge fit={fit} />
-                              </div>
-                              {/* 5. Request menu data CTA */}
+                              {/* Help add menu CTA */}
                               <a
                                 href={`mailto:hello@strideapp.sg?subject=Menu data for ${encodeURIComponent(place.name)}&body=Hi, I'd like to submit nutrition data for ${encodeURIComponent(place.name)}.`}
                                 style={{ fontSize: 11, color: '#2E6FB8', fontWeight: 600, textDecoration: 'none' }}
                               >
-                                📋 Help add {place.name}'s menu →
+                                📋 Help add {place.name}&apos;s menu →
                               </a>
                             </div>
                             <a href={place.mapsUrl} target="_blank" rel="noopener noreferrer" style={{ flexShrink: 0, background: GREEN, color: '#fff', borderRadius: 10, padding: '8px 12px', fontSize: 11, fontWeight: 700, textDecoration: 'none', boxShadow: '0 2px 8px rgba(30,127,92,0.22)', alignSelf: 'flex-start' }}>Map →</a>

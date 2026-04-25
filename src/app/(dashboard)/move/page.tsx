@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useState, useEffect, useCallback } from 'react';
 import { useStrideStore } from '@/lib/store';
 
@@ -80,23 +81,8 @@ const ACTIVITY_LIST = [
   { id: 'other',      name: 'Other',          emoji: '🔥', met: 5.0,  hasDistance: false },
 ];
 
-const DURATION_PRESETS = [15, 30, 45, 60, 90];
-const GENDER_FACTOR: Record<string, number> = { male: 1.0, female: 0.90, other: 0.95 };
-
 export default function MovePage() {
   const store   = useStrideStore();
-  const profile = store.profile;
-  const weight  = profile.currentWeight || 70;
-  const gender  = profile.gender || 'male';
-  const gFactor = GENDER_FACTOR[gender] ?? 1.0;
-
-  const [selectedAct,    setSelectedAct]    = useState<typeof ACTIVITY_LIST[0] | null>(null);
-  const [duration,       setDuration]       = useState(30);
-  const [customDuration, setCustomDuration] = useState('');
-  const [distance,       setDistance]       = useState('');
-  const [activityType,   setActivityType]   = useState('');
-  const [customCalories, setCustomCalories] = useState('');
-  const [actLogged,      setActLogged]      = useState(false);
 
   const [places,        setPlaces]        = useState<NearbyPlace[]>([]);
   const [locState,      setLocState]      = useState<'locating' | 'fetching' | 'done' | 'error' | 'no_key'>('locating');
@@ -119,7 +105,7 @@ export default function MovePage() {
     return matchesSearch && matchesCategory;
   });
 
-  const burned = store.getTodayCaloriesBurned();
+  const burned  = store.getTodayCaloriesBurned();
 
   const fetchPlaces = useCallback(async (lat: number, lng: number) => {
     setLocState('fetching');
@@ -150,41 +136,6 @@ export default function MovePage() {
       { enableHighAccuracy: false, timeout: 10000 },
     );
   }, [fetchPlaces]);
-
-  const effectiveDuration  = customDuration ? Number(customDuration) : duration;
-  const displayName        = selectedAct
-    ? (selectedAct.id === 'other' && activityType ? activityType : selectedAct.name)
-    : '';
-  const autoBurnEstimate   = selectedAct
-    ? Math.round(selectedAct.met * weight * (effectiveDuration / 60) * gFactor)
-    : 0;
-  const burnEstimate       = customCalories ? Number(customCalories) : autoBurnEstimate;
-
-  const handleLog = () => {
-    if (!selectedAct) return;
-    const distNote = distance ? ` · ${distance} km` : '';
-    store.addActivityEntry({
-      name:           displayName + distNote,
-      emoji:          selectedAct.emoji,
-      durationMins:   effectiveDuration,
-      caloriesBurned: burnEstimate,
-      intensity:      burnEstimate > 300 ? 'high' : burnEstimate > 150 ? 'medium' : 'low',
-      source:         'manual',
-    });
-    setActLogged(true);
-    setTimeout(() => {
-      setActLogged(false); setSelectedAct(null);
-      setCustomCalories(''); setCustomDuration(''); setDistance(''); setActivityType('');
-    }, 1600);
-  };
-
-  const inputStyle: React.CSSProperties = {
-    width: '100%', background: BG,
-    border: `1.5px solid ${BORDER}`, borderRadius: 12,
-    padding: '11px 14px', fontSize: 15, color: FG1,
-    outline: 'none', fontFamily: 'Inter, sans-serif',
-    boxSizing: 'border-box',
-  };
 
   return (
     <div style={{ background: BG, minHeight: '100vh' }}>
@@ -423,157 +374,26 @@ export default function MovePage() {
           </div>
         )}
 
-        {/* ── Activity list ── */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <span style={{ fontSize: 15, fontWeight: 800, color: FG1 }}>Log an Activity</span>
-          <span style={{ fontSize: 12, color: FG3 }}>{ACTIVITY_LIST.length} activities</span>
-        </div>
-
-        <div style={{
-          maxHeight: 320, overflowY: 'auto',
-          display: 'flex', flexDirection: 'column', gap: 6,
-          paddingRight: 2,
-          scrollbarWidth: 'thin',
-          scrollbarColor: `${BORDER} transparent`,
+        {/* ── Log activity shortcut ── */}
+        <Link href="/log?tab=activity" style={{
+          display: 'flex', alignItems: 'center', gap: 14,
+          background: CARD, borderRadius: 18, padding: '16px 18px',
+          border: `1px solid ${BORDER}`, boxShadow: SHADOW,
+          textDecoration: 'none',
         }}>
-          {ACTIVITY_LIST.map(a => {
-            const isSel     = selectedAct?.id === a.id;
-            const kcalMin   = Math.round(a.met * weight / 60);
-            const intensity = a.met >= 9   ? { label: 'High',   dot: '#D04E36', bg: 'rgba(208,78,54,0.10)',  text: '#D04E36' }
-                            : a.met >= 5.5 ? { label: 'Medium', dot: '#C98A2E', bg: 'rgba(201,138,46,0.10)', text: '#C98A2E' }
-                            :                { label: 'Low',    dot: GREEN,     bg: 'rgba(30,127,92,0.10)',  text: GREEN     };
-            return (
-              <div key={a.id}>
-                {/* Row */}
-                <button
-                  onClick={() => {
-                    setSelectedAct(isSel ? null : a);
-                    setCustomCalories(''); setCustomDuration(''); setDistance(''); setActivityType('');
-                  }}
-                  style={{
-                    width: '100%', display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '13px 14px', cursor: 'pointer', textAlign: 'left',
-                    background: isSel ? 'rgba(30,127,92,0.05)' : CARD,
-                    border: `1px solid ${isSel ? 'rgba(30,127,92,0.30)' : BORDER}`,
-                    borderRadius: isSel ? '16px 16px 0 0' : 16,
-                    transition: 'all .15s',
-                  }}
-                >
-                  <div style={{ width: 9, height: 9, borderRadius: '50%', flexShrink: 0, background: intensity.dot }} />
-                  <span style={{ fontSize: 20, flexShrink: 0 }}>{a.emoji}</span>
-                  <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: isSel ? FG1 : FG2 }}>
-                    {a.name}
-                  </span>
-                  <span style={{
-                    fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 6,
-                    background: intensity.bg, color: intensity.text, flexShrink: 0,
-                  }}>
-                    {intensity.label}
-                  </span>
-                  <span style={{ fontSize: 11, color: FG3, flexShrink: 0, minWidth: 70, textAlign: 'right' }}>
-                    ~{kcalMin} kcal/min
-                  </span>
-                  <span style={{ fontSize: 11, color: isSel ? GREEN : FG3, flexShrink: 0 }}>
-                    {isSel ? '▲' : '▼'}
-                  </span>
-                </button>
-
-                {/* Expanded panel */}
-                {isSel && (
-                  <div style={{
-                    background: CARD,
-                    border: `1px solid rgba(30,127,92,0.25)`, borderTop: 'none',
-                    borderRadius: '0 0 16px 16px', padding: '16px 14px',
-                    display: 'flex', flexDirection: 'column', gap: 12,
-                  }}>
-                    {/* Distance */}
-                    {a.hasDistance && (
-                      <div>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: FG2, marginBottom: 7 }}>
-                          Distance (km) <span style={{ fontWeight: 400, color: FG3 }}>— optional</span>
-                        </div>
-                        <input style={inputStyle} type="number" min="0" step="0.1"
-                          placeholder="e.g. 5.2" value={distance}
-                          onChange={e => setDistance(e.target.value)} />
-                      </div>
-                    )}
-                    {/* Activity type for Other */}
-                    {a.id === 'other' && (
-                      <div>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: FG2, marginBottom: 7 }}>Activity type</div>
-                        <input style={inputStyle}
-                          placeholder="e.g. Frisbee, Archery, Skateboarding…"
-                          value={activityType} onChange={e => setActivityType(e.target.value)} />
-                      </div>
-                    )}
-                    {/* Duration */}
-                    <div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: FG2, marginBottom: 7 }}>Duration (min)</div>
-                      <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
-                        {DURATION_PRESETS.map(d => (
-                          <button key={d} onClick={() => { setDuration(d); setCustomDuration(''); }} style={{
-                            flex: 1, padding: '9px 0', borderRadius: 10, cursor: 'pointer',
-                            fontSize: 12, fontWeight: 700,
-                            background: duration === d && !customDuration ? 'rgba(30,127,92,0.10)' : BG,
-                            color:      duration === d && !customDuration ? GREEN : FG3,
-                            border: `1px solid ${duration === d && !customDuration ? 'rgba(30,127,92,0.30)' : BORDER}`,
-                            transition: 'all .15s',
-                          }}>{d}</button>
-                        ))}
-                      </div>
-                      <input style={inputStyle} type="number" min="1" max="600"
-                        placeholder="Custom minutes…" value={customDuration}
-                        onChange={e => setCustomDuration(e.target.value)} />
-                    </div>
-
-                    {/* Preview card */}
-                    <div style={{
-                      background: BG, borderRadius: 14, padding: '12px 14px',
-                      display: 'flex', alignItems: 'center', border: `1px solid ${BORDER}`,
-                    }}>
-                      <span style={{ fontSize: 30, marginRight: 12 }}>{a.emoji}</span>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 14, fontWeight: 800, color: FG1 }}>{displayName}</div>
-                        <div style={{ fontSize: 11, color: FG3, marginTop: 2 }}>
-                          {effectiveDuration} min · {weight} kg{distance ? ` · ${distance} km` : ''}
-                        </div>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: 30, fontWeight: 900, color: GREEN, lineHeight: 1, fontFamily: "'Anton', Impact, sans-serif" }}>
-                          {autoBurnEstimate}
-                        </div>
-                        <div style={{ fontSize: 10, color: FG3 }}>kcal</div>
-                      </div>
-                    </div>
-
-                    {/* Override calories */}
-                    <input style={inputStyle} type="number" min="0"
-                      placeholder={`Override calories (est. ${autoBurnEstimate} kcal)`}
-                      value={customCalories} onChange={e => setCustomCalories(e.target.value)} />
-                    {customCalories && (
-                      <button onClick={() => setCustomCalories('')} style={{
-                        background: 'none', border: 'none', cursor: 'pointer',
-                        fontSize: 11, color: FG3, padding: 0, marginTop: -6, textAlign: 'left',
-                      }}>↩ Reset to auto-estimate ({autoBurnEstimate} kcal)</button>
-                    )}
-
-                    {/* Log button */}
-                    <button onClick={handleLog} style={{
-                      width: '100%', padding: '14px 0',
-                      background: actLogged ? 'rgba(30,127,92,0.10)' : GREEN,
-                      color: actLogged ? GREEN : '#fff',
-                      border: 'none', borderRadius: 14,
-                      fontSize: 14, fontWeight: 800, cursor: 'pointer', transition: 'all .2s',
-                      boxShadow: actLogged ? 'none' : '0 4px 14px rgba(30,127,92,0.28)',
-                    }}>
-                      {actLogged ? '✓ Activity Logged!' : `Log ${displayName}`}
-                    </button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+          <div style={{
+            width: 48, height: 48, borderRadius: 14, flexShrink: 0,
+            background: 'rgba(30,127,92,0.10)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24,
+          }}>
+            ⚡
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: FG1, marginBottom: 2 }}>Log an Activity</div>
+            <div style={{ fontSize: 12, color: FG3 }}>Running, gym, yoga and {ACTIVITY_LIST.length - 3} more</div>
+          </div>
+          <span style={{ fontSize: 18, color: FG3 }}>›</span>
+        </Link>
 
       </div>
     </div>

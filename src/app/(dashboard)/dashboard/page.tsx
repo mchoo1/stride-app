@@ -85,14 +85,11 @@ function TodayStatsCard({
   protein, proteinGoal,
   carbs, carbsGoal,
   fat, fatGoal,
-  actEntries, weekBurned,
 }: {
   consumed: number; burned: number; goal: number;
   protein: number;  proteinGoal: number;
   carbs: number;    carbsGoal: number;
   fat: number;      fatGoal: number;
-  actEntries: Array<{ id: string; emoji: string; name: string; caloriesBurned: number; durationMins: number }>;
-  weekBurned: number;
 }) {
   const net       = Math.max(0, consumed - burned);
   const remaining = goal - net;
@@ -102,9 +99,6 @@ function TodayStatsCard({
   const pct       = Math.min(net / Math.max(goal, 1), 1);
   const barColor  = over ? T.red : close ? T.amber : T.green;
   const numColor  = over ? T.red : T.textPrimary;
-
-  const todayBurned = actEntries.reduce((s, e) => s + e.caloriesBurned, 0);
-  const todayMins   = actEntries.reduce((s, e) => s + e.durationMins,   0);
 
   const macros = [
     { label: 'Protein', val: protein, goal: proteinGoal, color: T.blue     },
@@ -199,71 +193,6 @@ function TodayStatsCard({
         })}
       </div>
 
-      <Divider />
-
-      {/* ── Activity section ── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: T.textMuted, textTransform: 'uppercase' }}>
-          Activity
-        </div>
-        <Link href="/log?tab=activity" style={{ fontSize: 13, fontWeight: 600, color: T.amber, textDecoration: 'none' }}>
-          + Log
-        </Link>
-      </div>
-
-      {/* Always-visible stats row */}
-      <div style={{ display: 'flex', gap: 0, marginBottom: actEntries.length > 0 ? 12 : 0 }}>
-        {[
-          { label: 'Burned today', value: todayBurned, unit: 'kcal', color: todayBurned > 0 ? T.amber : T.textMuted },
-          { label: 'Active mins',  value: todayMins,   unit: 'min',  color: todayMins   > 0 ? T.blue  : T.textMuted },
-          { label: '7-day burned', value: weekBurned,  unit: 'kcal', color: weekBurned  > 0 ? T.green : T.textMuted },
-        ].map((s, i) => (
-          <div key={s.label} style={{
-            flex: 1,
-            borderLeft: i > 0 ? `1px solid ${T.border}` : 'none',
-            paddingLeft: i > 0 ? 12 : 0,
-            marginLeft:  i > 0 ? 12 : 0,
-          }}>
-            <div style={{ fontSize: 10, color: T.textMuted, fontWeight: 600, marginBottom: 2 }}>{s.label}</div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
-              <span style={{ fontSize: 18, fontWeight: 700, fontFamily: T.fontDisplay, color: s.color }}>
-                {s.value}
-              </span>
-              <span style={{ fontSize: 10, color: T.textMuted }}>{s.unit}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Activity entries or CTA */}
-      {actEntries.length > 0 ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {actEntries.map(e => (
-            <div key={e.id} style={{
-              display: 'flex', alignItems: 'center', gap: 10, padding: '6px 8px',
-              background: 'rgba(242,169,59,0.05)', borderRadius: 10,
-              border: `1px solid rgba(242,169,59,0.12)`,
-            }}>
-              <span style={{ fontSize: 18 }}>{e.emoji}</span>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: T.textPrimary }}>{e.name}</div>
-                <div style={{ fontSize: 11, color: T.textMuted }}>{e.durationMins} min</div>
-              </div>
-              <span style={{ fontSize: 13, fontWeight: 700, color: T.amber }}>-{e.caloriesBurned} kcal</span>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <Link href="/log?tab=activity" style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          padding: '12px 0', marginTop: 10, textDecoration: 'none',
-          background: 'rgba(242,169,59,0.05)', borderRadius: 12,
-          border: `1px dashed rgba(242,169,59,0.25)`,
-        }}>
-          <span style={{ fontSize: 18 }}>⚡</span>
-          <span style={{ fontSize: 13, color: T.amber, fontWeight: 600 }}>Log today&apos;s activity</span>
-        </Link>
-      )}
     </div>
   );
 }
@@ -846,8 +775,6 @@ export default function DashboardPage() {
           carbsGoal={profile.targetCarbs || Math.round((profile.targetCalories * 0.45) / 4)}
           fat={totals.fat}
           fatGoal={profile.targetFat || Math.round((profile.targetCalories * 0.25) / 9)}
-          actEntries={todayAct}
-          weekBurned={weekBurned}
         />
 
         {/* ── Quick action row ── */}
