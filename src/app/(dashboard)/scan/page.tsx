@@ -1,6 +1,7 @@
 'use client';
 import { useState, useRef, ChangeEvent } from 'react';
 import { useStrideStore } from '@/lib/store';
+import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 
 /* ── Design tokens ── */
@@ -13,18 +14,15 @@ const FG3    = '#8B95A7';
 const GREEN  = '#1E7F5C';
 const SHADOW = '0 1px 2px rgba(15,27,45,0.04), 0 2px 6px rgba(15,27,45,0.05)';
 
-const MOCK_SCANS = [
-  { name: 'Grilled Chicken & Veg', cal: 320, protein: 38, carbs: 14, fat: 9,  conf: 91 },
-  { name: 'Caesar Salad',          cal: 280, protein: 8,  carbs: 18, fat: 20, conf: 85 },
-  { name: 'Pasta Bolognese',       cal: 520, protein: 24, carbs: 62, fat: 18, conf: 88 },
-  { name: 'Avocado Toast',         cal: 340, protein: 9,  carbs: 32, fat: 20, conf: 93 },
-  { name: 'Smoothie Bowl',         cal: 410, protein: 12, carbs: 68, fat: 10, conf: 87 },
-  { name: 'Burger & Fries',        cal: 880, protein: 32, carbs: 90, fat: 44, conf: 90 },
-  { name: 'Sushi Platter',         cal: 480, protein: 26, carbs: 66, fat: 10, conf: 89 },
-  { name: 'Acai Bowl',             cal: 360, protein: 8,  carbs: 58, fat: 12, conf: 84 },
-];
-
-type ScanResult = typeof MOCK_SCANS[0];
+type ScanResult = {
+  name: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  confidence: number;
+  emoji?: string;
+};
 
 export default function ScanPage() {
   const store  = useStrideStore();
@@ -41,21 +39,56 @@ export default function ScanPage() {
     setTimeout(() => setToast(''), 2200);
   };
 
-  const handleFile = (e: ChangeEvent<HTMLInputElement>) => {
+  const [scanError, setScanError] = useState('');
+
+  const handleFile = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setScanError('');
     setPreview(URL.createObjectURL(file));
     setPhase('scanning');
-    const r = MOCK_SCANS[Math.floor(Math.random() * MOCK_SCANS.length)];
-    setTimeout(() => { setResult(r); setPhase('result'); }, 2200);
+
+    try {
+      // Read file as base64
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = ev => {
+          const dataUrl = ev.target?.result as string;
+          resolve(dataUrl.split(',')[1]);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      // Get Firebase auth token
+      const user = auth.currentUser;
+      const token = user ? await user.getIdToken() : '';
+
+      const res  = await fetch('/api/scan-food', {
+        method:  'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+        body: JSON.stringify({ image: base64, mimeType: file.type }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setResult(data);
+      setPhase('result');
+    } catch (err: unknown) {
+      setScanError(err instanceof Error ? err.message : 'Scan failed. Please try again.');
+      setPhase('idle');
+      if (fileRef.current) fileRef.current.value = '';
+    }
   };
 
   const logMeal = () => {
     if (!result) return;
     store.addFoodEntry({
-      name: result.name, calories: result.cal,
+      name: result.name, calories: result.calories,
       protein: result.protein, carbs: result.carbs, fat: result.fat,
-      emoji: '📷', mealType: 'lunch' as const, foodItemId: '', quantity: 100,
+      emoji: result.emoji ?? '📷', mealType: 'lunch' as const, foodItemId: '', quantity: 100,
     });
     setPhase('logged');
     showToast(`✅ ${result.name} logged!`);
@@ -132,6 +165,18 @@ export default function ScanPage() {
           }} />
         )}
 
+        {/* Error display */}
+        {scanError && phase === 'idle' && (
+          <div style={{
+            background: 'rgba(220,53,69,0.06)', borderRadius: 14, padding: '12px 14px',
+            border: '1px solid rgba(220,53,69,0.20)',
+            display: 'flex', gap: 10, alignItems: 'flex-start',
+          }}>
+            <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>⚠️</span>
+            <span style={{ fontSize: 13, color: '#B02A37', lineHeight: 1.6 }}>{scanError}</span>
+          </div>
+        )}
+
         {/* Scanning spinner */}
         {phase === 'scanning' && (
           <div style={{
@@ -163,11 +208,11 @@ export default function ScanPage() {
                 <div style={{ fontSize: 17, fontWeight: 700, color: FG1 }}>{result.name}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 4 }}>
                   <div style={{ width: 7, height: 7, borderRadius: '50%', background: GREEN }} />
-                  <span style={{ fontSize: 12, color: GREEN, fontWeight: 600 }}>{result.conf}% confidence</span>
+                  <span style={{ fontSize: 12, color: GREEN, fontWeight: 600 }}>{Math.round(result.confidence * 100)}% confidence</span>
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 36, fontWeight: 900, color: FG1, lineHeight: 1, fontFamily: "'Anton', Impact, sans-serif" }}>{result.cal}</div>
+                <div style={{ fontSize: 36, fontWeight: 900, color: FG1, lineHeight: 1, fontFamily: "'Anton', Impact, sans-serif" }}>{result.calories}</div>
                 <div style={{ fontSize: 13, color: FG3 }}>kcal</div>
               </div>
             </div>

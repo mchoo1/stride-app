@@ -5,6 +5,7 @@ import { useStrideStore } from '@/lib/store';
 import { calculateBMR, calculateTargetCalories, calculateMacros } from '@/lib/utils';
 import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
+import { api } from '@/lib/apiClient';
 import type { GoalType } from '@/types';
 
 const GOAL_OPTS: { key: GoalType; emoji: string; label: string }[] = [
@@ -83,7 +84,11 @@ export default function MePage() {
   const saveProfile = () => {
     const calories = calculateTargetCalories(form);
     const macros   = calculateMacros(calories, form.goalType);
-    store.updateProfile({ ...form, targetCalories: calories, targetProtein: macros.protein, targetCarbs: macros.carbs, targetFat: macros.fat });
+    const updated  = { ...form, targetCalories: calories, targetProtein: macros.protein, targetCarbs: macros.carbs, targetFat: macros.fat };
+    store.updateProfile(updated);
+    // Background sync to Firestore
+    api.profile.update(updated).catch(() => {});
+    api.summary.recompute().catch(() => {});
     setSaved(true); setTimeout(() => setSaved(false), 2000);
   };
 
@@ -557,9 +562,10 @@ export default function MePage() {
                 }}>
                   🚪 Sign Out
                 </button>
-                <button onClick={() => {
+                <button onClick={async () => {
                   if (confirm('Reset all app data and start over? This will clear all logs.')) {
                     store.resetAll();
+                    try { await signOut(auth); } catch { /* ignore */ }
                     window.location.href = '/register';
                   }
                 }} style={{

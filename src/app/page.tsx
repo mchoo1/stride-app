@@ -6,12 +6,12 @@ import { useAuth } from '@/lib/auth-context';
 import StrideWordmark from '@/components/StrideWordmark';
 
 const FEATURES = [
-  { emoji: '📷', title: 'AI Photo Scan',        desc: 'Snap a meal, get instant calorie and macro estimates from Vision AI.' },
-  { emoji: '🍽️', title: 'Smart Food Logging',   desc: 'Search 3M+ foods or enter manually with full macro breakdown.' },
-  { emoji: '⌚', title: 'Wearable Sync',        desc: 'Connect Apple Watch, Fitbit, or Garmin to auto-import activity data.' },
-  { emoji: '🌐', title: 'Community Feed',       desc: 'Share meals and workouts, discover macro-verified restaurant finds.' },
-  { emoji: '🍜', title: 'Meal Recommendations', desc: 'Get nearby restaurant dishes matched to your remaining macros.' },
-  { emoji: '🏢', title: 'Provider Portal',      desc: 'Gyms and restaurants can publish menus, class schedules, and macro data.' },
+  { emoji: '📷', title: 'AI Photo Scan',             desc: 'Snap a meal and get instant calorie and macro estimates powered by Claude Vision AI.' },
+  { emoji: '🍜', title: 'Singapore Food Database',   desc: 'Browse verified macros for McDonald\'s, KFC, Ya Kun, Old Chang Kee and more — with Protein/$ ratings.' },
+  { emoji: '✍️', title: 'Manual Food Logging',       desc: 'Search our food library or enter meals manually with full macro breakdown.' },
+  { emoji: '🏃', title: 'Activity & Streak Tracking',desc: 'Log runs, gym sessions, and workouts. Build daily streaks and track calories burned.' },
+  { emoji: '📍', title: 'GPS Nearby Places',         desc: 'Find gyms and restaurants near you with macro data matched from our Singapore database.' },
+  { emoji: '🎯', title: 'Personalised Targets',      desc: 'Set your goal — lose weight, build muscle, or maintain — and get auto-calculated calorie and macro targets.' },
 ];
 
 const GOALS = [

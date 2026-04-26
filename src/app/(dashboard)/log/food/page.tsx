@@ -1,7 +1,14 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useStrideStore } from '@/lib/store';
 import { MOCK_FOODS, MOCK_SCAN_RESULTS } from '@/lib/mockFoods';
+import { api } from '@/lib/apiClient';
+
+// Unified food shape for search results (mock + API)
+interface FoodSearchResult {
+  id: string; name: string; emoji: string;
+  calories: number; protein: number; carbs: number; fat: number;
+}
 
 const MEAL_TABS = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
 type ModalTab = 'search' | 'ai' | 'manual';
@@ -18,9 +25,11 @@ export default function FoodLogPage() {
   const [toast,     setToast]     = useState('');
 
   /* ── Search tab ── */
-  const [search,       setSearch]       = useState('');
-  const [selectedFood, setSelectedFood] = useState<typeof MOCK_FOODS[0] | null>(null);
-  const [weight,       setWeight]       = useState('100');
+  const [search,        setSearch]       = useState('');
+  const [selectedFood,  setSelectedFood] = useState<FoodSearchResult | null>(null);
+  const [weight,        setWeight]       = useState('100');
+  const [searchResults, setSearchResults] = useState<FoodSearchResult[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
 
   /* ── AI tab ── */
   const [aiPhoto,   setAiPhoto]   = useState<string | null>(null);
@@ -41,6 +50,31 @@ export default function FoodLogPage() {
   const mealType = MEAL_TABS[activeTab].toLowerCase() as 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 2200); };
+
+  // Debounced API food search
+  useEffect(() => {
+    if (!search.trim()) { setSearchResults([]); return; }
+    const t = setTimeout(async () => {
+      setSearchLoading(true);
+      try {
+        const items = await api.foods.search(search.trim());
+        setSearchResults(items.map(f => ({
+          id:       f.id,
+          name:     f.name,
+          emoji:    f.emoji ?? '🍽️',
+          calories: f.caloriesPer100g,
+          protein:  f.proteinPer100g,
+          carbs:    f.carbsPer100g,
+          fat:      f.fatPer100g,
+        })));
+      } catch {
+        setSearchResults([]); // fall back to mock
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 350);
+    return () => clearTimeout(t);
+  }, [search]);
 
   const openModal = (tab: ModalTab = 'search') => { setModalTab(tab); setShowModal(true); };
 
@@ -136,7 +170,12 @@ export default function FoodLogPage() {
   };
 
   const calPct = Math.min((totals.calories / Math.max(profile.targetCalories, 1)) * 100, 100);
-  const filteredFoods = MOCK_FOODS.filter(f => f.name.toLowerCase().includes(search.toLowerCase()));
+  // Display list: API results when searching, fallback to MOCK_FOODS for browse
+  const displayFoods: FoodSearchResult[] = search.trim()
+    ? (searchResults.length > 0
+        ? searchResults
+        : MOCK_FOODS.filter(f => f.name.toLowerCase().includes(search.toLowerCase())))
+    : MOCK_FOODS.slice(0, 20);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--bg-base)', minHeight: '100%' }}>
@@ -315,7 +354,12 @@ export default function FoodLogPage() {
 
                 {!selectedFood && (
                   <div style={{ flex: 1, overflowY: 'auto' }}>
-                    {(search ? filteredFoods : MOCK_FOODS).slice(0, 20).map(f => (
+                    {searchLoading && (
+                      <div style={{ textAlign: 'center', padding: '24px 0', color: '#aaa', fontSize: 13 }}>
+                        Searching…
+                      </div>
+                    )}
+                    {!searchLoading && displayFoods.map(f => (
                       <div key={f.id} onClick={() => setSelectedFood(f)} style={{
                         display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
                         borderRadius: 12, marginBottom: 4, cursor: 'pointer', background: '#f8f9fa',
@@ -328,6 +372,11 @@ export default function FoodLogPage() {
                         <span style={{ color: '#4CAF82', fontSize: 20 }}>›</span>
                       </div>
                     ))}
+                    {!searchLoading && search.trim() && displayFoods.length === 0 && (
+                      <div style={{ textAlign: 'center', padding: '24px 0', color: '#aaa', fontSize: 13 }}>
+                        No results found — try Manual Entry
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

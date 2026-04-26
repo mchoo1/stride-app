@@ -15,17 +15,18 @@ const HomeFill = () => (
     <path d="M5.5 9.2V19.5a1 1 0 0 0 1 1h3.5V15a.9.9 0 0 1 .9-.9h2.2a.9.9 0 0 1 .9.9v5.5h3.5a1 1 0 0 0 1-1V9.2L12 3.8 5.5 9.2Z" fill="currentColor" stroke="none"/>
   </svg>
 );
-const ScanOutline = () => (
+const LogOutline = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="6.5" width="18" height="13" rx="2.5"/>
-    <circle cx="12" cy="13.2" r="3.5"/>
-    <path d="M8.5 6.5 9.6 4.5h4.8l1.1 2"/>
+    <rect x="4" y="3" width="16" height="18" rx="2.5"/>
+    <path d="M8 8h8M8 12h8M8 16h5"/>
+    <path d="M15.5 15.5l2 2 3-3"/>
   </svg>
 );
-const ScanFill = () => (
+const LogFill = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M8.5 4.8a1 1 0 0 1 .86-.5h5.28a1 1 0 0 1 .86.5l.9 1.7H20a1.5 1.5 0 0 1 1.5 1.5v10.5A1.5 1.5 0 0 1 20 20H4a1.5 1.5 0 0 1-1.5-1.5V8A1.5 1.5 0 0 1 4 6.5h3.6l.9-1.7Z" fill="currentColor" stroke="none"/>
-    <circle cx="12" cy="13.2" r="3.2" fill="#fff" stroke="none"/>
+    <rect x="4" y="3" width="16" height="18" rx="2.5" fill="currentColor" stroke="none"/>
+    <path d="M8 8h8M8 12h8M8 16h5" stroke="#fff"/>
+    <path d="M15.5 15.5l2 2 3-3" stroke="#fff"/>
   </svg>
 );
 const EatOutline = () => (
@@ -69,7 +70,7 @@ const MeFill = () => (
 
 const NAV_ITEMS = [
   { href: '/dashboard', prefix: '/dashboard', label: 'Home',  Outline: HomeOutline,  Fill: HomeFill  },
-  { href: '/scan',      prefix: '/scan',      label: 'Scan',  Outline: ScanOutline,  Fill: ScanFill  },
+  { href: '/log',       prefix: '/log',       label: 'Log',   Outline: LogOutline,   Fill: LogFill   },
   { href: '/eat',       prefix: '/eat',       label: 'Eat',   Outline: EatOutline,   Fill: EatFill   },
   { href: '/move',      prefix: '/move',      label: 'Move',  Outline: MoveOutline,  Fill: MoveFill  },
   { href: '/me',        prefix: '/me',        label: 'Me',    Outline: MeOutline,    Fill: MeFill    },

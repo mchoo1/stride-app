@@ -290,6 +290,31 @@ const recommendations = {
   get: () => request<Recommendation[]>('GET', '/api/recommendations'),
 };
 
+// ── Community food library ────────────────────────────────────────────────────
+export interface FoodItem {
+  id:               string;
+  name:             string;
+  brand?:           string | null;
+  emoji?:           string | null;
+  caloriesPer100g:  number;
+  proteinPer100g:   number;
+  carbsPer100g:     number;
+  fatPer100g:       number;
+  dietaryFlags?:    string[];
+  source?:          string;
+  isVerified?:      boolean;
+}
+
+const foods = {
+  /** Search the community food library */
+  search: (q: string, limit = 20) =>
+    request<FoodItem[]>('GET', `/api/foods?q=${encodeURIComponent(q)}&limit=${limit}`),
+
+  /** Submit a community food entry */
+  submit: (data: Omit<FoodItem, 'id' | 'isVerified'>) =>
+    request<FoodItem>('POST', '/api/foods', data),
+};
+
 // ── Scan ──────────────────────────────────────────────────────────────────────
 export interface ScanResult {
   name:           string;
@@ -336,6 +361,7 @@ export const api = {
   summary,
   streak,
   recommendations,
+  foods,
   scan,
   places,
 };
