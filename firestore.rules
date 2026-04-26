@@ -18,12 +18,15 @@ service cloud.firestore {
       allow delete: if false;
 
       // Subcollections — private to owner
-      match /foodLogs/{docId}      { allow read, write: if isOwner(uid); }
-      match /activityLogs/{docId}  { allow read, write: if isOwner(uid); }
-      match /waterLogs/{docId}     { allow read, write: if isOwner(uid); }
-      match /dailySummaries/{docId}{ allow read, write: if isOwner(uid); }
-      match /notifications/{docId} { allow read, write: if isOwner(uid); }
-      match /wearables/{docId}     { allow read, write: if isOwner(uid); }
+      match /foodLogs/{docId}       { allow read, write: if isOwner(uid); }
+      match /activityLogs/{docId}   { allow read, write: if isOwner(uid); }
+      match /waterLogs/{docId}      { allow read, write: if isOwner(uid); }
+      match /weightLogs/{docId}     { allow read, write: if isOwner(uid); }
+      match /workoutLogs/{docId}    { allow read, write: if isOwner(uid); }
+      match /dailySummaries/{docId} { allow read, write: if isOwner(uid); }
+      match /recommendations/{docId}{ allow read, write: if isOwner(uid); }
+      match /notifications/{docId}  { allow read, write: if isOwner(uid); }
+      match /wearables/{docId}      { allow read, write: if isOwner(uid); }
 
       // Follow graph — readable by anyone auth'd
       match /follows/{followingId} {
