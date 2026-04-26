@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useStrideStore } from '@/lib/store';
+import { useRouter } from 'next/navigation';
 
 /* ── Design tokens ── */
 const BG     = '#F7F8FB';
@@ -91,10 +92,22 @@ function MacroChip({ label, val, bg, color }: { label: string; val: number; bg: 
 
 export default function RecommendationsPage() {
   const store   = useStrideStore();
+  const router  = useRouter();
   const profile = store.profile;
   const totals  = store.getTodayTotals();
   const [activeTab, setActiveTab] = useState('All');
   const [budget, setBudget] = useState(false);
+  const [loggedId, setLoggedId] = useState<string | null>(null);
+
+  const logMeal = (meal: typeof MEALS[0]) => {
+    store.addFoodEntry({
+      name: meal.name, calories: meal.cal,
+      protein: meal.p, carbs: meal.c, fat: meal.f,
+      emoji: meal.emoji, mealType: 'lunch', foodItemId: '', quantity: 100,
+    });
+    setLoggedId(meal.id);
+    setTimeout(() => { setLoggedId(null); router.push('/dashboard'); }, 1200);
+  };
 
   const remaining = {
     cal: Math.max(0, profile.targetCalories - totals.calories),
@@ -267,12 +280,16 @@ export default function RecommendationsPage() {
 
               {/* CTA buttons */}
               <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                <button style={{
+                <button onClick={() => logMeal(meal)} style={{
                   flex: 1, padding: '10px 0', borderRadius: 12, border: 'none',
-                  background: GREEN, color: '#fff', fontSize: 13, fontWeight: 700,
-                  cursor: 'pointer', boxShadow: '0 4px 14px rgba(30,127,92,0.25)',
+                  background: loggedId === meal.id ? 'rgba(30,127,92,0.15)' : GREEN,
+                  color: loggedId === meal.id ? GREEN : '#fff',
+                  fontSize: 13, fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: loggedId === meal.id ? 'none' : '0 4px 14px rgba(30,127,92,0.25)',
+                  transition: 'all .2s',
                 }}>
-                  📋 Log This
+                  {loggedId === meal.id ? '✅ Logged!' : '📋 Log This'}
                 </button>
                 {meal.deliveryApp ? (
                   <button style={{
