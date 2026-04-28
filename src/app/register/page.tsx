@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile, fetchSignInMethodsForEmail } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -11,8 +11,8 @@ import type { GoalType, DietaryFlag, UserProfile } from '@/types';
 import StrideWordmark from '@/components/StrideWordmark';
 import StrideIcon from '@/components/StrideIcon';
 
-// ─── Step definitions — Goal first, account last ─────────────────────────────
-const STEPS = ['Goal', 'Body', 'Diet', 'Account', 'Done'];
+// ─── Step definitions — Account first so email is validated early ─────────────
+const STEPS = ['Account', 'Goal', 'Body', 'Diet', 'Done'];
 
 const GOALS: { key: GoalType; emoji: string; title: string; desc: string; color: string }[] = [
   { key: 'weight_loss', emoji: '📉', title: 'Lose Weight',  desc: 'Burn more than I eat through a calorie deficit', color: '#FF6B6B' },
@@ -29,12 +29,19 @@ const ACTIVITY_LEVELS = [
 ];
 
 const DIETARY_OPTIONS: { key: DietaryFlag; label: string; emoji: string }[] = [
-  { key: 'vegetarian',   label: 'Vegetarian',  emoji: '🥦' },
-  { key: 'vegan',        label: 'Vegan',        emoji: '🌱' },
-  { key: 'gluten_free',  label: 'Gluten-Free',  emoji: '🌾' },
-  { key: 'lactose_free', label: 'Lactose-Free', emoji: '🥛' },
-  { key: 'keto',         label: 'Keto',         emoji: '🥑' },
-  { key: 'halal',        label: 'Halal',        emoji: '☪️' },
+  { key: 'halal',        label: 'Halal',         emoji: '☪️'  },
+  { key: 'vegetarian',   label: 'Vegetarian',    emoji: '🥦'  },
+  { key: 'vegan',        label: 'Vegan',         emoji: '🌱'  },
+  { key: 'pescatarian',  label: 'Pescatarian',   emoji: '🐟'  },
+  { key: 'gluten_free',  label: 'Gluten-Free',   emoji: '🌾'  },
+  { key: 'lactose_free', label: 'Lactose-Free',  emoji: '🥛'  },
+  { key: 'dairy_free',   label: 'Dairy-Free',    emoji: '🧀'  },
+  { key: 'nut_free',     label: 'Nut-Free',      emoji: '🥜'  },
+  { key: 'keto',         label: 'Keto',          emoji: '🥑'  },
+  { key: 'low_carb',     label: 'Low-Carb',      emoji: '🍞'  },
+  { key: 'high_protein', label: 'High-Protein',  emoji: '💪'  },
+  { key: 'no_pork',      label: 'No Pork',       emoji: '🐷'  },
+  { key: 'kosher',       label: 'Kosher',        emoji: '✡️'  },
 ];
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -42,29 +49,29 @@ export default function RegisterPage() {
   const router = useRouter();
   const { completeOnboarding } = useStrideStore();
 
-  const [step,    setStep]    = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState('');
+  const [step,         setStep]        = useState(0);
+  const [loading,      setLoading]     = useState(false);
+  const [error,        setError]       = useState('');
+  const [emailChecking, setEmailChecking] = useState(false);
 
   const [data, setData] = useState({
-    // Goal (step 0)
+    // Account (step 0)
+    name:     '',
+    email:    '',
+    password: '',
+    // Goal (step 1)
     goalType:      'weight_loss' as GoalType,
-    // Body (step 1)
+    // Body (step 2)
     gender:        'male' as 'male' | 'female' | 'other',
     age:           27,
     heightCm:      170,
     currentWeight: 75,
     targetWeight:  65,
     activityLevel: 'moderate' as UserProfile['activityLevel'],
-    // Diet (step 2)
+    // Diet (step 3)
     dietaryFlags:  [] as DietaryFlag[],
-    // Account (step 3)
-    name:     '',
-    email:    '',
-    password: '',
   });
 
-  // Raw string state for number inputs so clearing the field works correctly
   const [rawNums, setRawNums] = useState({ age: '27', height: '170', cw: '75', tw: '65' });
   const setRaw = (key: keyof typeof rawNums, val: string) => {
     setRawNums(r => ({ ...r, [key]: val }));
@@ -85,19 +92,35 @@ export default function RegisterPage() {
       : [...d.dietaryFlags, flag],
   }));
 
-  function canAdvance(): { ok: boolean; msg?: string } {
-    if (step === 3) { // Account step validation
-      if (!data.name.trim())        return { ok: false, msg: 'Please enter your name' };
-      if (!data.email.trim())       return { ok: false, msg: 'Please enter your email' };
-      if (data.password.length < 6) return { ok: false, msg: 'Password must be at least 6 characters' };
+  // ── Validate account step and check email availability ──
+  async function validateAccount(): Promise<boolean> {
+    if (!data.name.trim())        { setError('Please enter your name');              return false; }
+    if (!data.email.trim())       { setError('Please enter your email address');     return false; }
+    if (!/\S+@\S+\.\S+/.test(data.email)) { setError('Please enter a valid email'); return false; }
+    if (data.password.length < 6) { setError('Password must be at least 6 characters'); return false; }
+
+    // Check if email already exists in Firebase
+    setEmailChecking(true);
+    try {
+      const methods = await fetchSignInMethodsForEmail(auth, data.email);
+      if (methods.length > 0) {
+        setError('This email is already registered — sign in instead.');
+        return false;
+      }
+    } catch {
+      // If the check fails (network, disabled), continue — final step will catch it
+    } finally {
+      setEmailChecking(false);
     }
-    return { ok: true };
+    return true;
   }
 
-  function next() {
-    const { ok, msg } = canAdvance();
-    if (!ok) { setError(msg ?? ''); return; }
+  async function next() {
     setError('');
+    if (step === 0) {
+      const ok = await validateAccount();
+      if (!ok) return;
+    }
     setStep(s => Math.min(s + 1, STEPS.length - 1));
   }
 
@@ -111,11 +134,9 @@ export default function RegisterPage() {
     setError('');
     setLoading(true);
     try {
-      // Step 1: Create the auth account (critical — must succeed)
       const { user } = await createUserWithEmailAndPassword(auth, data.email, data.password);
       await updateProfile(user, { displayName: data.name });
 
-      // Step 2: Persist to Zustand immediately so dashboard works right away
       completeOnboarding({
         name:          data.name,
         email:         data.email,
@@ -129,7 +150,6 @@ export default function RegisterPage() {
         dietaryFlags:  data.dietaryFlags,
       });
 
-      // Step 3: Write to Firestore in the background — don't block navigation
       Promise.all([
         setDoc(doc(db, 'users', user.uid), {
           name:      data.name,
@@ -146,14 +166,11 @@ export default function RegisterPage() {
           dietaryFlags:  data.dietaryFlags,
           updatedAt:     serverTimestamp(),
         }),
-      ]).catch(() => {
-        // Firestore write failed silently — profile will sync next time
-      });
+      ]).catch(() => {});
 
       router.push('/dashboard');
     } catch (err: unknown) {
       const code = (err as { code?: string })?.code ?? '';
-
       if (code === 'auth/email-already-in-use')      setError('This email is already registered — sign in instead.');
       else if (code === 'auth/invalid-email')         setError('Please enter a valid email address.');
       else if (code === 'auth/weak-password')         setError('Password must be at least 6 characters.');
@@ -193,8 +210,53 @@ export default function RegisterPage() {
 
       <div style={{ flex: 1, maxWidth: 440, width: '100%', margin: '0 auto', padding: '24px 20px 40px' }}>
 
-        {/* ── Step 0: Goal ── */}
+        {/* ── Step 0: Account (email first!) ── */}
         {step === 0 && (
+          <div>
+            <h2 style={{ fontSize: 24, fontWeight: 800, color: '#1a1a2e', marginBottom: 6 }}>Create your account</h2>
+            <p style={{ fontSize: 14, color: '#888', marginBottom: 24 }}>Free forever. Your data stays yours.</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#666', marginBottom: 6 }}>Your name</label>
+                <input className="form-input" placeholder="e.g. Ming"
+                  value={data.name} onChange={e => update('name', e.target.value)} autoFocus/>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#666', marginBottom: 6 }}>Email</label>
+                <input type="email" className="form-input" placeholder="you@example.com"
+                  value={data.email} onChange={e => { update('email', e.target.value); setError(''); }}/>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#666', marginBottom: 6 }}>Password</label>
+                <input type="password" className="form-input" placeholder="Min 6 characters"
+                  value={data.password} onChange={e => update('password', e.target.value)}/>
+              </div>
+            </div>
+
+            {error && (
+              <div style={{
+                marginTop: 14, borderRadius: 12, padding: '12px 14px',
+                background: error.includes('already registered') ? 'rgba(46,111,184,0.06)' : '#fff5f5',
+                border: `1px solid ${error.includes('already registered') ? 'rgba(46,111,184,0.20)' : '#fed7d7'}`,
+              }}>
+                <p style={{ color: error.includes('already registered') ? '#2E6FB8' : '#c53030', fontSize: 13, lineHeight: 1.5, margin: 0 }}>
+                  {error}
+                  {error.includes('already registered') && (
+                    <>{' '}<Link href="/login" style={{ color: '#2E6FB8', fontWeight: 700 }}>Sign in →</Link></>
+                  )}
+                </p>
+              </div>
+            )}
+
+            <p style={{ textAlign: 'center', color: '#aaa', fontSize: 13, marginTop: 16 }}>
+              Already have an account?{' '}
+              <Link href="/login" style={{ color: '#4A90D9', fontWeight: 600 }}>Sign in</Link>
+            </p>
+          </div>
+        )}
+
+        {/* ── Step 1: Goal ── */}
+        {step === 1 && (
           <div>
             <h2 style={{ fontSize: 24, fontWeight: 800, color: '#1a1a2e', marginBottom: 6 }}>What&apos;s your goal?</h2>
             <p style={{ fontSize: 14, color: '#888', marginBottom: 24 }}>
@@ -223,20 +285,15 @@ export default function RegisterPage() {
                 );
               })}
             </div>
-            <p style={{ textAlign: 'center', color: '#aaa', fontSize: 13, marginTop: 8 }}>
-              Already have an account?{' '}
-              <Link href="/login" style={{ color: '#4A90D9', fontWeight: 600 }}>Sign in</Link>
-            </p>
           </div>
         )}
 
-        {/* ── Step 1: Body ── */}
-        {step === 1 && (
+        {/* ── Step 2: Body ── */}
+        {step === 2 && (
           <div>
             <h2 style={{ fontSize: 24, fontWeight: 800, color: '#1a1a2e', marginBottom: 6 }}>Tell us about you</h2>
             <p style={{ fontSize: 14, color: '#888', marginBottom: 24 }}>Used to calculate your calorie needs accurately.</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {/* Gender */}
               <div>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#666', marginBottom: 8 }}>Biological sex <span style={{ fontWeight: 400, color: '#bbb' }}>(affects calorie calculation)</span></label>
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -256,28 +313,24 @@ export default function RegisterPage() {
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#666', marginBottom: 6 }}>Age</label>
                   <input type="number" className="form-input" value={rawNums.age}
-                    onChange={e => setRaw('age', e.target.value)}
-                    placeholder="e.g. 27" min="10" max="100"/>
+                    onChange={e => setRaw('age', e.target.value)} placeholder="e.g. 27" min="10" max="100"/>
                 </div>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#666', marginBottom: 6 }}>Height (cm)</label>
                   <input type="number" className="form-input" value={rawNums.height}
-                    onChange={e => setRaw('height', e.target.value)}
-                    placeholder="e.g. 170" min="100" max="250"/>
+                    onChange={e => setRaw('height', e.target.value)} placeholder="e.g. 170" min="100" max="250"/>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 12 }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#666', marginBottom: 6 }}>Current weight (kg)</label>
                   <input type="number" className="form-input" value={rawNums.cw}
-                    onChange={e => setRaw('cw', e.target.value)}
-                    placeholder="e.g. 75" min="20" max="300" step="0.1"/>
+                    onChange={e => setRaw('cw', e.target.value)} placeholder="e.g. 75" min="20" max="300" step="0.1"/>
                 </div>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#666', marginBottom: 6 }}>Target weight (kg)</label>
                   <input type="number" className="form-input" value={rawNums.tw}
-                    onChange={e => setRaw('tw', e.target.value)}
-                    placeholder="e.g. 65" min="20" max="300" step="0.1"/>
+                    onChange={e => setRaw('tw', e.target.value)} placeholder="e.g. 65" min="20" max="300" step="0.1"/>
                 </div>
               </div>
               <div>
@@ -309,60 +362,31 @@ export default function RegisterPage() {
           </div>
         )}
 
-        {/* ── Step 2: Diet ── */}
-        {step === 2 && (
+        {/* ── Step 3: Diet ── */}
+        {step === 3 && (
           <div>
             <h2 style={{ fontSize: 24, fontWeight: 800, color: '#1a1a2e', marginBottom: 6 }}>Dietary preferences</h2>
             <p style={{ fontSize: 14, color: '#888', marginBottom: 24 }}>
-              Select any that apply — or skip. You can change these later.
+              Select any that apply — we&apos;ll filter food recommendations to match. You can change these later.
             </p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
               {DIETARY_OPTIONS.map(d => {
                 const sel = data.dietaryFlags.includes(d.key);
                 return (
                   <button key={d.key} onClick={() => toggleDiet(d.key)} style={{
-                    borderRadius: 16, padding: '14px 12px',
-                    display: 'flex', alignItems: 'center', gap: 10,
+                    borderRadius: 14, padding: '12px 10px',
+                    display: 'flex', alignItems: 'center', gap: 8,
                     background: sel ? 'rgba(76,175,130,.10)' : '#fff',
                     border: `2px solid ${sel ? '#4CAF82' : '#e8eaed'}`,
                     cursor: 'pointer', transition: 'all .2s',
                   }}>
-                    <span style={{ fontSize: 22 }}>{d.emoji}</span>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: sel ? '#4CAF82' : '#555' }}>{d.label}</span>
+                    <span style={{ fontSize: 20 }}>{d.emoji}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: sel ? '#4CAF82' : '#555' }}>{d.label}</span>
+                    {sel && <span style={{ fontSize: 12, marginLeft: 'auto' }}>✓</span>}
                   </button>
                 );
               })}
             </div>
-          </div>
-        )}
-
-        {/* ── Step 3: Account ── */}
-        {step === 3 && (
-          <div>
-            <h2 style={{ fontSize: 24, fontWeight: 800, color: '#1a1a2e', marginBottom: 6 }}>Create your account</h2>
-            <p style={{ fontSize: 14, color: '#888', marginBottom: 24 }}>Free forever. Your data stays yours.</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#666', marginBottom: 6 }}>Your name</label>
-                <input className="form-input" placeholder="e.g. Ming"
-                  value={data.name} onChange={e => update('name', e.target.value)} autoFocus/>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#666', marginBottom: 6 }}>Email</label>
-                <input type="email" className="form-input" placeholder="you@example.com"
-                  value={data.email} onChange={e => update('email', e.target.value)}/>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#666', marginBottom: 6 }}>Password</label>
-                <input type="password" className="form-input" placeholder="Min 6 characters"
-                  value={data.password} onChange={e => update('password', e.target.value)}/>
-              </div>
-            </div>
-            {error && <p style={{ color: '#e53e3e', fontSize: 13, marginTop: 12, textAlign: 'center' }}>{error}</p>}
-            <p style={{ textAlign: 'center', color: '#aaa', fontSize: 13, marginTop: 16 }}>
-              Already have an account?{' '}
-              <Link href="/login" style={{ color: '#4A90D9', fontWeight: 600 }}>Sign in</Link>
-            </p>
           </div>
         )}
 
@@ -399,6 +423,21 @@ export default function RegisterPage() {
                   </div>
                 ))}
               </div>
+              {data.dietaryFlags.length > 0 && (
+                <div style={{ marginTop: 10, padding: '10px 12px', background: '#f5f7fa', borderRadius: 12 }}>
+                  <div style={{ fontSize: 11, color: '#aaa', marginBottom: 6 }}>Dietary preferences</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {data.dietaryFlags.map(f => {
+                      const opt = DIETARY_OPTIONS.find(o => o.key === f);
+                      return opt ? (
+                        <span key={f} style={{ fontSize: 12, fontWeight: 600, color: '#4CAF82', background: 'rgba(76,175,130,0.10)', borderRadius: 8, padding: '3px 8px' }}>
+                          {opt.emoji} {opt.label}
+                        </span>
+                      ) : null;
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
             {error && (
               <div style={{
@@ -415,11 +454,16 @@ export default function RegisterPage() {
           </div>
         )}
 
-        {/* Continue button (steps 0–3 except step 3 which uses the same next()) */}
+        {/* Continue button (steps 0–3) */}
         {step < 4 && (
           <div style={{ marginTop: 28 }}>
-            <button onClick={next} className="btn-primary" style={{ width: '100%', padding: '14px 0', fontSize: 16 }}>
-              Continue →
+            <button
+              onClick={next}
+              disabled={emailChecking}
+              className="btn-primary"
+              style={{ width: '100%', padding: '14px 0', fontSize: 16, opacity: emailChecking ? 0.7 : 1 }}
+            >
+              {emailChecking ? 'Checking email…' : 'Continue →'}
             </button>
           </div>
         )}

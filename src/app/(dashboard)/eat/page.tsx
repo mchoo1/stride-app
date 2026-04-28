@@ -60,6 +60,9 @@ const DIET_LABEL: Record<DietaryFlag, string> = {
   vegetarian: '🥦 Vegetarian', vegan: '🌱 Vegan',
   gluten_free: '🌾 Gluten-Free', lactose_free: '🥛 Lactose-Free',
   keto: '🥑 Keto', halal: '☪️ Halal', kosher: '✡️ Kosher',
+  dairy_free: '🧀 Dairy-Free', nut_free: '🥜 Nut-Free',
+  low_carb: '🍞 Low-Carb', high_protein: '💪 High-Protein',
+  pescatarian: '🐟 Pescatarian', no_pork: '🐷 No Pork',
 };
 const HIGH_PROTEIN_THRESHOLD = 25; // g
 
@@ -179,13 +182,15 @@ function FilterBar({
   filterMaxDist, setFilterMaxDist,
   filterCuisine, setFilterCuisine,
   filterHighProtein, setFilterHighProtein,
-  cuisineOptions,
+  filterDietMatch, setFilterDietMatch,
+  cuisineOptions, hasDietPrefs,
 }: {
   filterOpenNow: boolean;      setFilterOpenNow: (v: boolean) => void;
   filterMaxDist: null|0.5|1|2; setFilterMaxDist: (v: null|0.5|1|2) => void;
   filterCuisine: string;       setFilterCuisine: (v: string) => void;
   filterHighProtein: boolean;  setFilterHighProtein: (v: boolean) => void;
-  cuisineOptions: string[];
+  filterDietMatch: boolean;    setFilterDietMatch: (v: boolean) => void;
+  cuisineOptions: string[]; hasDietPrefs: boolean;
 }) {
   const chip = (active: boolean): React.CSSProperties => ({
     flexShrink: 0, borderRadius: 999, padding: '5px 12px',
@@ -200,8 +205,16 @@ function FilterBar({
   ];
   return (
     <div style={{ marginBottom: 14, display: 'flex', flexDirection: 'column', gap: 6 }}>
-      {/* Row 1: Open Now + High Protein + Distance */}
+      {/* Row 1: Diet Match + Open Now + High Protein + Distance */}
       <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2 }}>
+        {hasDietPrefs && (
+          <button
+            onClick={() => setFilterDietMatch(!filterDietMatch)}
+            style={{ ...chip(filterDietMatch), border: `1px solid ${filterDietMatch ? 'rgba(30,127,92,0.35)' : BORDER}`, background: filterDietMatch ? 'rgba(30,127,92,0.12)' : CARD, color: filterDietMatch ? GREEN : FG3, fontWeight: 800 }}
+          >
+            🥗 My Diet
+          </button>
+        )}
         <button onClick={() => setFilterOpenNow(!filterOpenNow)} style={chip(filterOpenNow)}>
           🟢 Open Now
         </button>
@@ -640,11 +653,12 @@ export default function EatPage() {
   const [logged,        setLogged      ] = useState<Set<string>>(new Set());
   const [recipeLogged,  setRecipeLogged] = useState<Set<string>>(new Set());
 
-  /* Filter state */
+  /* Filter state — default diet filter ON if user has preferences set */
   const [filterOpenNow,     setFilterOpenNow    ] = useState(false);
   const [filterMaxDist,     setFilterMaxDist    ] = useState<null|0.5|1|2>(null);
   const [filterCuisine,     setFilterCuisine    ] = useState('All');
   const [filterHighProtein, setFilterHighProtein] = useState(false);
+  const [filterDietMatch,   setFilterDietMatch  ] = useState(userFlags.length > 0);
 
   const switchTab = (t: typeof tab) => {
     setTab(t); setQuery(''); setExpandedId(null);
@@ -688,24 +702,40 @@ export default function EatPage() {
     return Array.from(seen).sort();
   }, [enrichedPlaces]);
 
-  /* Sorted + filtered GPS places */
+  /* Sorted + filtered GPS places — restaurants with menu DB always shown first */
   const sortedFilteredPlaces = useMemo(() => {
     let list = [...enrichedPlaces];
 
-    if (filterOpenNow)        list = list.filter(p => p.hours === 'Open now');
+    if (filterOpenNow)          list = list.filter(p => p.hours === 'Open now');
     if (filterMaxDist !== null) list = list.filter(p => (p.distKm ?? 999) <= filterMaxDist);
     if (filterCuisine !== 'All') list = list.filter(p => {
       const c = p.dbMatch ? p.dbMatch.cuisine : p.type;
       return c.toLowerCase().includes(filterCuisine.toLowerCase());
     });
-    /* 2. High Protein filter */
+    /* High Protein filter */
     if (filterHighProtein) list = list.filter(p => {
       if (p.dbMatch && p.dbMatch.menu.length > 0)
         return p.dbMatch.menu.some(i => i.protein >= HIGH_PROTEIN_THRESHOLD);
       return (CUISINE_FALLBACK[p.type] ?? FALLBACK_DEFAULT).protein >= HIGH_PROTEIN_THRESHOLD;
     });
+    /* Diet match filter — only show restaurants where at least one menu item fits user's diet */
+    if (filterDietMatch && userFlags.length > 0) {
+      list = list.filter(p => {
+        if (p.dbMatch && p.dbMatch.menu.length > 0) {
+          return p.dbMatch.menu.some(i => userFlags.every(f => i.compatibleWith.includes(f)));
+        }
+        // For non-DB places use fallback compatibility
+        const fb = CUISINE_FALLBACK[p.type] ?? FALLBACK_DEFAULT;
+        return userFlags.some(f => fb.compatibleWith.includes(f));
+      });
+    }
 
     list.sort((a, b) => {
+      // Restaurants with full DB always float to top
+      const aDb = !!a.dbMatch, bDb = !!b.dbMatch;
+      if (aDb && !bDb) return -1;
+      if (!aDb && bDb) return 1;
+
       if (sortBy === 'distance') return (a.distKm ?? 999) - (b.distKm ?? 999);
       if (sortBy === 'protein_dollar') {
         const ppd = (p: EnrichedPlace) => p.dbMatch && p.dbMatch.menu.length
@@ -719,22 +749,20 @@ export default function EatPage() {
           : (CUISINE_FALLBACK[p.type] ?? FALLBACK_DEFAULT).price;
         return minP(a) - minP(b);
       }
-      /* best_match */
-      const aDb = !!a.dbMatch, bDb = !!b.dbMatch;
-      if (aDb && !bDb) return -1;
-      if (!aDb && bDb) return 1;
+      /* best_match: within same DB-match tier, sort by macro match score or protein/$ */
       if (aDb && bDb) {
         const sc = (p: EnrichedPlace) => p.dbMatch!.menu.length
           ? Math.max(...p.dbMatch!.menu.map(i => macroMatchScore(i, macroRem))) : 0;
         return sc(b) - sc(a);
       }
+      // Both non-DB: sort by estimated protein/$
       const fb = (p: EnrichedPlace) => CUISINE_FALLBACK[p.type] ?? FALLBACK_DEFAULT;
       return proteinPerDollar(fb(b).protein, fb(b).price) - proteinPerDollar(fb(a).protein, fb(a).price);
     });
     return list;
-  }, [enrichedPlaces, sortBy, filterOpenNow, filterMaxDist, filterCuisine, filterHighProtein, macroRem]);
+  }, [enrichedPlaces, sortBy, filterOpenNow, filterMaxDist, filterCuisine, filterHighProtein, filterDietMatch, userFlags, macroRem]);
 
-  const anyFilterActive = filterOpenNow || filterMaxDist !== null || filterCuisine !== 'All' || filterHighProtein;
+  const anyFilterActive = filterOpenNow || filterMaxDist !== null || filterCuisine !== 'All' || filterHighProtein || (filterDietMatch && userFlags.length > 0);
 
   const searchResults = useMemo(() => {
     if (!query.trim()) return null;
@@ -859,7 +887,8 @@ export default function EatPage() {
             filterMaxDist={filterMaxDist}         setFilterMaxDist={setFilterMaxDist}
             filterCuisine={filterCuisine}         setFilterCuisine={setFilterCuisine}
             filterHighProtein={filterHighProtein} setFilterHighProtein={setFilterHighProtein}
-            cuisineOptions={cuisineOptions}
+            filterDietMatch={filterDietMatch}     setFilterDietMatch={setFilterDietMatch}
+            cuisineOptions={cuisineOptions}       hasDietPrefs={userFlags.length > 0}
           />
         )}
 

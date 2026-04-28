@@ -2,7 +2,9 @@
 export type GoalType = 'weight_loss' | 'muscle_gain' | 'maintenance';
 export type DietaryFlag =
   | 'vegetarian' | 'vegan' | 'gluten_free'
-  | 'lactose_free' | 'keto' | 'halal' | 'kosher';
+  | 'lactose_free' | 'keto' | 'halal' | 'kosher'
+  | 'dairy_free' | 'nut_free' | 'low_carb' | 'high_protein'
+  | 'pescatarian' | 'no_pork';
 
 export interface UserProfile {
   name:               string;

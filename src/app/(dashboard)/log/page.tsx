@@ -1,8 +1,9 @@
 'use client';
-import { Suspense, useState, useRef } from 'react';
+import { Suspense, useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useStrideStore } from '@/lib/store';
+import { api } from '@/lib/apiClient';
 
 // ── Food database ─────────────────────────────────────────────────────────────
 const FOOD_DB = [
@@ -126,6 +127,30 @@ function LogInner() {
   const [activityType,  setActivityType]  = useState('');   // free-text, for "Other"
   const [customCalories,setCustomCalories]= useState('');
   const [actLogged,     setActLogged]     = useState(false);
+
+  // ── 7-day history ──────────────────────────────────────────────────────────
+  const [history,     setHistory]     = useState<{ date: string; calories: number; burned: number; target: number | null }[]>([]);
+  const [histLoading, setHistLoading] = useState(true);
+
+  useEffect(() => {
+    const dates = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(); d.setDate(d.getDate() - (6 - i));
+      return d.toISOString().slice(0, 10);
+    });
+    Promise.all(dates.map(d => api.summary.getByDate(d).catch(() => null)))
+      .then(results => {
+        setHistory(dates.map((date, i) => {
+          const r = results[i] as { totalCalories?: number; caloriesBurned?: number; targetCalories?: number } | null;
+          return {
+            date,
+            calories: r?.totalCalories ?? 0,
+            burned:   r?.caloriesBurned ?? 0,
+            target:   r?.targetCalories ?? null,
+          };
+        }));
+      })
+      .finally(() => setHistLoading(false));
+  }, []);
 
   const profile = store.profile;
   const weight  = profile.currentWeight || 70;
@@ -302,6 +327,70 @@ function LogInner() {
           boxShadow: SHADOW,
         }}>←</button>
         <h1 style={{ fontSize: 20, fontWeight: 800, color: FG1, margin: 0, flex: 1 }}>Log</h1>
+      </div>
+
+      {/* ── 7-Day History ── */}
+      <div style={{ padding: '0 16px', marginBottom: 14 }}>
+        <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, boxShadow: SHADOW, padding: '14px 16px 12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: FG3, textTransform: 'uppercase' }}>
+              7-Day History
+            </span>
+            <Link href="/log/history" style={{ fontSize: 13, fontWeight: 600, color: '#2E6FB8', textDecoration: 'none' }}>
+              Full log →
+            </Link>
+          </div>
+          {histLoading ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0' }}>
+              <div style={{ width: 14, height: 14, borderRadius: '50%', border: `2px solid ${BORDER}`, borderTopColor: GREEN, animation: 'spin 1s linear infinite' }} />
+              <span style={{ fontSize: 12, color: FG3 }}>Loading history…</span>
+            </div>
+          ) : (
+            <>
+              {/* Stats row */}
+              <div style={{ display: 'flex', gap: 0, marginBottom: 14 }}>
+                {[
+                  { label: 'Avg calories', value: history.length ? Math.round(history.reduce((s, d) => s + d.calories, 0) / history.length) : 0, unit: 'kcal/day', color: FG1 },
+                  { label: 'Total burned',  value: history.reduce((s, d) => s + d.burned, 0), unit: 'kcal', color: '#F2A93B' },
+                  { label: 'Active days',   value: history.filter(d => d.calories > 0 || d.burned > 0).length, unit: '/ 7', color: GREEN },
+                ].map((s, i) => (
+                  <div key={s.label} style={{ flex: 1, borderLeft: i > 0 ? `1px solid ${BORDER}` : 'none', paddingLeft: i > 0 ? 12 : 0, marginLeft: i > 0 ? 12 : 0 }}>
+                    <div style={{ fontSize: 10, color: FG3, fontWeight: 600, marginBottom: 2 }}>{s.label}</div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
+                      <span style={{ fontSize: 18, fontWeight: 700, color: s.color, fontFamily: "'Anton', Impact, sans-serif" }}>{s.value}</span>
+                      <span style={{ fontSize: 10, color: FG3 }}>{s.unit}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Mini bar chart */}
+              <div style={{ display: 'flex', gap: 5, alignItems: 'flex-end', height: 52 }}>
+                {history.map((d, i) => {
+                  const maxCal = Math.max(...history.map(h => h.calories), profile.targetCalories, 1);
+                  const pct    = d.calories / maxCal;
+                  const isToday = i === 6;
+                  const days   = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+                  const dow    = new Date(d.date + 'T00:00:00').getDay();
+                  return (
+                    <div key={d.date} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                      <div style={{ width: '100%', height: 40, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+                        <div style={{
+                          width: '70%', height: `${Math.max(pct * 100, d.calories > 0 ? 8 : 3)}%`,
+                          background: isToday ? GREEN : d.calories > 0 ? 'rgba(30,127,92,0.35)' : BORDER,
+                          borderRadius: 3, transition: 'height .4s',
+                          minHeight: 3,
+                        }} />
+                      </div>
+                      <span style={{ fontSize: 9, color: isToday ? GREEN : FG3, fontWeight: isToday ? 800 : 500 }}>
+                        {isToday ? 'Now' : days[dow]}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* ── Tab Switcher ── */}

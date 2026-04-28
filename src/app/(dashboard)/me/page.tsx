@@ -6,7 +6,7 @@ import { calculateBMR, calculateTargetCalories, calculateMacros } from '@/lib/ut
 import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { api } from '@/lib/apiClient';
-import type { GoalType } from '@/types';
+import type { GoalType, DietaryFlag } from '@/types';
 
 const GOAL_OPTS: { key: GoalType; emoji: string; label: string }[] = [
   { key: 'weight_loss', emoji: '📉', label: 'Lose Weight'  },
@@ -21,6 +21,22 @@ const ACTIVITY_LABELS: Record<string, string> = {
   active:      'Very active (6–7x/wk)',
   very_active: 'Athlete (2x/day)',
 };
+
+const DIET_OPTIONS: { key: DietaryFlag; label: string; emoji: string }[] = [
+  { key: 'halal',        label: 'Halal',         emoji: '☪️'  },
+  { key: 'vegetarian',   label: 'Vegetarian',    emoji: '🥦'  },
+  { key: 'vegan',        label: 'Vegan',         emoji: '🌱'  },
+  { key: 'pescatarian',  label: 'Pescatarian',   emoji: '🐟'  },
+  { key: 'gluten_free',  label: 'Gluten-Free',   emoji: '🌾'  },
+  { key: 'lactose_free', label: 'Lactose-Free',  emoji: '🥛'  },
+  { key: 'dairy_free',   label: 'Dairy-Free',    emoji: '🧀'  },
+  { key: 'nut_free',     label: 'Nut-Free',      emoji: '🥜'  },
+  { key: 'keto',         label: 'Keto',          emoji: '🥑'  },
+  { key: 'low_carb',     label: 'Low-Carb',      emoji: '🍞'  },
+  { key: 'high_protein', label: 'High-Protein',  emoji: '💪'  },
+  { key: 'no_pork',      label: 'No Pork',       emoji: '🐷'  },
+  { key: 'kosher',       label: 'Kosher',        emoji: '✡️'  },
+];
 
 /** SVG sparkline for weight trend */
 function WeightChart({ entries }: { entries: { date: string; weight: number }[] }) {
@@ -69,6 +85,20 @@ export default function MePage() {
   const [bfInput,     setBfInput    ] = useState('');
   const [saved,       setSaved      ] = useState(false);
   const [form,        setForm       ] = useState({ ...profile });
+  const [dietFlags,   setDietFlags  ] = useState<DietaryFlag[]>(profile.dietaryFlags ?? []);
+  const [dietSaved,   setDietSaved  ] = useState(false);
+
+  const toggleDietFlag = (flag: DietaryFlag) => {
+    setDietFlags(prev => prev.includes(flag) ? prev.filter(f => f !== flag) : [...prev, flag]);
+  };
+
+  const saveDietPreferences = () => {
+    const updated = { ...form, dietaryFlags: dietFlags };
+    store.updateProfile(updated);
+    api.profile.update(updated).catch(() => {});
+    setDietSaved(true);
+    setTimeout(() => setDietSaved(false), 2000);
+  };
 
   const latestWeight = trend.length ? trend[trend.length - 1].weight : profile.currentWeight;
   const latestBf     = trend.length ? trend[trend.length - 1].bodyFat : undefined;
@@ -500,6 +530,54 @@ export default function MePage() {
                   ))}
                 </div>
               </div>
+            </div>
+
+            {/* ── Dietary Preferences ── */}
+            <div style={cardStyle}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#0F1B2D', marginBottom: 6 }}>Dietary Preferences</div>
+              <p style={{ fontSize: 12, color: '#8B95A7', marginBottom: 14, lineHeight: 1.5 }}>
+                Used to filter food recommendations on the Eat page. Select all that apply.
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
+                {DIET_OPTIONS.map(opt => {
+                  const active = dietFlags.includes(opt.key);
+                  return (
+                    <button
+                      key={opt.key}
+                      onClick={() => toggleDietFlag(opt.key)}
+                      style={{
+                        borderRadius: 12, padding: '10px 10px',
+                        display: 'flex', alignItems: 'center', gap: 8,
+                        border: `1.5px solid ${active ? '#1E7F5C' : '#E5E9F2'}`,
+                        background: active ? 'rgba(30,127,92,0.08)' : '#F7F8FB',
+                        cursor: 'pointer', transition: 'all .2s',
+                        fontFamily: 'Inter, sans-serif',
+                        textAlign: 'left',
+                      }}
+                    >
+                      <span style={{ fontSize: 18 }}>{opt.emoji}</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: active ? '#1E7F5C' : '#5B6576', flex: 1 }}>{opt.label}</span>
+                      {active && <span style={{ fontSize: 11, color: '#1E7F5C' }}>✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
+              <button onClick={saveDietPreferences} style={{
+                width: '100%',
+                background: dietSaved ? 'rgba(30,127,92,0.10)' : '#1E7F5C',
+                color: dietSaved ? '#1E7F5C' : '#FFFFFF',
+                border: dietSaved ? '1px solid rgba(30,127,92,0.20)' : 'none',
+                borderRadius: 14,
+                padding: '12px 0',
+                fontSize: 14,
+                fontWeight: 800,
+                cursor: 'pointer',
+                transition: 'all .2s',
+                boxShadow: dietSaved ? 'none' : '0 4px 14px rgba(30,127,92,0.22)',
+                fontFamily: 'Inter, sans-serif',
+              }}>
+                {dietSaved ? '✓ Preferences Saved!' : 'Save Dietary Preferences'}
+              </button>
             </div>
 
             <div style={cardStyle}>
