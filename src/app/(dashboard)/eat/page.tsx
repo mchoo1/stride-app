@@ -6,7 +6,7 @@ import {
   macroMatchScore, proteinPerDollar, ppdColor, filterItemsByDiet,
   resolveIngredients, calcCostPerServing,
   SG_RESTAURANTS, SG_RECIPES,
-  type SGRestaurant, type SGMenuItem, type SGRecipe, type RestaurantTab, type RestaurantTier,
+  type SGRestaurant, type SGMenuItem, type SGRecipe, type ServiceType, type RestaurantTier,
 } from '@/lib/sgFoodDb';
 import type { DietaryFlag } from '@/types';
 
@@ -32,9 +32,11 @@ interface EnrichedPlace extends NearbyPlace {
   tier: RestaurantTier;
 }
 
-type MealType = 'breakfast' | 'lunch' | 'snack' | 'dinner';
-type SortKey  = 'best_match' | 'protein_dollar' | 'price' | 'distance';
-type DietFit  = 'great' | 'check' | 'warn' | 'neutral';
+type MealType     = 'breakfast' | 'lunch' | 'snack' | 'dinner';
+type SortKey      = 'best_match' | 'protein_dollar' | 'price' | 'distance';
+type DietFit      = 'great' | 'check' | 'warn' | 'neutral';
+type EatTab       = 'food' | 'store';
+type ServiceFilter = 'all' | ServiceType;
 
 /* ── Cuisine fallbacks ── */
 interface FallbackDish {
@@ -100,6 +102,23 @@ function DietBadge({ fit }: { fit: DietFit }) {
     <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 6, background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.color }}>
       {cfg.label}
     </span>
+  );
+}
+
+function ServiceBadges({ serviceTypes }: { serviceTypes: ServiceType[] }) {
+  const map: Record<ServiceType, { label: string; emoji: string }> = {
+    dine_in:  { label: 'Dine In',   emoji: '🍽️' },
+    grab_go:  { label: 'Takeaway',  emoji: '🥡' },
+    delivery: { label: 'Delivery',  emoji: '🛵' },
+  };
+  return (
+    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+      {serviceTypes.map(s => (
+        <span key={s} style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 5, background: 'rgba(91,101,118,0.08)', border: `1px solid ${BORDER}`, color: FG3 }}>
+          {map[s].emoji} {map[s].label}
+        </span>
+      ))}
+    </div>
   );
 }
 
@@ -180,8 +199,9 @@ function SortBar({ active, onChange, showDistance }: {
   );
 }
 
-/* ── 2. FilterBar with High Protein chip ── */
+/* ── 2. FilterBar ── */
 function FilterBar({
+  filterService, setFilterService,
   filterOpenNow, setFilterOpenNow,
   filterMaxDist, setFilterMaxDist,
   filterCuisine, setFilterCuisine,
@@ -189,12 +209,13 @@ function FilterBar({
   filterDietMatch, setFilterDietMatch,
   cuisineOptions, hasDietPrefs,
 }: {
-  filterOpenNow: boolean;      setFilterOpenNow: (v: boolean) => void;
-  filterMaxDist: null|0.5|1|2; setFilterMaxDist: (v: null|0.5|1|2) => void;
-  filterCuisine: string;       setFilterCuisine: (v: string) => void;
-  filterHighProtein: boolean;  setFilterHighProtein: (v: boolean) => void;
-  filterDietMatch: boolean;    setFilterDietMatch: (v: boolean) => void;
-  cuisineOptions: string[]; hasDietPrefs: boolean;
+  filterService: ServiceFilter;  setFilterService: (v: ServiceFilter) => void;
+  filterOpenNow: boolean;        setFilterOpenNow: (v: boolean) => void;
+  filterMaxDist: null|0.5|1|2;  setFilterMaxDist: (v: null|0.5|1|2) => void;
+  filterCuisine: string;         setFilterCuisine: (v: string) => void;
+  filterHighProtein: boolean;    setFilterHighProtein: (v: boolean) => void;
+  filterDietMatch: boolean;      setFilterDietMatch: (v: boolean) => void;
+  cuisineOptions: string[];      hasDietPrefs: boolean;
 }) {
   const chip = (active: boolean): React.CSSProperties => ({
     flexShrink: 0, borderRadius: 999, padding: '5px 12px',
@@ -207,8 +228,28 @@ function FilterBar({
     { val: null, label: 'All' }, { val: 0.5, label: '< 500m' },
     { val: 1, label: '< 1km'  }, { val: 2,   label: '< 2km'  },
   ];
+  const serviceOpts: { val: ServiceFilter; label: string; soon?: boolean }[] = [
+    { val: 'all',      label: '🍴 All'       },
+    { val: 'dine_in',  label: '🍽️ Dine In'  },
+    { val: 'grab_go',  label: '🥡 Takeaway'  },
+    { val: 'delivery', label: '🛵 Delivery', soon: true },
+  ];
   return (
     <div style={{ marginBottom: 14, display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {/* Row 0: Service type */}
+      <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2 }}>
+        {serviceOpts.map(s => (
+          <button key={s.val} onClick={() => !s.soon && setFilterService(s.val)}
+            style={{
+              ...chip(filterService === s.val),
+              opacity: s.soon ? 0.45 : 1, cursor: s.soon ? 'not-allowed' : 'pointer',
+              position: 'relative' as const,
+            }}
+          >
+            {s.label}{s.soon && <span style={{ fontSize: 8, marginLeft: 3, verticalAlign: 'super', color: FG3 }}>soon</span>}
+          </button>
+        ))}
+      </div>
       {/* Row 1: Diet Match + Open Now + High Protein + Distance */}
       <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2 }}>
         {hasDietPrefs && (
@@ -469,10 +510,11 @@ function RestaurantCard({
             {rating != null ? ` · ⭐ ${rating.toFixed(1)}` : ''}
             {itemCount > 0 ? ` · ${itemCount} items` : ''}
           </div>
-          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center', marginBottom: 3 }}>
             <DietBadge fit={dietFit} />
             {itemCount === 0 && <span style={{ fontSize: 10, color: FG3, fontStyle: 'italic' }}>Menu data coming soon</span>}
           </div>
+          <ServiceBadges serviceTypes={restaurant.serviceTypes} />
           {/* 1. Macro match bar */}
           {bestScore !== null && <MacroMatchBar score={bestScore} />}
         </div>
@@ -671,23 +713,25 @@ export default function EatPage() {
   /* 3. Meal time context — computed once */
   const mealCtx = useMemo(() => getMealContext(), []);
 
-  const [tab,           setTab         ] = useState<RestaurantTab | 'store'>('restaurant');
+  const [tab,           setTab         ] = useState<EatTab>('food');
   const [sortBy,        setSortBy      ] = useState<SortKey>('best_match');
   const [query,         setQuery       ] = useState('');
   const [expandedId,    setExpandedId  ] = useState<string | null>(null);
   const [logged,        setLogged      ] = useState<Set<string>>(new Set());
   const [recipeLogged,  setRecipeLogged] = useState<Set<string>>(new Set());
 
-  /* Filter state — default diet filter ON if user has preferences set */
+  /* Filter state */
+  const [filterService,     setFilterService    ] = useState<ServiceFilter>('all');
   const [filterOpenNow,     setFilterOpenNow    ] = useState(false);
   const [filterMaxDist,     setFilterMaxDist    ] = useState<null|0.5|1|2>(null);
   const [filterCuisine,     setFilterCuisine    ] = useState('All');
   const [filterHighProtein, setFilterHighProtein] = useState(false);
   const [filterDietMatch,   setFilterDietMatch  ] = useState(userFlags.length > 0);
 
-  const switchTab = (t: typeof tab) => {
+  const switchTab = (t: EatTab) => {
     setTab(t); setQuery(''); setExpandedId(null);
-    setFilterOpenNow(false); setFilterMaxDist(null); setFilterCuisine('All'); setFilterHighProtein(false);
+    setFilterService('all'); setFilterOpenNow(false); setFilterMaxDist(null);
+    setFilterCuisine('All'); setFilterHighProtein(false);
   };
 
   const [places,   setPlaces  ] = useState<NearbyPlace[]>([]);
@@ -736,6 +780,10 @@ export default function EatPage() {
     let list = [...enrichedPlaces];
 
     // ── Shared filters ──────────────────────────────────────────────────────
+    // Service type filter on DB-matched places
+    if (filterService !== 'all') list = list.filter(p =>
+      !p.dbMatch || p.dbMatch.serviceTypes.includes(filterService as ServiceType)
+    );
     if (filterOpenNow)           list = list.filter(p => p.hours === 'Open now');
     if (filterMaxDist !== null)  list = list.filter(p => (p.distKm ?? 999) <= filterMaxDist);
     if (filterCuisine !== 'All') list = list.filter(p => {
@@ -798,12 +846,22 @@ export default function EatPage() {
   const searchResults = useMemo(() => {
     if (!query.trim()) return null;
     if (tab === 'store') return { type: 'recipes' as const, recipes: searchRecipes(query) };
-    const { restaurants, items } = searchAll(query, tab as RestaurantTab);
+    const svcFilter = filterService !== 'all' && filterService !== 'delivery'
+      ? filterService as ServiceType : undefined;
+    const { restaurants, items } = searchAll(query, svcFilter);
     return { type: 'food' as const, restaurants, items };
-  }, [query, tab]);
+  }, [query, tab, filterService]);
 
-  const grabGoRestaurants = useMemo(() => {
-    const base = SG_RESTAURANTS.filter(r => r.tabs.includes('grab_go'));
+  /* DB chains — shown when GPS is unavailable or below GPS section.
+     Excludes any outlet already surfaced by GPS (avoid duplicates). */
+  const dbChains = useMemo(() => {
+    const gpsMatchedIds = new Set(enrichedPlaces.filter(p => p.dbMatch).map(p => p.dbMatch!.id));
+    let base = SG_RESTAURANTS
+      .filter(r => r.tier === 'full_menu')                   // only verified chains
+      .filter(r => !gpsMatchedIds.has(r.id))                 // not already shown via GPS
+      .filter(r => filterService === 'all' || r.serviceTypes.includes(filterService as ServiceType))
+      .filter(r => !filterDietMatch || !userFlags.length ||
+        r.menu.some(i => userFlags.every(f => i.compatibleWith.includes(f))));
     return [...base].sort((a, b) => {
       if (sortBy === 'protein_dollar') {
         const ppd = (r: SGRestaurant) => r.menu.length ? Math.max(...r.menu.map(i => proteinPerDollar(i.protein, i.price))) : 0;
@@ -816,7 +874,7 @@ export default function EatPage() {
       const sc = (r: SGRestaurant) => r.menu.length ? Math.max(...r.menu.map(i => macroMatchScore(i, macroRem))) : 0;
       return sc(b) - sc(a);
     });
-  }, [sortBy, macroRem]);
+  }, [enrichedPlaces, sortBy, macroRem, filterService, filterDietMatch, userFlags]);
 
   /* Log helpers — use meal context mealType */
   const logMenuItem = useCallback((item: SGMenuItem, restaurant: SGRestaurant) => {
@@ -895,25 +953,25 @@ export default function EatPage() {
 
       <div style={{ padding: '0 16px 100px' }}>
 
-        {/* Tab bar */}
+        {/* Tab bar — 2 tabs */}
         <div style={{ background: CARD, borderRadius: 16, padding: 4, display: 'flex', gap: 4, border: `1px solid ${BORDER}`, marginBottom: 14, boxShadow: SHADOW }}>
-          <button style={tabBtn(tab === 'restaurant')} onClick={() => switchTab('restaurant')}>🍽️ Restaurant</button>
-          <button style={tabBtn(tab === 'grab_go')}    onClick={() => switchTab('grab_go')}>🥡 Grab &amp; Go</button>
-          <button style={tabBtn(tab === 'store')}      onClick={() => switchTab('store')}>🛒 Store</button>
+          <button style={tabBtn(tab === 'food')}  onClick={() => switchTab('food')}>🍴 Find Food</button>
+          <button style={tabBtn(tab === 'store')} onClick={() => switchTab('store')}>🛒 Store</button>
         </div>
 
         <SearchBar
           value={query} onChange={setQuery}
-          placeholder={tab === 'restaurant' ? 'Search restaurants or dishes…' : tab === 'grab_go' ? 'Search brands or ready-to-eat items…' : 'Search recipes or ingredients…'}
+          placeholder={tab === 'food' ? 'Search restaurants, chains, or dishes…' : 'Search recipes or ingredients…'}
         />
 
-        {!query && tab !== 'store' && (
-          <SortBar active={sortBy} onChange={setSortBy} showDistance={tab === 'restaurant'} />
+        {!query && tab === 'food' && (
+          <SortBar active={sortBy} onChange={setSortBy} showDistance={locState === 'done'} />
         )}
 
-        {/* Filter bar: Restaurant GPS tab only */}
-        {tab === 'restaurant' && !query && locState === 'done' && (
+        {/* Filter bar: Food tab */}
+        {tab === 'food' && !query && (
           <FilterBar
+            filterService={filterService}         setFilterService={setFilterService}
             filterOpenNow={filterOpenNow}         setFilterOpenNow={setFilterOpenNow}
             filterMaxDist={filterMaxDist}         setFilterMaxDist={setFilterMaxDist}
             filterCuisine={filterCuisine}         setFilterCuisine={setFilterCuisine}
@@ -923,8 +981,8 @@ export default function EatPage() {
           />
         )}
 
-        {/* ══ RESTAURANT TAB ══ */}
-        {tab === 'restaurant' && (
+        {/* ══ FOOD TAB ══ */}
+        {tab === 'food' && (
           <>
             {searchResults?.type === 'food' && (
               <>
@@ -1109,77 +1167,33 @@ export default function EatPage() {
                     })}
                   </>
                 )}
-              </>
-            )}
-          </>
-        )}
 
-        {/* ══ GRAB & GO ══ */}
-        {tab === 'grab_go' && (
-          <>
-            {searchResults?.type === 'food' && (
-              searchResults.restaurants.length === 0 && searchResults.items.length === 0 ? (
-                query.trim().length > 0 ? (
-                  <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, padding: '28px 20px', textAlign: 'center', boxShadow: SHADOW }}>
-                    <div style={{ fontSize: 40, marginBottom: 10 }}>🔍</div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: FG2, marginBottom: 8 }}>Not in our database yet</div>
-                    <a
-                      href={`https://www.google.com/maps/search/${encodeURIComponent(query)}+Singapore`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        display: 'inline-block',
-                        background: 'rgba(46,111,184,0.08)',
-                        color: '#2E6FB8',
-                        borderRadius: 12,
-                        padding: '10px 16px',
-                        fontSize: 13,
-                        fontWeight: 700,
-                        textDecoration: 'none',
-                        marginBottom: 8,
-                      }}
-                    >
-                      📍 Search on Google Maps →
-                    </a>
-                    <div style={{ fontSize: 11, color: '#8B95A7' }}>Opens Google Maps for nearby options</div>
-                  </div>
-                ) : (
-                  <EmptyState emoji="🔍" title="No results" subtitle={`"${query}" not found yet. More brands coming soon.`} />
-                )
-              ) : (
-                <>
-                  {searchResults.restaurants.map(r => (
-                    <RestaurantCard key={r.id} restaurant={r}
-                      isExpanded={expandedId === r.id}
-                      onToggle={() => setExpandedId(expandedId === r.id ? null : r.id)}
-                      userFlags={userFlags} remaining={macroRem} onLog={logMenuItem} logged={logged}
+                {/* ── DB chains: always shown when not searching ──
+                    "Also in database" after GPS results; "Browse" when GPS unavailable */}
+                {dbChains.length > 0 && (
+                  <>
+                    <TierSectionHeader
+                      emoji="🏪"
+                      title={locState === 'done' ? 'Also In Our Database' : 'Browse Our Database'}
+                      count={dbChains.length}
+                      color={FG2}
+                      note={locState === 'done' ? 'Not detected nearby' : "Enable location to see what's nearby"}
                     />
-                  ))}
-                  {searchResults.items.length > 0 && (
-                    <div style={{ background: CARD, borderRadius: 18, border: `1px solid ${BORDER}`, overflow: 'hidden', boxShadow: SHADOW }}>
-                      {searchResults.items.map(({ restaurant, item }) => (
-                        <div key={`${restaurant.id}-${item.id}`}>
-                          <div style={{ padding: '6px 14px 0', fontSize: 10, fontWeight: 700, color: FG3 }}>{restaurant.name}</div>
-                          <MenuItemRow item={item} userFlags={userFlags} onLog={i => logMenuItem(i, restaurant)} logged={logged.has(item.id)} />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )
-            )}
-            {!query && (
-              grabGoRestaurants.length === 0 ? (
-                <EmptyState emoji="🥡" title="Grab & Go database coming soon" subtitle="We're adding Old Chang Kee, Ya Kun, 7-Eleven, BreadTalk and more. Check back shortly." />
-              ) : (
-                grabGoRestaurants.map(r => (
-                  <RestaurantCard key={r.id} restaurant={r}
-                    isExpanded={expandedId === r.id}
-                    onToggle={() => setExpandedId(expandedId === r.id ? null : r.id)}
-                    userFlags={userFlags} remaining={macroRem} onLog={logMenuItem} logged={logged}
-                  />
-                ))
-              )
+                    {dbChains.map(r => (
+                      <RestaurantCard key={r.id} restaurant={r}
+                        isExpanded={expandedId === r.id}
+                        onToggle={() => setExpandedId(expandedId === r.id ? null : r.id)}
+                        userFlags={userFlags} remaining={macroRem} onLog={logMenuItem} logged={logged}
+                        badge={
+                          <span style={{ fontSize: 9, fontWeight: 800, background: 'rgba(46,111,184,0.10)', color: '#2E6FB8', borderRadius: 5, padding: '1px 5px' }}>
+                            📋 IN DATABASE
+                          </span>
+                        }
+                      />
+                    ))}
+                  </>
+                )}
+              </>
             )}
           </>
         )}
