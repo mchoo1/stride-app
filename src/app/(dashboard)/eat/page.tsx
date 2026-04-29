@@ -803,7 +803,7 @@ export default function EatPage() {
   }, [query, tab]);
 
   const grabGoRestaurants = useMemo(() => {
-    const base = SG_RESTAURANTS.filter(r => r.tab === 'grab_go');
+    const base = SG_RESTAURANTS.filter(r => r.tabs.includes('grab_go'));
     return [...base].sort((a, b) => {
       if (sortBy === 'protein_dollar') {
         const ppd = (r: SGRestaurant) => r.menu.length ? Math.max(...r.menu.map(i => proteinPerDollar(i.protein, i.price))) : 0;

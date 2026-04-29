@@ -144,8 +144,13 @@ export interface SGRestaurant {
    */
   cuisine: string;
 
-  /** Which Eat page tab this restaurant appears in */
-  tab: RestaurantTab;
+  /**
+   * Which Eat page tab(s) this restaurant appears in.
+   * An outlet can appear in multiple tabs — e.g. Ya Kun has dine-in seating
+   * (restaurant) AND a counter-service takeaway menu (grab_go).
+   * Use a single-element array for outlets that belong to only one tab.
+   */
+  tabs: RestaurantTab[];
 
   /**
    * Lowercase partial strings used to fuzzy-match Google Places results.
@@ -412,7 +417,7 @@ export const SG_RESTAURANTS: SGRestaurant[] = [
     name: "McDonald's",
     emoji: '🍔',
     cuisine: 'Fast Food',
-    tab: 'restaurant',
+    tabs: ['restaurant'],
     tier: 'full_menu',
     aliases: ['mcdonald', 'mcdonalds', "mcdonald's", 'mcd', 'mac'],
     dietTags: ['halal'],
@@ -629,7 +634,7 @@ export const SG_RESTAURANTS: SGRestaurant[] = [
     name: 'KFC',
     emoji: '🍗',
     cuisine: 'Fast Food',
-    tab: 'restaurant',
+    tabs: ['restaurant'],
     tier: 'full_menu',
     aliases: ['kfc', 'kentucky fried chicken', 'kentucky'],
     dietTags: ['halal'],
@@ -785,7 +790,7 @@ export const SG_RESTAURANTS: SGRestaurant[] = [
     name: 'Burger King',
     emoji: '👑',
     cuisine: 'Fast Food',
-    tab: 'restaurant',
+    tabs: ['restaurant'],
     tier: 'full_menu',
     aliases: ['burger king', 'burgerking', 'bk'],
     dietTags: ['halal'],
@@ -926,7 +931,7 @@ export const SG_RESTAURANTS: SGRestaurant[] = [
     name: 'Subway',
     emoji: '🥖',
     cuisine: 'Sandwiches',
-    tab: 'restaurant',
+    tabs: ['restaurant', 'grab_go'],
     tier: 'full_menu',
     aliases: ['subway'],
     dietTags: ['halal'],
@@ -1100,7 +1105,7 @@ export const SG_RESTAURANTS: SGRestaurant[] = [
     name: 'Old Chang Kee',
     emoji: '🥟',
     cuisine: 'Local Snacks',
-    tab: 'grab_go',
+    tabs: ['restaurant', 'grab_go'],
     tier: 'full_menu',
     aliases: ['old chang kee', 'ock', 'old chang'],
     dietTags: ['halal'],
@@ -1224,7 +1229,7 @@ export const SG_RESTAURANTS: SGRestaurant[] = [
     name: 'Ya Kun Kaya Toast',
     emoji: '🍞',
     cuisine: 'Local Cafe',
-    tab: 'grab_go',
+    tabs: ['restaurant', 'grab_go'],
     tier: 'full_menu',
     aliases: ['ya kun', 'yakun', 'ya kun kaya'],
     dietTags: [],
@@ -1363,7 +1368,7 @@ export const SG_RESTAURANTS: SGRestaurant[] = [
     name: 'BreadTalk',
     emoji: '🥐',
     cuisine: 'Bakery',
-    tab: 'grab_go',
+    tabs: ['grab_go'],
     tier: 'full_menu',
     aliases: ['breadtalk', 'bread talk'],
     dietTags: ['halal'],
@@ -1486,7 +1491,7 @@ export const SG_RESTAURANTS: SGRestaurant[] = [
     name: 'Gong Cha',
     emoji: '🧋',
     cuisine: 'Bubble Tea',
-    tab: 'grab_go',
+    tabs: ['grab_go'],
     tier: 'full_menu',
     aliases: ['gong cha', 'gongcha', 'gong-cha'],
     dietTags: ['halal', 'vegetarian'],
@@ -1604,7 +1609,7 @@ export const SG_RESTAURANTS: SGRestaurant[] = [
     name: '7-Eleven',
     emoji: '🏪',
     cuisine: 'Convenience Store',
-    tab: 'grab_go',
+    tabs: ['grab_go'],
     tier: 'full_menu',
     aliases: ['7-eleven', '7 eleven', '7eleven', 'seven eleven'],
     dietTags: [],
@@ -2676,7 +2681,7 @@ const SG_HAWKER_PLACES: SGRestaurant[] = [
     name: 'Maxwell Food Centre',
     emoji: '🍗',
     cuisine: 'Local & Hawker',
-    tab: 'restaurant',
+    tabs: ['restaurant'],
     tier: 'estimated_menu',
     aliases: ['maxwell food centre', 'maxwell food center', 'maxwell hawker', 'maxwell road food centre'],
     dietTags: ['halal', 'lactose_free'],
@@ -2716,7 +2721,7 @@ const SG_HAWKER_PLACES: SGRestaurant[] = [
     name: 'Lau Pa Sat Festival Market',
     emoji: '🏛️',
     cuisine: 'Local & Hawker',
-    tab: 'restaurant',
+    tabs: ['restaurant'],
     tier: 'estimated_menu',
     aliases: ['lau pa sat', 'lau pa sat festival', 'telok ayer market', 'lps', 'lau pasat'],
     dietTags: ['halal', 'lactose_free'],
@@ -2752,7 +2757,7 @@ const SG_HAWKER_PLACES: SGRestaurant[] = [
     name: 'Newton Food Centre',
     emoji: '🌃',
     cuisine: 'Local & Hawker',
-    tab: 'restaurant',
+    tabs: ['restaurant'],
     tier: 'estimated_menu',
     aliases: ['newton food centre', 'newton hawker', 'newton circus', 'newton food center'],
     dietTags: ['halal', 'lactose_free'],
@@ -2788,7 +2793,7 @@ const SG_HAWKER_PLACES: SGRestaurant[] = [
     name: 'Chinatown Complex Food Centre',
     emoji: '🏮',
     cuisine: 'Local & Hawker',
-    tab: 'restaurant',
+    tabs: ['restaurant'],
     tier: 'estimated_menu',
     aliases: ['chinatown complex', 'chinatown food centre', 'chinatown complex hawker', 'smith street food centre'],
     dietTags: ['lactose_free'],
@@ -2824,7 +2829,7 @@ const SG_HAWKER_PLACES: SGRestaurant[] = [
     name: 'Tekka Market',
     emoji: '🇮🇳',
     cuisine: 'Indian & Malay',
-    tab: 'restaurant',
+    tabs: ['restaurant'],
     tier: 'estimated_menu',
     aliases: ['tekka market', 'tekka centre', 'serangoon road market', 'little india market', 'buffalo road market'],
     dietTags: ['halal', 'vegetarian', 'lactose_free'],
@@ -2864,7 +2869,7 @@ const SG_HAWKER_PLACES: SGRestaurant[] = [
     name: 'Old Airport Road Food Centre',
     emoji: '✈️',
     cuisine: 'Local & Hawker',
-    tab: 'restaurant',
+    tabs: ['restaurant'],
     tier: 'estimated_menu',
     aliases: ['old airport road food centre', 'old airport road hawker', 'oar food centre', 'oran hawker'],
     dietTags: ['lactose_free'],
@@ -2900,7 +2905,7 @@ const SG_HAWKER_PLACES: SGRestaurant[] = [
     name: 'Amoy Street Food Centre',
     emoji: '🏙️',
     cuisine: 'Local & Hawker',
-    tab: 'restaurant',
+    tabs: ['restaurant'],
     tier: 'estimated_menu',
     aliases: ['amoy street food centre', 'amoy street hawker', 'amoy hawker', 'amoy street', 'telok ayer hawker'],
     dietTags: ['lactose_free'],
@@ -2936,7 +2941,7 @@ const SG_HAWKER_PLACES: SGRestaurant[] = [
     name: 'Hong Lim Food Centre',
     emoji: '🏯',
     cuisine: 'Local & Hawker',
-    tab: 'restaurant',
+    tabs: ['restaurant'],
     tier: 'estimated_menu',
     aliases: ['hong lim food centre', 'hong lim market', 'hong lim hawker', 'hong lim complex'],
     dietTags: ['lactose_free'],
@@ -2968,7 +2973,7 @@ const SG_HAWKER_PLACES: SGRestaurant[] = [
     name: 'Bedok Interchange Hawker Centre',
     emoji: '🚉',
     cuisine: 'Local & Hawker',
-    tab: 'restaurant',
+    tabs: ['restaurant'],
     tier: 'estimated_menu',
     aliases: ['bedok interchange', 'bedok interchange hawker', 'bedok food centre', 'bedok interchange food centre'],
     dietTags: ['halal', 'lactose_free'],
@@ -3004,7 +3009,7 @@ const SG_HAWKER_PLACES: SGRestaurant[] = [
     name: 'Tiong Bahru Market',
     emoji: '🌿',
     cuisine: 'Local & Hawker',
-    tab: 'restaurant',
+    tabs: ['restaurant'],
     tier: 'estimated_menu',
     aliases: ['tiong bahru market', 'tiong bahru hawker', 'tiong bahru food centre', 'seng poh road market'],
     dietTags: ['lactose_free'],
@@ -3067,7 +3072,7 @@ export function searchRestaurants(
   tab?: RestaurantTab,
 ): SGRestaurant[] {
   const base = tab
-    ? SG_RESTAURANTS.filter(r => r.tab === tab)
+    ? SG_RESTAURANTS.filter(r => r.tabs.includes(tab))
     : SG_RESTAURANTS;
 
   if (!query.trim()) return base;
@@ -3095,7 +3100,7 @@ export function searchMenuItems(
   const results: MenuItemSearchResult[] = [];
 
   SG_RESTAURANTS
-    .filter(r => tab === undefined || r.tab === tab)
+    .filter(r => tab === undefined || r.tabs.includes(tab))
     .forEach(restaurant => {
       restaurant.menu.forEach(item => {
         const nameMatch = item.name.toLowerCase().includes(lower);
