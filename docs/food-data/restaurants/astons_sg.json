@@ -1,0 +1,198 @@
+{
+  "id": "astons",
+  "name": "Aston's Specialities",
+  "emoji": "\ud83e\udd69",
+  "cuisine": "Western Casual",
+  "tier": "full_menu",
+  "serviceTypes": [
+    "dine_in",
+    "grab_go",
+    "delivery"
+  ],
+  "aliases": [
+    "astons",
+    "aston's",
+    "aston specialities",
+    "astons specialities"
+  ],
+  "dietTags": [],
+  "priceRange": "$",
+  "nutritionUrl": "https://www.astons.com.sg/menu",
+  "lastUpdated": "2026-05-01",
+  "menu": [
+    {
+      "id": "astons_ribeye",
+      "name": "Ribeye Steak (180g)",
+      "emoji": "\ud83e\udd69",
+      "price": 18.9,
+      "calories": 480,
+      "protein": 44,
+      "carbs": 0,
+      "fat": 32,
+      "sodium": 480,
+      "category": "Steaks",
+      "compatibleWith": [
+        "no_pork",
+        "gluten_free"
+      ],
+      "isPopular": true,
+      "description": "Grilled ribeye steak served with 2 sides and sauce of choice.",
+      "source": "community",
+      "sourceUrl": "https://www.astons.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01",
+      "nutritionNote": "Not halal-certified. Steak macros estimated per 180g serve; exclude sides."
+    },
+    {
+      "id": "astons_sirloin",
+      "name": "Sirloin Steak (180g)",
+      "emoji": "\ud83e\udd69",
+      "price": 16.9,
+      "calories": 380,
+      "protein": 46,
+      "carbs": 0,
+      "fat": 20,
+      "sodium": 420,
+      "category": "Steaks",
+      "compatibleWith": [
+        "no_pork",
+        "gluten_free"
+      ],
+      "isPopular": true,
+      "source": "community",
+      "sourceUrl": "https://www.astons.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "astons_chicken_chop",
+      "name": "Chicken Chop",
+      "emoji": "\ud83c\udf57",
+      "price": 13.9,
+      "calories": 420,
+      "protein": 40,
+      "carbs": 8,
+      "fat": 24,
+      "sodium": 680,
+      "category": "Chicken",
+      "compatibleWith": [
+        "no_pork"
+      ],
+      "isPopular": true,
+      "description": "Pan-fried or grilled chicken leg quarter served with 2 sides.",
+      "source": "community",
+      "sourceUrl": "https://www.astons.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "astons_fish_chips",
+      "name": "Fish & Chips",
+      "emoji": "\ud83d\udc1f",
+      "price": 14.9,
+      "calories": 560,
+      "protein": 28,
+      "carbs": 52,
+      "fat": 26,
+      "sodium": 820,
+      "category": "Seafood",
+      "compatibleWith": [
+        "no_pork"
+      ],
+      "isPopular": false,
+      "description": "Beer-battered fish fillet with tartar sauce and fries.",
+      "source": "community",
+      "sourceUrl": "https://www.astons.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "astons_salmon",
+      "name": "Grilled Salmon",
+      "emoji": "\ud83d\udc1f",
+      "price": 17.9,
+      "calories": 440,
+      "protein": 42,
+      "carbs": 4,
+      "fat": 26,
+      "sodium": 560,
+      "category": "Seafood",
+      "compatibleWith": [
+        "no_pork",
+        "gluten_free"
+      ],
+      "isPopular": true,
+      "description": "Grilled Atlantic salmon fillet served with 2 sides.",
+      "source": "community",
+      "sourceUrl": "https://www.astons.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "astons_mashed_potato",
+      "name": "Mashed Potato",
+      "emoji": "\ud83e\udd54",
+      "price": 0,
+      "calories": 180,
+      "protein": 3,
+      "carbs": 26,
+      "fat": 7,
+      "sodium": 340,
+      "category": "Sides",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "description": "Creamy mashed potato with butter. Included as a set side.",
+      "source": "community",
+      "sourceUrl": "https://www.astons.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "astons_coleslaw",
+      "name": "Coleslaw",
+      "emoji": "\ud83e\udd57",
+      "price": 0,
+      "calories": 130,
+      "protein": 1,
+      "carbs": 14,
+      "fat": 8,
+      "sodium": 220,
+      "category": "Sides",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": false,
+      "description": "Creamy coleslaw. Included as a set side.",
+      "source": "community",
+      "sourceUrl": "https://www.astons.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "astons_fries",
+      "name": "Steak Fries",
+      "emoji": "\ud83c\udf5f",
+      "price": 0,
+      "calories": 280,
+      "protein": 4,
+      "carbs": 38,
+      "fat": 13,
+      "sodium": 380,
+      "category": "Sides",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "description": "Thick-cut steak fries. Included as a set side.",
+      "source": "community",
+      "sourceUrl": "https://www.astons.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    }
+  ]
+}

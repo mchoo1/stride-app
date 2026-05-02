@@ -1,0 +1,169 @@
+{
+  "id": "dosirak",
+  "name": "Dosirak",
+  "emoji": "\ud83c\udf71",
+  "cuisine": "Korean",
+  "tier": "full_menu",
+  "serviceTypes": [
+    "dine_in",
+    "grab_go",
+    "delivery"
+  ],
+  "aliases": [
+    "dosirak",
+    "\ub3c4\uc2dc\ub77d"
+  ],
+  "dietTags": [],
+  "priceRange": "$",
+  "nutritionUrl": "https://www.dosirak.com.sg/menu",
+  "lastUpdated": "2026-05-01",
+  "menu": [
+    {
+      "id": "dosirak_bulgogi_set",
+      "name": "Bulgogi Beef Rice Set",
+      "emoji": "\ud83c\udf71",
+      "price": 9.9,
+      "calories": 620,
+      "protein": 28,
+      "carbs": 86,
+      "fat": 16,
+      "sodium": 980,
+      "category": "Rice Sets",
+      "compatibleWith": [
+        "no_pork"
+      ],
+      "isPopular": true,
+      "description": "Marinated bulgogi beef over steamed white rice with kimchi and banchan.",
+      "source": "community",
+      "sourceUrl": "https://www.dosirak.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01",
+      "nutritionNote": "Not halal-certified. Community estimates."
+    },
+    {
+      "id": "dosirak_spicy_chicken_set",
+      "name": "Spicy Chicken Rice Set",
+      "emoji": "\ud83c\udf36\ufe0f",
+      "price": 9.9,
+      "calories": 590,
+      "protein": 30,
+      "carbs": 80,
+      "fat": 14,
+      "sodium": 920,
+      "category": "Rice Sets",
+      "compatibleWith": [
+        "no_pork"
+      ],
+      "isPopular": true,
+      "source": "community",
+      "sourceUrl": "https://www.dosirak.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "dosirak_kimchi_fried_rice",
+      "name": "Kimchi Fried Rice",
+      "emoji": "\ud83c\udf5a",
+      "price": 8.5,
+      "calories": 520,
+      "protein": 14,
+      "carbs": 88,
+      "fat": 12,
+      "sodium": 1020,
+      "category": "Rice",
+      "compatibleWith": [
+        "no_pork"
+      ],
+      "isPopular": true,
+      "description": "Wok-fried kimchi fried rice with egg.",
+      "source": "community",
+      "sourceUrl": "https://www.dosirak.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "dosirak_army_stew",
+      "name": "Budae Jjigae (Army Stew)",
+      "emoji": "\ud83c\udf72",
+      "price": 13.9,
+      "calories": 480,
+      "protein": 26,
+      "carbs": 48,
+      "fat": 18,
+      "sodium": 1340,
+      "category": "Stews",
+      "compatibleWith": [],
+      "isPopular": true,
+      "description": "Korean fusion stew with spam, sausage, kimchi, tofu, and ramen noodles.",
+      "source": "community",
+      "sourceUrl": "https://www.dosirak.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "dosirak_tteokbokki",
+      "name": "Tteokbokki",
+      "emoji": "\ud83c\udf36\ufe0f",
+      "price": 8.9,
+      "calories": 380,
+      "protein": 8,
+      "carbs": 72,
+      "fat": 6,
+      "sodium": 980,
+      "category": "Sides",
+      "compatibleWith": [
+        "no_pork"
+      ],
+      "isPopular": true,
+      "description": "Spicy rice cakes in gochujang sauce.",
+      "source": "community",
+      "sourceUrl": "https://www.dosirak.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "dosirak_japchae",
+      "name": "Japchae (Glass Noodles)",
+      "emoji": "\ud83c\udf5c",
+      "price": 9.5,
+      "calories": 420,
+      "protein": 12,
+      "carbs": 68,
+      "fat": 10,
+      "sodium": 680,
+      "category": "Noodles",
+      "compatibleWith": [
+        "no_pork"
+      ],
+      "isPopular": false,
+      "description": "Stir-fried sweet potato glass noodles with vegetables and beef.",
+      "source": "community",
+      "sourceUrl": "https://www.dosirak.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "dosirak_kimchi_side",
+      "name": "Kimchi (side)",
+      "emoji": "\ud83e\udd6c",
+      "price": 2.0,
+      "calories": 30,
+      "protein": 1,
+      "carbs": 4,
+      "fat": 0,
+      "sodium": 380,
+      "category": "Sides",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian",
+        "vegan",
+        "gluten_free"
+      ],
+      "isPopular": false,
+      "source": "community",
+      "sourceUrl": "https://www.dosirak.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    }
+  ]
+}

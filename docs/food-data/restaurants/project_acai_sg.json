@@ -1,0 +1,161 @@
+{
+  "id": "project_acai",
+  "name": "Project A\u00e7a\u00ed",
+  "emoji": "\ud83e\uded0",
+  "cuisine": "Healthy / A\u00e7a\u00ed",
+  "tier": "full_menu",
+  "serviceTypes": [
+    "dine_in",
+    "grab_go",
+    "delivery"
+  ],
+  "aliases": [
+    "project acai",
+    "project a\u00e7a\u00ed",
+    "projectacai"
+  ],
+  "dietTags": [],
+  "priceRange": "$$",
+  "nutritionUrl": "https://www.projectacai.com/menu",
+  "lastUpdated": "2026-05-01",
+  "menu": [
+    {
+      "id": "pacai_classic_bowl",
+      "name": "Classic A\u00e7a\u00ed Bowl",
+      "emoji": "\ud83e\uded0",
+      "price": 12.9,
+      "calories": 420,
+      "protein": 8,
+      "carbs": 68,
+      "fat": 14,
+      "sodium": 80,
+      "category": "A\u00e7a\u00ed Bowls",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "description": "Blended a\u00e7a\u00ed base topped with granola, banana, and honey.",
+      "source": "official_sg",
+      "sourceUrl": "https://www.projectacai.com/menu",
+      "verified": true,
+      "lastVerified": "2026-05-01",
+      "nutritionNote": "Not halal-certified."
+    },
+    {
+      "id": "pacai_protein_bowl",
+      "name": "Protein A\u00e7a\u00ed Bowl",
+      "emoji": "\ud83d\udcaa",
+      "price": 15.9,
+      "calories": 480,
+      "protein": 24,
+      "carbs": 62,
+      "fat": 14,
+      "sodium": 120,
+      "category": "A\u00e7a\u00ed Bowls",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "description": "A\u00e7a\u00ed base with protein powder, almond butter, granola, and berries.",
+      "source": "official_sg",
+      "sourceUrl": "https://www.projectacai.com/menu",
+      "verified": true,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "pacai_pitaya_bowl",
+      "name": "Pitaya (Dragon Fruit) Bowl",
+      "emoji": "\ud83d\udc09",
+      "price": 14.9,
+      "calories": 380,
+      "protein": 6,
+      "carbs": 72,
+      "fat": 6,
+      "sodium": 60,
+      "category": "A\u00e7a\u00ed Bowls",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian",
+        "vegan",
+        "gluten_free"
+      ],
+      "isPopular": true,
+      "description": "Blended pitaya base with banana, coconut milk, granola, and kiwi.",
+      "source": "official_sg",
+      "sourceUrl": "https://www.projectacai.com/menu",
+      "verified": true,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "pacai_green_bowl",
+      "name": "Green Detox Bowl",
+      "emoji": "\ud83e\udd5d",
+      "price": 14.9,
+      "calories": 360,
+      "protein": 8,
+      "carbs": 60,
+      "fat": 10,
+      "sodium": 70,
+      "category": "A\u00e7a\u00ed Bowls",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian",
+        "vegan",
+        "gluten_free"
+      ],
+      "isPopular": false,
+      "description": "Spinach, mango, pineapple blended base with chia seeds and coconut.",
+      "source": "official_sg",
+      "sourceUrl": "https://www.projectacai.com/menu",
+      "verified": true,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "pacai_smoothie_acai",
+      "name": "A\u00e7a\u00ed Smoothie (regular)",
+      "emoji": "\ud83e\udd64",
+      "price": 9.9,
+      "calories": 280,
+      "protein": 4,
+      "carbs": 48,
+      "fat": 8,
+      "sodium": 60,
+      "category": "Smoothies",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian",
+        "vegan",
+        "gluten_free"
+      ],
+      "isPopular": true,
+      "source": "official_sg",
+      "sourceUrl": "https://www.projectacai.com/menu",
+      "verified": true,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "pacai_pb_bowl",
+      "name": "Peanut Butter A\u00e7a\u00ed Bowl",
+      "emoji": "\ud83e\udd5c",
+      "price": 15.9,
+      "calories": 560,
+      "protein": 18,
+      "carbs": 62,
+      "fat": 26,
+      "sodium": 180,
+      "category": "A\u00e7a\u00ed Bowls",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": false,
+      "description": "A\u00e7a\u00ed base with peanut butter, banana, granola, and dark chocolate.",
+      "source": "official_sg",
+      "sourceUrl": "https://www.projectacai.com/menu",
+      "verified": true,
+      "lastVerified": "2026-05-01"
+    }
+  ]
+}

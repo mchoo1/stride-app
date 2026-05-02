@@ -1,0 +1,411 @@
+{
+  "id": "jollibee",
+  "name": "Jollibee",
+  "emoji": "🍗",
+  "cuisine": "Fast Food",
+  "tier": "full_menu",
+  "serviceTypes": [
+    "dine_in",
+    "grab_go",
+    "delivery"
+  ],
+  "aliases": [
+    "jollibee",
+    "jolly bee",
+    "jb"
+  ],
+  "dietTags": [
+    "halal"
+  ],
+  "priceRange": "$$",
+  "nutritionUrl": "https://jollibee.com.sg",
+  "lastUpdated": "2026-04-24",
+  "menu": [
+    {
+      "id": "jollibee_chickenjoy_1pc",
+      "name": "Chickenjoy (1 pc)",
+      "emoji": "🍗",
+      "price": 5.5,
+      "calories": 340,
+      "protein": 22,
+      "carbs": 18,
+      "fat": 20,
+      "category": "Chickenjoy",
+      "compatibleWith": [
+        "halal",
+        "high_protein"
+      ],
+      "isPopular": true,
+      "description": "Single piece of crispy fried chicken. Original recipe, juicy inside, crispy outside.",
+      "source": "community",
+      "sourceUrl": "https://www.mynetdiary.com/food/calories-in-chicken-joy-by-jollibee-piece-19191848-0.html",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "jollibee_chickenjoy_2pc",
+      "name": "Chickenjoy (2 pc) Meal",
+      "emoji": "🍗",
+      "price": 9.7,
+      "calories": 680,
+      "protein": 44,
+      "carbs": 36,
+      "fat": 40,
+      "category": "Chickenjoy",
+      "compatibleWith": [
+        "halal",
+        "high_protein"
+      ],
+      "isPopular": true,
+      "description": "Two pieces of crispy fried chicken with rice and gravy. Bestseller meal.",
+      "source": "community",
+      "sourceUrl": "https://www.fatsecret.com.sg/calories-nutrition/search?q=Jollibee",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "jollibee_chickenjoy_3pc",
+      "name": "Chickenjoy (3 pc) Meal",
+      "emoji": "🍗",
+      "price": 12.4,
+      "calories": 1020,
+      "protein": 66,
+      "carbs": 54,
+      "fat": 60,
+      "category": "Chickenjoy",
+      "compatibleWith": [
+        "halal",
+        "high_protein"
+      ],
+      "isPopular": false,
+      "description": "Three pieces of crispy fried chicken with rice and gravy.",
+      "source": "community",
+      "sourceUrl": "https://www.nutritionix.com/brand/jollibee/products/62b4d4a209d7c5dc6adedb9c",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "jollibee_chickenjoy_6pc_bucket",
+      "name": "Chickenjoy (6 pc) Bucket",
+      "emoji": "🍗",
+      "price": 22.0,
+      "calories": 2040,
+      "protein": 132,
+      "carbs": 108,
+      "fat": 120,
+      "category": "Chickenjoy",
+      "compatibleWith": [
+        "halal",
+        "high_protein"
+      ],
+      "isPopular": true,
+      "description": "Six pieces of crispy fried chicken. Shareable bucket.",
+      "source": "community",
+      "sourceUrl": "https://mysgmenu.com/jollibee-menu-singapore-with-prices/",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "jollibee_chickenjoy_8pc_bucket",
+      "name": "Chickenjoy (8 pc) Bucket",
+      "emoji": "🍗",
+      "price": 27.9,
+      "calories": 2720,
+      "protein": 176,
+      "carbs": 144,
+      "fat": 160,
+      "category": "Chickenjoy",
+      "compatibleWith": [
+        "halal",
+        "high_protein"
+      ],
+      "isPopular": true,
+      "description": "Eight pieces of crispy fried chicken. Family-size bucket.",
+      "source": "community",
+      "sourceUrl": "https://mysgmenu.com/jollibee-menu-singapore-with-prices/",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "jollibee_yumburger",
+      "name": "Yumburger",
+      "emoji": "🍔",
+      "price": 4.2,
+      "calories": 250,
+      "protein": 10,
+      "carbs": 33,
+      "fat": 9,
+      "category": "Burgers",
+      "compatibleWith": [
+        "halal"
+      ],
+      "isPopular": false,
+      "description": "Signature single beef patty with Jollibee's special sauce on a toasted bun.",
+      "source": "community",
+      "sourceUrl": "https://www.carbmanager.com/food-detail/md:16a3f885a8a1d001d9b69b29917581eb/yum-burger",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "jollibee_yumburger_with_cheese",
+      "name": "Yumburger with Cheese",
+      "emoji": "🍔",
+      "price": 4.9,
+      "calories": 410,
+      "protein": 16,
+      "carbs": 35,
+      "fat": 25,
+      "category": "Burgers",
+      "compatibleWith": [
+        "halal"
+      ],
+      "isPopular": true,
+      "description": "Yumburger topped with melted cheese and special sauce.",
+      "source": "community",
+      "sourceUrl": "https://www.eatthismuch.com/calories/yumburger-with-cheese-4163318",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "jollibee_champ_burger",
+      "name": "Champ Burger",
+      "emoji": "🍔",
+      "price": 5.5,
+      "calories": 360,
+      "protein": 13,
+      "carbs": 30,
+      "fat": 21,
+      "category": "Burgers",
+      "compatibleWith": [
+        "halal"
+      ],
+      "isPopular": true,
+      "description": "Double beef patties with Jollibee's special sauce and cheese.",
+      "source": "community",
+      "sourceUrl": "https://www.snapcalorie.com/nutrition/jollibee_yum_burger_nutrition.html",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "jollibee_chickenjoy_sandwich",
+      "name": "Chickenjoy Sandwich",
+      "emoji": "🥪",
+      "price": 6.8,
+      "calories": 580,
+      "protein": 25,
+      "carbs": 48,
+      "fat": 28,
+      "category": "Chicken Sandwiches",
+      "compatibleWith": [
+        "halal"
+      ],
+      "isPopular": true,
+      "description": "Crispy Chickenjoy breast fillet on a toasted bun with pickles and mayo.",
+      "source": "community",
+      "sourceUrl": "https://www.nutritionix.com/brand/jollibee/products/62b4d4a209d7c5dc6adedb9c",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "jollibee_aloha_chicken_sandwich",
+      "name": "Aloha Chicken Sandwich",
+      "emoji": "🥪",
+      "price": 8.3,
+      "calories": 650,
+      "protein": 41,
+      "carbs": 65,
+      "fat": 33,
+      "category": "Chicken Sandwiches",
+      "compatibleWith": [
+        "halal"
+      ],
+      "isPopular": true,
+      "description": "Crispy chicken breast fillet with grilled pineapple, bacon, lettuce, cheese, and aloha dressing on brioche bun.",
+      "source": "community",
+      "sourceUrl": "https://www.eatthismuch.com/calories/chicken-sandwich-aloha-4529974",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "jollibee_jolly_spaghetti",
+      "name": "Jolly Spaghetti",
+      "emoji": "🍝",
+      "price": 5.8,
+      "calories": 420,
+      "protein": 12,
+      "carbs": 62,
+      "fat": 12,
+      "category": "Pasta",
+      "compatibleWith": [
+        "halal"
+      ],
+      "isPopular": true,
+      "description": "Spaghetti in signature sweet tomato-based sauce with cheese. Jollibee's iconic dish.",
+      "source": "community",
+      "sourceUrl": "https://mysgmenu.com/jollibee-menu-singapore-with-prices/",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "jollibee_jolly_hotdog",
+      "name": "Jolly Hotdog",
+      "emoji": "🌭",
+      "price": 3.6,
+      "calories": 386,
+      "protein": 12,
+      "carbs": 32,
+      "fat": 24,
+      "category": "Hotdogs & Sides",
+      "compatibleWith": [
+        "halal"
+      ],
+      "isPopular": false,
+      "description": "Jollibee's signature hotdog with special sauce on a soft bun.",
+      "source": "community",
+      "sourceUrl": "https://foods.fatsecret.com/calories-nutrition/jollibee/jolly-hotdog",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "jollibee_crispy_fries_regular",
+      "name": "Jolly Crispy Fries (Regular)",
+      "emoji": "🍟",
+      "price": 2.8,
+      "calories": 340,
+      "protein": 4,
+      "carbs": 41,
+      "fat": 18,
+      "category": "Sides",
+      "compatibleWith": [
+        "halal"
+      ],
+      "isPopular": true,
+      "description": "Golden crispy shoestring fries. Regular serving.",
+      "source": "community",
+      "sourceUrl": "https://www.eatthismuch.com/calories/jolly-crispy-fries-regular-4029479",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "jollibee_crispy_fries_large",
+      "name": "Jolly Crispy Fries (Large)",
+      "emoji": "🍟",
+      "price": 3.8,
+      "calories": 510,
+      "protein": 6,
+      "carbs": 48,
+      "fat": 27,
+      "category": "Sides",
+      "compatibleWith": [
+        "halal"
+      ],
+      "isPopular": true,
+      "description": "Golden crispy shoestring fries. Large serving.",
+      "source": "community",
+      "sourceUrl": "https://www.eatthismuch.com/calories/jolly-crispy-fries-large-4531478",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "jollibee_peach_mango_pie",
+      "name": "Peach Mango Pie",
+      "emoji": "🥧",
+      "price": 2.2,
+      "calories": 270,
+      "protein": 3,
+      "carbs": 40,
+      "fat": 11,
+      "category": "Desserts",
+      "compatibleWith": [
+        "halal"
+      ],
+      "isPopular": true,
+      "description": "Crispy pastry shell with sweet peach-mango filling. Signature Jollibee dessert.",
+      "source": "community",
+      "sourceUrl": "https://www.eatthismuch.com/calories/peach-mango-pie-4029984",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "jollibee_coke_regular",
+      "name": "Coca-Cola (Regular)",
+      "emoji": "🥤",
+      "price": 2.2,
+      "calories": 140,
+      "protein": 0,
+      "carbs": 39,
+      "fat": 0,
+      "category": "Beverages",
+      "compatibleWith": [
+        "halal"
+      ],
+      "isPopular": false,
+      "description": "Classic Coca-Cola soft drink. Regular size.",
+      "source": "community",
+      "sourceUrl": null,
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "jollibee_pineapple_quencher",
+      "name": "Pineapple Quencher",
+      "emoji": "🍹",
+      "price": 3.5,
+      "calories": 180,
+      "protein": 0,
+      "carbs": 45,
+      "fat": 0,
+      "category": "Beverages",
+      "compatibleWith": [
+        "halal"
+      ],
+      "isPopular": true,
+      "description": "Sweet and refreshing pineapple juice drink. Signature Jollibee tropical beverage.",
+      "source": "community",
+      "sourceUrl": "https://www.jollibeefoods.com/products/pineapple-quencher",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "jollibee_iced_tea",
+      "name": "Iced Tea",
+      "emoji": "🧋",
+      "price": 2.5,
+      "calories": 0,
+      "protein": 0,
+      "carbs": 0,
+      "fat": 0,
+      "category": "Beverages",
+      "compatibleWith": [
+        "halal"
+      ],
+      "isPopular": false,
+      "description": "Freshly brewed black iced tea. Unsweetened.",
+      "source": "community",
+      "sourceUrl": null,
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "jollibee_burger_steak",
+      "name": "Burger Steak",
+      "emoji": "🍽️",
+      "price": 7.2,
+      "calories": 520,
+      "protein": 28,
+      "carbs": 42,
+      "fat": 26,
+      "category": "Rice Meals",
+      "compatibleWith": [
+        "halal",
+        "high_protein"
+      ],
+      "isPopular": true,
+      "description": "Juicy beef patty smothered in mushroom gravy, served with steamed rice and vegetables.",
+      "source": "community",
+      "sourceUrl": "https://www.mynetdiary.com/food/calories-in-chicken-joy-by-jollibee-piece-19191848-0.html",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    }
+  ]
+}

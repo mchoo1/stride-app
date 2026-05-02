@@ -1,0 +1,131 @@
+{
+  "id": "chagee",
+  "name": "Chagee",
+  "emoji": "\ud83c\udf75",
+  "cuisine": "Bubble Tea",
+  "tier": "full_menu",
+  "serviceTypes": [
+    "dine_in",
+    "grab_go"
+  ],
+  "aliases": [
+    "chagee",
+    "\u9738\u738b\u8336\u59ec",
+    "cha gee"
+  ],
+  "dietTags": [],
+  "priceRange": "$",
+  "nutritionUrl": "https://chagee.com/sg",
+  "lastUpdated": "2026-05-01",
+  "menu": [
+    {
+      "id": "chagee_jasmine_milk",
+      "name": "Jasmine Milk Green Tea (M, standard sugar)",
+      "emoji": "\ud83c\udf75",
+      "price": 5.8,
+      "calories": 240,
+      "protein": 4,
+      "carbs": 44,
+      "fat": 5,
+      "sodium": 70,
+      "category": "Milk Tea",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "description": "Chagee's hero drink: jasmine green tea with creamy milk.",
+      "source": "community",
+      "sourceUrl": "https://chagee.com/sg",
+      "verified": false,
+      "lastVerified": "2026-05-01",
+      "nutritionNote": "Not halal-certified. Community estimates; Chagee does not publish SG nutrition data."
+    },
+    {
+      "id": "chagee_bawang_oolong",
+      "name": "BAWANG Oolong Milk Tea (M, standard sugar)",
+      "emoji": "\ud83c\udf75",
+      "price": 6.5,
+      "calories": 260,
+      "protein": 4,
+      "carbs": 48,
+      "fat": 5,
+      "sodium": 75,
+      "category": "Milk Tea",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "description": "Premium oolong milk tea, Chagee's signature series.",
+      "source": "community",
+      "sourceUrl": "https://chagee.com/sg",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "chagee_cheese_milk_tea",
+      "name": "Cheese Milk Tea (M, standard sugar)",
+      "emoji": "\ud83e\uddcb",
+      "price": 6.9,
+      "calories": 290,
+      "protein": 6,
+      "carbs": 48,
+      "fat": 8,
+      "sodium": 130,
+      "category": "Cheese Tea",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "source": "community",
+      "sourceUrl": "https://chagee.com/sg",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "chagee_puremax_latte",
+      "name": "Puremax Tea Latte (M, standard sugar)",
+      "emoji": "\u2615",
+      "price": 6.2,
+      "calories": 200,
+      "protein": 5,
+      "carbs": 34,
+      "fat": 5,
+      "sodium": 80,
+      "category": "Tea Latte",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": false,
+      "source": "community",
+      "sourceUrl": "https://chagee.com/sg",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "chagee_fruit_tea",
+      "name": "Seasonal Fruit Tea (M)",
+      "emoji": "\ud83c\udf79",
+      "price": 5.5,
+      "calories": 150,
+      "protein": 0,
+      "carbs": 36,
+      "fat": 0,
+      "sodium": 15,
+      "category": "Fruit Tea",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian",
+        "vegan"
+      ],
+      "isPopular": false,
+      "source": "community",
+      "sourceUrl": "https://chagee.com/sg",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    }
+  ]
+}

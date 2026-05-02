@@ -1,0 +1,250 @@
+{
+  "id": "mccafe",
+  "name": "McCaf\u00e9",
+  "emoji": "\u2615",
+  "cuisine": "Caf\u00e9 / Coffee",
+  "tier": "full_menu",
+  "serviceTypes": [
+    "dine_in",
+    "grab_go",
+    "delivery"
+  ],
+  "aliases": [
+    "mccafe",
+    "mc cafe",
+    "mcdonald's cafe"
+  ],
+  "dietTags": [
+    "halal"
+  ],
+  "priceRange": "$",
+  "nutritionUrl": "https://www.mcdonalds.com.sg/nutrition",
+  "lastUpdated": "2026-05-01",
+  "menu": [
+    {
+      "id": "mccafe_latte",
+      "name": "Caf\u00e9 Latte (Medium)",
+      "emoji": "\u2615",
+      "price": 5.4,
+      "calories": 140,
+      "protein": 7,
+      "carbs": 14,
+      "fat": 6,
+      "sodium": 95,
+      "category": "Hot Coffee",
+      "compatibleWith": [
+        "halal",
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "description": "Espresso with steamed whole milk.",
+      "source": "official_sg",
+      "sourceUrl": "https://www.mcdonalds.com.sg/nutrition",
+      "verified": true,
+      "lastVerified": "2026-05-01",
+      "nutritionNote": "Halal-certified in Singapore."
+    },
+    {
+      "id": "mccafe_cappuccino",
+      "name": "Cappuccino (Medium)",
+      "emoji": "\u2615",
+      "price": 5.4,
+      "calories": 110,
+      "protein": 6,
+      "carbs": 11,
+      "fat": 4,
+      "sodium": 80,
+      "category": "Hot Coffee",
+      "compatibleWith": [
+        "halal",
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "source": "official_sg",
+      "sourceUrl": "https://www.mcdonalds.com.sg/nutrition",
+      "verified": true,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "mccafe_americano",
+      "name": "Americano (Medium)",
+      "emoji": "\u2615",
+      "price": 4.5,
+      "calories": 10,
+      "protein": 1,
+      "carbs": 1,
+      "fat": 0,
+      "sodium": 10,
+      "category": "Hot Coffee",
+      "compatibleWith": [
+        "halal",
+        "no_pork",
+        "vegetarian",
+        "vegan",
+        "gluten_free"
+      ],
+      "isPopular": false,
+      "source": "official_sg",
+      "sourceUrl": "https://www.mcdonalds.com.sg/nutrition",
+      "verified": true,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "mccafe_mocha",
+      "name": "Mocha (Medium)",
+      "emoji": "\u2615",
+      "price": 5.9,
+      "calories": 200,
+      "protein": 7,
+      "carbs": 28,
+      "fat": 7,
+      "sodium": 105,
+      "category": "Hot Coffee",
+      "compatibleWith": [
+        "halal",
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "source": "official_sg",
+      "sourceUrl": "https://www.mcdonalds.com.sg/nutrition",
+      "verified": true,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "mccafe_frappe_mocha",
+      "name": "Frappe Mocha (Medium)",
+      "emoji": "\ud83e\udd64",
+      "price": 6.5,
+      "calories": 370,
+      "protein": 6,
+      "carbs": 58,
+      "fat": 13,
+      "sodium": 200,
+      "category": "Blended",
+      "compatibleWith": [
+        "halal",
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "description": "Blended iced mocha with whipped cream.",
+      "source": "official_sg",
+      "sourceUrl": "https://www.mcdonalds.com.sg/nutrition",
+      "verified": true,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "mccafe_frappe_caramel",
+      "name": "Frappe Caramel (Medium)",
+      "emoji": "\ud83e\udd64",
+      "price": 6.5,
+      "calories": 380,
+      "protein": 5,
+      "carbs": 62,
+      "fat": 13,
+      "sodium": 210,
+      "category": "Blended",
+      "compatibleWith": [
+        "halal",
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": false,
+      "source": "official_sg",
+      "sourceUrl": "https://www.mcdonalds.com.sg/nutrition",
+      "verified": true,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "mccafe_chocolate_muffin",
+      "name": "Double Chocolate Muffin",
+      "emoji": "\ud83e\uddc1",
+      "price": 3.5,
+      "calories": 430,
+      "protein": 6,
+      "carbs": 58,
+      "fat": 20,
+      "sodium": 360,
+      "category": "Bakery",
+      "compatibleWith": [
+        "halal",
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "source": "official_sg",
+      "sourceUrl": "https://www.mcdonalds.com.sg/nutrition",
+      "verified": true,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "mccafe_blueberry_muffin",
+      "name": "Blueberry Muffin",
+      "emoji": "\ud83e\uddc1",
+      "price": 3.5,
+      "calories": 390,
+      "protein": 6,
+      "carbs": 56,
+      "fat": 16,
+      "sodium": 310,
+      "category": "Bakery",
+      "compatibleWith": [
+        "halal",
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": false,
+      "source": "official_sg",
+      "sourceUrl": "https://www.mcdonalds.com.sg/nutrition",
+      "verified": true,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "mccafe_choc_chip_cookie",
+      "name": "Chocolate Chip Cookie",
+      "emoji": "\ud83c\udf6a",
+      "price": 2.0,
+      "calories": 170,
+      "protein": 2,
+      "carbs": 24,
+      "fat": 8,
+      "sodium": 140,
+      "category": "Bakery",
+      "compatibleWith": [
+        "halal",
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "source": "official_sg",
+      "sourceUrl": "https://www.mcdonalds.com.sg/nutrition",
+      "verified": true,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "mccafe_hot_chocolate",
+      "name": "Hot Chocolate (Medium)",
+      "emoji": "\ud83c\udf6b",
+      "price": 4.9,
+      "calories": 250,
+      "protein": 8,
+      "carbs": 36,
+      "fat": 8,
+      "sodium": 170,
+      "category": "Hot Drinks",
+      "compatibleWith": [
+        "halal",
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": false,
+      "source": "official_sg",
+      "sourceUrl": "https://www.mcdonalds.com.sg/nutrition",
+      "verified": true,
+      "lastVerified": "2026-05-01"
+    }
+  ]
+}

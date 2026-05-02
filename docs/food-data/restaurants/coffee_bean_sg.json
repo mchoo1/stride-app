@@ -1,0 +1,196 @@
+{
+  "id": "coffee_bean",
+  "name": "The Coffee Bean & Tea Leaf",
+  "emoji": "\u2615",
+  "cuisine": "Caf\u00e9 / Coffee",
+  "tier": "full_menu",
+  "serviceTypes": [
+    "dine_in",
+    "grab_go",
+    "delivery"
+  ],
+  "aliases": [
+    "coffee bean",
+    "cbtl",
+    "the coffee bean",
+    "coffee bean tea leaf"
+  ],
+  "dietTags": [],
+  "priceRange": "$$",
+  "nutritionUrl": "https://www.coffeebean.com.sg/menu",
+  "lastUpdated": "2026-05-01",
+  "menu": [
+    {
+      "id": "cbtl_ice_blended_original",
+      "name": "Original Ice Blended\u00ae (Medium)",
+      "emoji": "\ud83e\udd64",
+      "price": 8.5,
+      "calories": 360,
+      "protein": 4,
+      "carbs": 68,
+      "fat": 8,
+      "sodium": 140,
+      "category": "Ice Blended",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "description": "CBTL's signature blended coffee drink with milk.",
+      "source": "official_sg",
+      "sourceUrl": "https://www.coffeebean.com.sg/menu",
+      "verified": true,
+      "lastVerified": "2026-05-01",
+      "nutritionNote": "Not halal-certified in Singapore."
+    },
+    {
+      "id": "cbtl_ice_blended_chocolate",
+      "name": "Chocolate Ice Blended\u00ae (Medium)",
+      "emoji": "\ud83e\udd64",
+      "price": 8.5,
+      "calories": 380,
+      "protein": 6,
+      "carbs": 72,
+      "fat": 9,
+      "sodium": 160,
+      "category": "Ice Blended",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "source": "official_sg",
+      "sourceUrl": "https://www.coffeebean.com.sg/menu",
+      "verified": true,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "cbtl_ice_blended_matcha",
+      "name": "Matcha Latte Ice Blended\u00ae (Medium)",
+      "emoji": "\ud83c\udf75",
+      "price": 9.0,
+      "calories": 340,
+      "protein": 5,
+      "carbs": 60,
+      "fat": 9,
+      "sodium": 120,
+      "category": "Ice Blended",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "source": "official_sg",
+      "sourceUrl": "https://www.coffeebean.com.sg/menu",
+      "verified": true,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "cbtl_latte",
+      "name": "Latte (Medium)",
+      "emoji": "\u2615",
+      "price": 7.0,
+      "calories": 150,
+      "protein": 8,
+      "carbs": 14,
+      "fat": 6,
+      "sodium": 110,
+      "category": "Hot Coffee",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "source": "official_sg",
+      "sourceUrl": "https://www.coffeebean.com.sg/menu",
+      "verified": true,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "cbtl_cold_brew",
+      "name": "Cold Brew Coffee (Medium)",
+      "emoji": "\ud83e\uddca",
+      "price": 7.5,
+      "calories": 20,
+      "protein": 1,
+      "carbs": 2,
+      "fat": 0,
+      "sodium": 15,
+      "category": "Cold Coffee",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian",
+        "vegan",
+        "gluten_free"
+      ],
+      "isPopular": false,
+      "source": "official_sg",
+      "sourceUrl": "https://www.coffeebean.com.sg/menu",
+      "verified": true,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "cbtl_earl_grey",
+      "name": "Earl Grey Tea Latte (Hot)",
+      "emoji": "\ud83e\uded6",
+      "price": 6.5,
+      "calories": 130,
+      "protein": 6,
+      "carbs": 16,
+      "fat": 4,
+      "sodium": 90,
+      "category": "Tea",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": false,
+      "source": "community",
+      "sourceUrl": "https://www.coffeebean.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "cbtl_croissant",
+      "name": "Butter Croissant",
+      "emoji": "\ud83e\udd50",
+      "price": 4.5,
+      "calories": 280,
+      "protein": 6,
+      "carbs": 30,
+      "fat": 15,
+      "sodium": 320,
+      "category": "Bakery",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "source": "community",
+      "sourceUrl": "https://www.coffeebean.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "cbtl_choc_cake",
+      "name": "Chocolate Fudge Cake (slice)",
+      "emoji": "\ud83c\udf70",
+      "price": 8.5,
+      "calories": 480,
+      "protein": 6,
+      "carbs": 62,
+      "fat": 24,
+      "sodium": 290,
+      "category": "Cakes",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "source": "community",
+      "sourceUrl": "https://www.coffeebean.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    }
+  ]
+}

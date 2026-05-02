@@ -1,0 +1,161 @@
+{
+  "id": "mixue",
+  "name": "Mixue",
+  "emoji": "\ud83c\udf66",
+  "cuisine": "Bubble Tea / Ice Cream",
+  "tier": "full_menu",
+  "serviceTypes": [
+    "dine_in",
+    "grab_go"
+  ],
+  "aliases": [
+    "mixue",
+    "mix xue",
+    "\u871c\u96ea\u51b0\u57ce"
+  ],
+  "dietTags": [
+    "halal"
+  ],
+  "priceRange": "$",
+  "nutritionUrl": "https://www.mixuebingcheng.com/sg",
+  "lastUpdated": "2026-05-01",
+  "menu": [
+    {
+      "id": "mixue_soft_serve",
+      "name": "Vanilla Soft Serve",
+      "emoji": "\ud83c\udf66",
+      "price": 1.5,
+      "calories": 130,
+      "protein": 3,
+      "carbs": 18,
+      "fat": 5,
+      "sodium": 60,
+      "category": "Ice Cream",
+      "compatibleWith": [
+        "halal",
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "description": "Mixue's famous $1.50 soft serve cone.",
+      "source": "community",
+      "sourceUrl": "https://www.mixuebingcheng.com/sg",
+      "verified": false,
+      "lastVerified": "2026-05-01",
+      "nutritionNote": "Halal-certified in Singapore. Community estimates."
+    },
+    {
+      "id": "mixue_milk_tea",
+      "name": "Classic Milk Tea (M, standard sugar, with pearls)",
+      "emoji": "\ud83e\uddcb",
+      "price": 3.5,
+      "calories": 290,
+      "protein": 3,
+      "carbs": 54,
+      "fat": 6,
+      "sodium": 65,
+      "category": "Milk Tea",
+      "compatibleWith": [
+        "halal",
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "source": "community",
+      "sourceUrl": "https://www.mixuebingcheng.com/sg",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "mixue_strawberry_lemonade",
+      "name": "Strawberry Lemonade (M)",
+      "emoji": "\ud83c\udf53",
+      "price": 3.8,
+      "calories": 140,
+      "protein": 0,
+      "carbs": 34,
+      "fat": 0,
+      "sodium": 20,
+      "category": "Fruit Tea",
+      "compatibleWith": [
+        "halal",
+        "no_pork",
+        "vegetarian",
+        "vegan"
+      ],
+      "isPopular": true,
+      "description": "Fresh lemon juice with strawberry fruit tea.",
+      "source": "community",
+      "sourceUrl": "https://www.mixuebingcheng.com/sg",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "mixue_mango_tea",
+      "name": "Mango Green Tea (M)",
+      "emoji": "\ud83e\udd6d",
+      "price": 3.5,
+      "calories": 160,
+      "protein": 0,
+      "carbs": 38,
+      "fat": 0,
+      "sodium": 15,
+      "category": "Fruit Tea",
+      "compatibleWith": [
+        "halal",
+        "no_pork",
+        "vegetarian",
+        "vegan"
+      ],
+      "isPopular": true,
+      "source": "community",
+      "sourceUrl": "https://www.mixuebingcheng.com/sg",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "mixue_matcha_latte",
+      "name": "Matcha Latte (M)",
+      "emoji": "\ud83c\udf75",
+      "price": 4.0,
+      "calories": 220,
+      "protein": 4,
+      "carbs": 40,
+      "fat": 5,
+      "sodium": 70,
+      "category": "Milk Tea",
+      "compatibleWith": [
+        "halal",
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": false,
+      "source": "community",
+      "sourceUrl": "https://www.mixuebingcheng.com/sg",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "mixue_sundae",
+      "name": "Chocolate Soft Serve Sundae",
+      "emoji": "\ud83c\udf68",
+      "price": 2.5,
+      "calories": 200,
+      "protein": 4,
+      "carbs": 30,
+      "fat": 8,
+      "sodium": 80,
+      "category": "Ice Cream",
+      "compatibleWith": [
+        "halal",
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": false,
+      "source": "community",
+      "sourceUrl": "https://www.mixuebingcheng.com/sg",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    }
+  ]
+}

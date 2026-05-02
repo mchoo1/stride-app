@@ -1,0 +1,134 @@
+{
+  "id": "nourish_bowl",
+  "name": "Nourish Bowl",
+  "emoji": "\ud83e\udd57",
+  "cuisine": "Healthy / Bowls",
+  "tier": "partial_menu",
+  "serviceTypes": [
+    "dine_in",
+    "grab_go",
+    "delivery"
+  ],
+  "aliases": [
+    "nourish bowl",
+    "nourishbowl",
+    "nourish"
+  ],
+  "dietTags": [],
+  "priceRange": "$$",
+  "nutritionUrl": "https://www.nourishbowl.com.sg/menu",
+  "lastUpdated": "2026-05-01",
+  "menu": [
+    {
+      "id": "nb_chicken_bowl",
+      "name": "Grilled Chicken Power Bowl",
+      "emoji": "\ud83e\udd57",
+      "price": 14.9,
+      "calories": 500,
+      "protein": 38,
+      "carbs": 52,
+      "fat": 14,
+      "sodium": 720,
+      "category": "Power Bowls",
+      "compatibleWith": [
+        "no_pork",
+        "gluten_free"
+      ],
+      "isPopular": true,
+      "description": "Grilled chicken, brown rice, edamame, avocado, and house dressing.",
+      "source": "community",
+      "sourceUrl": "https://www.nourishbowl.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01",
+      "nutritionNote": "Not halal-certified. Community estimates."
+    },
+    {
+      "id": "nb_salmon_bowl",
+      "name": "Salmon Teriyaki Bowl",
+      "emoji": "\ud83d\udc1f",
+      "price": 17.9,
+      "calories": 540,
+      "protein": 36,
+      "carbs": 54,
+      "fat": 18,
+      "sodium": 760,
+      "category": "Power Bowls",
+      "compatibleWith": [
+        "no_pork"
+      ],
+      "isPopular": true,
+      "source": "community",
+      "sourceUrl": "https://www.nourishbowl.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "nb_vegan_bowl",
+      "name": "Vegan Buddha Bowl",
+      "emoji": "\ud83c\udf31",
+      "price": 13.9,
+      "calories": 420,
+      "protein": 16,
+      "carbs": 58,
+      "fat": 14,
+      "sodium": 560,
+      "category": "Power Bowls",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian",
+        "vegan",
+        "gluten_free"
+      ],
+      "isPopular": true,
+      "description": "Quinoa, roasted sweet potato, chickpeas, avocado, and tahini dressing.",
+      "source": "community",
+      "sourceUrl": "https://www.nourishbowl.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "nb_smoothie",
+      "name": "Green Smoothie",
+      "emoji": "\ud83e\udd64",
+      "price": 8.5,
+      "calories": 220,
+      "protein": 6,
+      "carbs": 38,
+      "fat": 4,
+      "sodium": 60,
+      "category": "Smoothies",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian",
+        "vegan",
+        "gluten_free"
+      ],
+      "isPopular": false,
+      "source": "community",
+      "sourceUrl": "https://www.nourishbowl.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "nb_beef_bowl",
+      "name": "Teriyaki Beef Bowl",
+      "emoji": "\ud83e\udd69",
+      "price": 16.9,
+      "calories": 560,
+      "protein": 40,
+      "carbs": 52,
+      "fat": 20,
+      "sodium": 800,
+      "category": "Power Bowls",
+      "compatibleWith": [
+        "no_pork",
+        "gluten_free"
+      ],
+      "isPopular": false,
+      "source": "community",
+      "sourceUrl": "https://www.nourishbowl.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    }
+  ]
+}

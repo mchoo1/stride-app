@@ -1,0 +1,152 @@
+{
+  "id": "liho",
+  "name": "LiHo",
+  "emoji": "\ud83e\uddcb",
+  "cuisine": "Bubble Tea",
+  "tier": "full_menu",
+  "serviceTypes": [
+    "dine_in",
+    "grab_go"
+  ],
+  "aliases": [
+    "liho",
+    "li ho",
+    "liho tea"
+  ],
+  "dietTags": [],
+  "priceRange": "$",
+  "nutritionUrl": "https://www.drinkliho.com/menu",
+  "lastUpdated": "2026-05-01",
+  "menu": [
+    {
+      "id": "liho_cheese_ggt",
+      "name": "Cheese Green Tea (M, 70% sugar)",
+      "emoji": "\ud83e\uddcb",
+      "price": 5.5,
+      "calories": 220,
+      "protein": 4,
+      "carbs": 40,
+      "fat": 5,
+      "sodium": 120,
+      "category": "Cheese Tea",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "description": "LiHo's signature cheese-foam green tea. Top: lightly salted cream cheese foam.",
+      "source": "community",
+      "sourceUrl": "https://www.drinkliho.com/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01",
+      "nutritionNote": "Not halal-certified. Community estimates at 70% sugar, medium, no pearls."
+    },
+    {
+      "id": "liho_cheese_oolong",
+      "name": "Cheese Oolong Tea (M, 70% sugar)",
+      "emoji": "\ud83e\uddcb",
+      "price": 5.5,
+      "calories": 210,
+      "protein": 4,
+      "carbs": 38,
+      "fat": 5,
+      "sodium": 115,
+      "category": "Cheese Tea",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "source": "community",
+      "sourceUrl": "https://www.drinkliho.com/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "liho_milk_tea",
+      "name": "Classic Milk Tea (M, 70% sugar, with pearls)",
+      "emoji": "\ud83e\uddcb",
+      "price": 4.2,
+      "calories": 320,
+      "protein": 3,
+      "carbs": 60,
+      "fat": 6,
+      "sodium": 80,
+      "category": "Milk Tea",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "source": "community",
+      "sourceUrl": "https://www.drinkliho.com/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "liho_brown_sugar_milk",
+      "name": "Brown Sugar Pearl Fresh Milk (M)",
+      "emoji": "\ud83e\uddcb",
+      "price": 5.8,
+      "calories": 360,
+      "protein": 8,
+      "carbs": 64,
+      "fat": 8,
+      "sodium": 100,
+      "category": "Fresh Milk",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "description": "Tiger-stripe brown sugar syrup with tapioca pearls and fresh milk.",
+      "source": "community",
+      "sourceUrl": "https://www.drinkliho.com/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "liho_matcha_milk",
+      "name": "Matcha Latte (M, 70% sugar)",
+      "emoji": "\ud83c\udf75",
+      "price": 5.5,
+      "calories": 240,
+      "protein": 5,
+      "carbs": 42,
+      "fat": 6,
+      "sodium": 90,
+      "category": "Milk Tea",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "source": "community",
+      "sourceUrl": "https://www.drinkliho.com/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "liho_passionfruit_tea",
+      "name": "Passionfruit Green Tea (M, 70% sugar)",
+      "emoji": "\ud83c\udf79",
+      "price": 4.5,
+      "calories": 160,
+      "protein": 0,
+      "carbs": 38,
+      "fat": 0,
+      "sodium": 20,
+      "category": "Fruit Tea",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian",
+        "vegan"
+      ],
+      "isPopular": false,
+      "source": "community",
+      "sourceUrl": "https://www.drinkliho.com/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    }
+  ]
+}

@@ -1,0 +1,502 @@
+{
+  "id": "aw",
+  "name": "A&W",
+  "emoji": "🍟",
+  "cuisine": "Fast Food",
+  "tier": "full_menu",
+  "serviceTypes": [
+    "dine_in",
+    "grab_go"
+  ],
+  "aliases": [
+    "a&w",
+    "a and w",
+    "aw",
+    "aw restaurants",
+    "a&w restaurants"
+  ],
+  "dietTags": [
+    "halal"
+  ],
+  "priceRange": "$$",
+  "nutritionUrl": "https://awrestaurants.com.sg/",
+  "lastUpdated": "2026-04-24",
+  "menu": [
+    {
+      "id": "aw_mozza_burger",
+      "name": "Mozza Burger",
+      "emoji": "🍔",
+      "price": 7.5,
+      "calories": 620,
+      "protein": 27,
+      "carbs": 37,
+      "fat": 39,
+      "category": "Signature Burgers",
+      "compatibleWith": [
+        "halal",
+        "high_protein"
+      ],
+      "isPopular": true,
+      "description": "Double beef patties, mozzarella, lettuce, tomatoes, pickles, and a chicken crisp. A&W SG signature.",
+      "source": "community",
+      "sourceUrl": "https://www.myfooddiary.com/foods/7333085/a-and-w-mozza-burger-single",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "aw_double_mozza_burger",
+      "name": "Double Mozza Burger",
+      "emoji": "🍔",
+      "price": 9.1,
+      "calories": 800,
+      "protein": 42,
+      "carbs": 38,
+      "fat": 53,
+      "category": "Signature Burgers",
+      "compatibleWith": [
+        "halal",
+        "high_protein"
+      ],
+      "isPopular": false,
+      "description": "Double beef patties with extra mozzarella and chicken crisp — upsized Mozza Burger.",
+      "source": "community",
+      "sourceUrl": "https://www.carbmanager.com/food-detail/md:e313fa0562c258db12dd2c1710752fc5/double-mozza-burger",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "aw_double_cheeseburger",
+      "name": "Double Cheeseburger",
+      "emoji": "🍔",
+      "price": 7.2,
+      "calories": 680,
+      "protein": 40,
+      "carbs": 44,
+      "fat": 38,
+      "category": "Signature Burgers",
+      "compatibleWith": [
+        "halal",
+        "high_protein"
+      ],
+      "isPopular": true,
+      "description": "Two beef patties with American cheese, ketchup, mustard, and pickles.",
+      "source": "community",
+      "sourceUrl": "https://www.carbmanager.com/food-detail/md:51448f4f3b79c22795570b47d0e453fe/original-double-cheeseburger-1-sandwich",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "aw_cheeseburger",
+      "name": "Cheeseburger",
+      "emoji": "🍔",
+      "price": 5.2,
+      "calories": 400,
+      "protein": 20,
+      "carbs": 39,
+      "fat": 18,
+      "category": "Signature Burgers",
+      "compatibleWith": [
+        "halal"
+      ],
+      "isPopular": false,
+      "description": "Classic single beef patty with American cheese, ketchup, mustard, and pickles.",
+      "source": "community",
+      "sourceUrl": "https://www.myfooddiary.com/foods/326194/a-and-w-cheeseburger",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "aw_cream_cheese_chicken_burger",
+      "name": "Cream Cheese Chicken Burger",
+      "emoji": "🥪",
+      "price": 7.9,
+      "calories": 580,
+      "protein": 23,
+      "carbs": 46,
+      "fat": 34,
+      "category": "Cream Cheese Burgers",
+      "compatibleWith": [
+        "halal"
+      ],
+      "isPopular": true,
+      "description": "SG/Okinawa-exclusive. Hand-breaded chicken with cream cheese spread, lettuce on a toasted semolina bun. (Macros estimated — no official data published.)",
+      "source": "community",
+      "sourceUrl": "https://eatbook.sg/aw-restaurants-jewel/",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "aw_cream_cheese_beef_burger",
+      "name": "Cream Cheese Beef Burger",
+      "emoji": "🍔",
+      "price": 7.9,
+      "calories": 680,
+      "protein": 28,
+      "carbs": 42,
+      "fat": 44,
+      "category": "Cream Cheese Burgers",
+      "compatibleWith": [
+        "halal"
+      ],
+      "isPopular": false,
+      "description": "SG/Okinawa-exclusive. Beef patty with cream cheese spread, lettuce on a toasted semolina bun. (Macros estimated — no official data published.)",
+      "source": "community",
+      "sourceUrl": "https://eatbook.sg/aw-restaurants-jewel/",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "aw_chubby_chicken_sandwich",
+      "name": "Chubby Chicken Sandwich",
+      "emoji": "🥪",
+      "price": 6.9,
+      "calories": 490,
+      "protein": 21,
+      "carbs": 44,
+      "fat": 27,
+      "category": "Golden Aroma Chicken",
+      "compatibleWith": [
+        "halal"
+      ],
+      "isPopular": true,
+      "description": "Hand-breaded white meat chicken with lettuce and mayo sauce in a toasted semolina bun.",
+      "source": "community",
+      "sourceUrl": "https://www.carbmanager.com/food-detail/md:efc62614c1fa3c4606e74d114ed8d5cb/chubby-chicken-burger",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "aw_spicy_chicken_sandwich",
+      "name": "Spicy Chicken Sandwich",
+      "emoji": "🥪",
+      "price": 6.9,
+      "calories": 500,
+      "protein": 21,
+      "carbs": 44,
+      "fat": 28,
+      "category": "Golden Aroma Chicken",
+      "compatibleWith": [
+        "halal"
+      ],
+      "isPopular": false,
+      "description": "Chubby chicken patty with spicy mayo sauce, lettuce on a toasted semolina bun.",
+      "source": "community",
+      "sourceUrl": "https://www.carbmanager.com/food-detail/md:efc62614c1fa3c4606e74d114ed8d5cb/chubby-chicken-burger",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "aw_coney_dog",
+      "name": "A&W Coney Dog (Beef)",
+      "emoji": "🌭",
+      "price": 5.2,
+      "calories": 340,
+      "protein": 14,
+      "carbs": 26,
+      "fat": 20,
+      "category": "All American Coney",
+      "compatibleWith": [
+        "halal"
+      ],
+      "isPopular": true,
+      "description": "Beef hot dog topped with signature coney beef sauce and diced onions.",
+      "source": "community",
+      "sourceUrl": "https://www.myfooddiary.com/foods/326215/a-and-w-coney-dog",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "aw_chicken_coney_dog",
+      "name": "Chicken Coney Dog",
+      "emoji": "🌭",
+      "price": 5.2,
+      "calories": 300,
+      "protein": 16,
+      "carbs": 26,
+      "fat": 15,
+      "category": "All American Coney",
+      "compatibleWith": [
+        "halal"
+      ],
+      "isPopular": true,
+      "description": "SG chicken hot dog topped with A&W's coney beef sauce and diced onions. (Macros estimated from US Coney Dog — chicken substitute.)",
+      "source": "community",
+      "sourceUrl": "https://www.myfooddiary.com/foods/326215/a-and-w-coney-dog",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "aw_coney_cheese_dog",
+      "name": "Coney Cheese Dog",
+      "emoji": "🌭",
+      "price": 5.7,
+      "calories": 400,
+      "protein": 16,
+      "carbs": 27,
+      "fat": 25,
+      "category": "All American Coney",
+      "compatibleWith": [
+        "halal"
+      ],
+      "isPopular": false,
+      "description": "Coney dog topped with melted nacho cheese sauce.",
+      "source": "community",
+      "sourceUrl": "https://www.myfooddiary.com/foods/326217/a-and-w-coney-cheese-dog",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "aw_golden_aroma_chicken_1pc",
+      "name": "Golden Aroma Chicken (1 pc)",
+      "emoji": "🍗",
+      "price": 3.2,
+      "calories": 260,
+      "protein": 22,
+      "carbs": 11,
+      "fat": 15,
+      "category": "Golden Aroma Chicken",
+      "compatibleWith": [
+        "halal",
+        "high_protein"
+      ],
+      "isPopular": true,
+      "description": "Hand-breaded fried chicken piece with A&W's signature seasoning — crispy outside, juicy inside.",
+      "source": "community",
+      "sourceUrl": "https://anwmalaysia.com.my/anw/2-pieces-chicken-combo/",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "aw_chicken_strips_3pc",
+      "name": "Chubby Chicken Strips (3 pc)",
+      "emoji": "🍗",
+      "price": 7.9,
+      "calories": 300,
+      "protein": 20,
+      "carbs": 25,
+      "fat": 15,
+      "category": "Golden Aroma Chicken",
+      "compatibleWith": [
+        "halal",
+        "high_protein"
+      ],
+      "isPopular": false,
+      "description": "Three hand-breaded white-meat chicken strips, served with dipping sauce.",
+      "source": "community",
+      "sourceUrl": "https://fastfoodnutrition.org/ca/a-w/chicken-strips/3-piece",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "aw_curly_fries_regular",
+      "name": "Curly Fries (Regular)",
+      "emoji": "🍟",
+      "price": 3.6,
+      "calories": 266,
+      "protein": 3,
+      "carbs": 34,
+      "fat": 14,
+      "category": "Snacks",
+      "compatibleWith": [
+        "halal",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "description": "Signature seasoned curly-cut fries — crispy and well-seasoned.",
+      "source": "community",
+      "sourceUrl": "https://www.fatsecret.com.sg/calories-nutrition/a-w/curly-fries/1-serving",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "aw_onion_rings",
+      "name": "Onion Rings",
+      "emoji": "🧅",
+      "price": 3.9,
+      "calories": 250,
+      "protein": 4,
+      "carbs": 36,
+      "fat": 5,
+      "category": "Snacks",
+      "compatibleWith": [
+        "halal",
+        "vegetarian"
+      ],
+      "isPopular": false,
+      "description": "Golden-battered onion rings, crispy outside.",
+      "source": "community",
+      "sourceUrl": "https://www.myfooddiary.com/foods/1965710/a-and-w-onion-rings",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "aw_beef_coney_cheese_fries",
+      "name": "Beef Coney Cheese Fries",
+      "emoji": "🍟",
+      "price": 4.9,
+      "calories": 550,
+      "protein": 17,
+      "carbs": 48,
+      "fat": 33,
+      "category": "Snacks",
+      "compatibleWith": [
+        "halal"
+      ],
+      "isPopular": true,
+      "description": "Curly fries drenched in beef coney sauce and nacho cheese sauce.",
+      "source": "community",
+      "sourceUrl": "https://www.eatthismuch.com/calories/chili-cheese-fries-179617",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "aw_chicken_coney_cheese_fries",
+      "name": "Chicken Coney Cheese Fries",
+      "emoji": "🍟",
+      "price": 4.9,
+      "calories": 530,
+      "protein": 16,
+      "carbs": 48,
+      "fat": 31,
+      "category": "Snacks",
+      "compatibleWith": [
+        "halal"
+      ],
+      "isPopular": false,
+      "description": "Curly fries drenched in chicken coney sauce and nacho cheese sauce.",
+      "source": "community",
+      "sourceUrl": "https://eatbook.sg/aw-restaurants-jewel/",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "aw_waffle_plain",
+      "name": "Waffle (Plain)",
+      "emoji": "🧇",
+      "price": 3.9,
+      "calories": 310,
+      "protein": 7,
+      "carbs": 42,
+      "fat": 12,
+      "category": "Waffles & Desserts",
+      "compatibleWith": [
+        "halal",
+        "vegetarian"
+      ],
+      "isPopular": false,
+      "description": "Freshly-made waffle served with butter and syrup.",
+      "source": "community",
+      "sourceUrl": "https://eatbook.sg/aw-restaurants-jewel/",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "aw_waffle_ice_cream",
+      "name": "Waffle with Ice Cream",
+      "emoji": "🧇",
+      "price": 4.5,
+      "calories": 420,
+      "protein": 7,
+      "carbs": 58,
+      "fat": 17,
+      "category": "Waffles & Desserts",
+      "compatibleWith": [
+        "halal",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "description": "Freshly-made waffle topped with a scoop of vanilla ice cream.",
+      "source": "community",
+      "sourceUrl": "https://eatbook.sg/aw-restaurants-jewel/",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "aw_waffle_sundae",
+      "name": "Waffle Sundae",
+      "emoji": "🧇",
+      "price": 4.9,
+      "calories": 480,
+      "protein": 7,
+      "carbs": 66,
+      "fat": 20,
+      "category": "Waffles & Desserts",
+      "compatibleWith": [
+        "halal",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "description": "Warm waffle topped with vanilla ice cream and choice of topping (chocolate / strawberry / caramel).",
+      "source": "community",
+      "sourceUrl": "https://sgrestaurantsmenu.com/aw-singapore-menu/",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "aw_root_beer_regular",
+      "name": "Root Beer (Regular)",
+      "emoji": "🥤",
+      "price": 4.15,
+      "calories": 170,
+      "protein": 0,
+      "carbs": 44,
+      "fat": 0,
+      "category": "Drinks",
+      "compatibleWith": [
+        "halal",
+        "vegan",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "description": "A&W's signature draft root beer served in a frosted mug — regular size.",
+      "source": "community",
+      "sourceUrl": "https://backend.awrestaurants.com/sites/default/files/2025-01/A&W%20Nutritional%20Fact%20Sheet%202025.pdf",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "aw_root_beer_zero",
+      "name": "Root Beer Zero Sugar",
+      "emoji": "🥤",
+      "price": 4.15,
+      "calories": 0,
+      "protein": 0,
+      "carbs": 0,
+      "fat": 0,
+      "category": "Drinks",
+      "compatibleWith": [
+        "halal",
+        "vegan",
+        "vegetarian",
+        "low_carb"
+      ],
+      "isPopular": false,
+      "description": "Zero-sugar, zero-calorie draft root beer served in a frosted mug.",
+      "source": "community",
+      "sourceUrl": "https://priceclub.com.sg/products/root-beer-diet",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    },
+    {
+      "id": "aw_root_beer_float",
+      "name": "Root Beer Float",
+      "emoji": "🥤",
+      "price": 3.5,
+      "calories": 330,
+      "protein": 2,
+      "carbs": 45,
+      "fat": 6,
+      "category": "Drinks",
+      "compatibleWith": [
+        "halal",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "description": "A&W's iconic frosted mug of draft root beer topped with creamy vanilla ice cream.",
+      "source": "community",
+      "sourceUrl": "https://www.myfooddiary.com/brand/a-and-w",
+      "verified": false,
+      "lastVerified": "2026-04-24"
+    }
+  ]
+}

@@ -1,0 +1,161 @@
+{
+  "id": "koi",
+  "name": "KOI Th\u00e9",
+  "emoji": "\ud83e\uddcb",
+  "cuisine": "Bubble Tea",
+  "tier": "full_menu",
+  "serviceTypes": [
+    "dine_in",
+    "grab_go"
+  ],
+  "aliases": [
+    "koi",
+    "koi the",
+    "koi cafe",
+    "koi th\u00e9"
+  ],
+  "dietTags": [
+    "halal"
+  ],
+  "priceRange": "$",
+  "nutritionUrl": "https://www.koithe.com/sg",
+  "lastUpdated": "2026-05-01",
+  "menu": [
+    {
+      "id": "koi_oolong_milk_tea",
+      "name": "KOI Milk Tea (M, 70% sugar, with pearls)",
+      "emoji": "\ud83e\uddcb",
+      "price": 4.5,
+      "calories": 310,
+      "protein": 3,
+      "carbs": 58,
+      "fat": 6,
+      "sodium": 70,
+      "category": "Milk Tea",
+      "compatibleWith": [
+        "halal",
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "description": "KOI's signature oolong milk tea with tapioca pearls.",
+      "source": "community",
+      "sourceUrl": "https://www.koithe.com/sg",
+      "verified": false,
+      "lastVerified": "2026-05-01",
+      "nutritionNote": "Halal-certified in Singapore. Community estimates at 70% sugar, medium."
+    },
+    {
+      "id": "koi_3q",
+      "name": "3Q Milk Tea (M, 70% sugar)",
+      "emoji": "\ud83e\uddcb",
+      "price": 5.5,
+      "calories": 370,
+      "protein": 4,
+      "carbs": 70,
+      "fat": 7,
+      "sodium": 80,
+      "category": "Milk Tea",
+      "compatibleWith": [
+        "halal",
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "description": "Milk tea with 3 toppings: pearls, pudding, and aloe vera.",
+      "source": "community",
+      "sourceUrl": "https://www.koithe.com/sg",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "koi_fresh_milk_tea",
+      "name": "Fresh Milk Tea (M, 70% sugar)",
+      "emoji": "\ud83e\uddcb",
+      "price": 5.2,
+      "calories": 240,
+      "protein": 6,
+      "carbs": 42,
+      "fat": 5,
+      "sodium": 85,
+      "category": "Fresh Milk Tea",
+      "compatibleWith": [
+        "halal",
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "source": "community",
+      "sourceUrl": "https://www.koithe.com/sg",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "koi_matcha_milk",
+      "name": "Matcha Milk (M, 70% sugar)",
+      "emoji": "\ud83c\udf75",
+      "price": 5.5,
+      "calories": 230,
+      "protein": 5,
+      "carbs": 40,
+      "fat": 6,
+      "sodium": 75,
+      "category": "Milk Tea",
+      "compatibleWith": [
+        "halal",
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "source": "community",
+      "sourceUrl": "https://www.koithe.com/sg",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "koi_passionfruit_green",
+      "name": "Passionfruit, Peach & Green Tea (M, 70% sugar)",
+      "emoji": "\ud83c\udf79",
+      "price": 4.8,
+      "calories": 180,
+      "protein": 0,
+      "carbs": 44,
+      "fat": 0,
+      "sodium": 20,
+      "category": "Fruit Tea",
+      "compatibleWith": [
+        "halal",
+        "no_pork",
+        "vegetarian",
+        "vegan"
+      ],
+      "isPopular": true,
+      "source": "community",
+      "sourceUrl": "https://www.koithe.com/sg",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "koi_brown_sugar",
+      "name": "Brown Sugar Milk with Pearl (M)",
+      "emoji": "\ud83e\uddcb",
+      "price": 5.8,
+      "calories": 340,
+      "protein": 7,
+      "carbs": 60,
+      "fat": 7,
+      "sodium": 90,
+      "category": "Fresh Milk",
+      "compatibleWith": [
+        "halal",
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "source": "community",
+      "sourceUrl": "https://www.koithe.com/sg",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    }
+  ]
+}

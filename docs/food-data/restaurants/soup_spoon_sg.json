@@ -1,0 +1,193 @@
+{
+  "id": "soup_spoon",
+  "name": "The Soup Spoon",
+  "emoji": "\ud83e\udd63",
+  "cuisine": "Healthy / Soups",
+  "tier": "full_menu",
+  "serviceTypes": [
+    "dine_in",
+    "grab_go",
+    "delivery"
+  ],
+  "aliases": [
+    "soup spoon",
+    "the soup spoon",
+    "soupspoon"
+  ],
+  "dietTags": [],
+  "priceRange": "$$",
+  "nutritionUrl": "https://www.thesoupspoon.com/nutrition",
+  "lastUpdated": "2026-05-01",
+  "menu": [
+    {
+      "id": "ss_chicken_mushroom",
+      "name": "Chicken & Mushroom Soup (Large)",
+      "emoji": "\ud83e\udd63",
+      "price": 9.9,
+      "calories": 220,
+      "protein": 18,
+      "carbs": 16,
+      "fat": 8,
+      "sodium": 860,
+      "category": "Soups",
+      "compatibleWith": [
+        "no_pork"
+      ],
+      "isPopular": true,
+      "description": "Hearty chicken and mushroom soup. One of the chain's bestsellers.",
+      "source": "official_sg",
+      "sourceUrl": "https://www.thesoupspoon.com/nutrition",
+      "verified": true,
+      "lastVerified": "2026-05-01",
+      "nutritionNote": "Not halal-certified."
+    },
+    {
+      "id": "ss_cream_mushroom",
+      "name": "Cream of Mushroom (Large)",
+      "emoji": "\ud83c\udf44",
+      "price": 9.9,
+      "calories": 280,
+      "protein": 5,
+      "carbs": 18,
+      "fat": 20,
+      "sodium": 820,
+      "category": "Soups",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "source": "official_sg",
+      "sourceUrl": "https://www.thesoupspoon.com/nutrition",
+      "verified": true,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "ss_tomato_basil",
+      "name": "Tomato Basil Soup (Large)",
+      "emoji": "\ud83c\udf45",
+      "price": 8.9,
+      "calories": 180,
+      "protein": 4,
+      "carbs": 22,
+      "fat": 8,
+      "sodium": 760,
+      "category": "Soups",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian",
+        "vegan"
+      ],
+      "isPopular": true,
+      "source": "official_sg",
+      "sourceUrl": "https://www.thesoupspoon.com/nutrition",
+      "verified": true,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "ss_lobster_bisque",
+      "name": "Lobster Bisque (Large)",
+      "emoji": "\ud83e\udd9e",
+      "price": 13.9,
+      "calories": 310,
+      "protein": 10,
+      "carbs": 18,
+      "fat": 22,
+      "sodium": 940,
+      "category": "Soups",
+      "compatibleWith": [
+        "no_pork"
+      ],
+      "isPopular": true,
+      "description": "Rich and creamy lobster bisque.",
+      "source": "official_sg",
+      "sourceUrl": "https://www.thesoupspoon.com/nutrition",
+      "verified": true,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "ss_minestrone",
+      "name": "Minestrone (Large)",
+      "emoji": "\ud83e\udd63",
+      "price": 8.9,
+      "calories": 160,
+      "protein": 6,
+      "carbs": 26,
+      "fat": 4,
+      "sodium": 780,
+      "category": "Soups",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian",
+        "vegan"
+      ],
+      "isPopular": false,
+      "source": "official_sg",
+      "sourceUrl": "https://www.thesoupspoon.com/nutrition",
+      "verified": true,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "ss_clam_chowder",
+      "name": "New England Clam Chowder (Large)",
+      "emoji": "\ud83e\udd63",
+      "price": 11.9,
+      "calories": 330,
+      "protein": 12,
+      "carbs": 24,
+      "fat": 20,
+      "sodium": 900,
+      "category": "Soups",
+      "compatibleWith": [
+        "no_pork"
+      ],
+      "isPopular": true,
+      "source": "official_sg",
+      "sourceUrl": "https://www.thesoupspoon.com/nutrition",
+      "verified": true,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "ss_sourdough",
+      "name": "Sourdough Bread (side)",
+      "emoji": "\ud83c\udf5e",
+      "price": 2.5,
+      "calories": 180,
+      "protein": 6,
+      "carbs": 34,
+      "fat": 2,
+      "sodium": 380,
+      "category": "Sides",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "source": "community",
+      "sourceUrl": "https://www.thesoupspoon.com/nutrition",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "ss_caesar_salad",
+      "name": "Caesar Salad",
+      "emoji": "\ud83e\udd57",
+      "price": 9.9,
+      "calories": 310,
+      "protein": 12,
+      "carbs": 18,
+      "fat": 22,
+      "sodium": 640,
+      "category": "Salads",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": false,
+      "source": "community",
+      "sourceUrl": "https://www.thesoupspoon.com/nutrition",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    }
+  ]
+}

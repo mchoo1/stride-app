@@ -1,0 +1,135 @@
+{
+  "id": "superfood_kitchen",
+  "name": "Superfood Kitchen",
+  "emoji": "\ud83e\udd6c",
+  "cuisine": "Healthy / Bowls",
+  "tier": "partial_menu",
+  "serviceTypes": [
+    "dine_in",
+    "grab_go",
+    "delivery"
+  ],
+  "aliases": [
+    "superfood kitchen",
+    "sfk",
+    "superfoodkitchen"
+  ],
+  "dietTags": [],
+  "priceRange": "$$",
+  "nutritionUrl": "https://www.superfoodkitchen.com.sg/menu",
+  "lastUpdated": "2026-05-01",
+  "menu": [
+    {
+      "id": "sfk_signature_bowl",
+      "name": "Superfood Signature Bowl",
+      "emoji": "\ud83e\udd6c",
+      "price": 15.9,
+      "calories": 480,
+      "protein": 28,
+      "carbs": 52,
+      "fat": 16,
+      "sodium": 680,
+      "category": "Superfood Bowls",
+      "compatibleWith": [
+        "no_pork",
+        "gluten_free"
+      ],
+      "isPopular": true,
+      "description": "Quinoa, kale, roasted chickpeas, avocado, and superfood dressing.",
+      "source": "community",
+      "sourceUrl": "https://www.superfoodkitchen.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01",
+      "nutritionNote": "Not halal-certified. Community estimates."
+    },
+    {
+      "id": "sfk_chicken_bowl",
+      "name": "Grilled Chicken Superfood Bowl",
+      "emoji": "\ud83c\udf57",
+      "price": 16.9,
+      "calories": 520,
+      "protein": 40,
+      "carbs": 50,
+      "fat": 16,
+      "sodium": 720,
+      "category": "Superfood Bowls",
+      "compatibleWith": [
+        "no_pork",
+        "gluten_free"
+      ],
+      "isPopular": true,
+      "source": "community",
+      "sourceUrl": "https://www.superfoodkitchen.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "sfk_a\u00e7ai_bowl",
+      "name": "A\u00e7a\u00ed Power Bowl",
+      "emoji": "\ud83e\uded0",
+      "price": 14.9,
+      "calories": 440,
+      "protein": 10,
+      "carbs": 70,
+      "fat": 14,
+      "sodium": 60,
+      "category": "Superfood Bowls",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian",
+        "vegan"
+      ],
+      "isPopular": true,
+      "description": "A\u00e7a\u00ed blend with chia seeds, granola, mixed berries, and coconut flakes.",
+      "source": "community",
+      "sourceUrl": "https://www.superfoodkitchen.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "sfk_detox_salad",
+      "name": "Detox Kale Salad",
+      "emoji": "\ud83e\udd57",
+      "price": 13.9,
+      "calories": 340,
+      "protein": 10,
+      "carbs": 32,
+      "fat": 18,
+      "sodium": 480,
+      "category": "Salads",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian",
+        "vegan",
+        "gluten_free"
+      ],
+      "isPopular": false,
+      "source": "community",
+      "sourceUrl": "https://www.superfoodkitchen.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "sfk_protein_smoothie",
+      "name": "Protein Power Smoothie",
+      "emoji": "\ud83e\udd64",
+      "price": 9.9,
+      "calories": 300,
+      "protein": 24,
+      "carbs": 36,
+      "fat": 6,
+      "sodium": 120,
+      "category": "Smoothies",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": true,
+      "description": "Banana, almond butter, protein powder, almond milk, and chia seeds.",
+      "source": "community",
+      "sourceUrl": "https://www.superfoodkitchen.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    }
+  ]
+}

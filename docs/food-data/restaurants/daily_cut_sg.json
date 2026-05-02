@@ -1,0 +1,172 @@
+{
+  "id": "daily_cut",
+  "name": "The Daily Cut",
+  "emoji": "\ud83e\udd57",
+  "cuisine": "Healthy / Bowls",
+  "tier": "full_menu",
+  "serviceTypes": [
+    "dine_in",
+    "grab_go",
+    "delivery"
+  ],
+  "aliases": [
+    "daily cut",
+    "the daily cut",
+    "tdc"
+  ],
+  "dietTags": [],
+  "priceRange": "$$",
+  "nutritionUrl": "https://www.thedailycut.com.sg/menu",
+  "lastUpdated": "2026-05-01",
+  "menu": [
+    {
+      "id": "tdc_chicken_rice",
+      "name": "Grilled Chicken Thigh Bowl (Brown Rice)",
+      "emoji": "\ud83e\udd57",
+      "price": 14.9,
+      "calories": 520,
+      "protein": 40,
+      "carbs": 52,
+      "fat": 14,
+      "sodium": 780,
+      "category": "Signature Bowls",
+      "compatibleWith": [
+        "no_pork",
+        "gluten_free"
+      ],
+      "isPopular": true,
+      "description": "Marinated grilled chicken thigh over brown rice with greens and house dressing.",
+      "source": "official_sg",
+      "sourceUrl": "https://www.thedailycut.com.sg/menu",
+      "verified": true,
+      "lastVerified": "2026-05-01",
+      "nutritionNote": "Not halal-certified. Macros from TDC website. Gluten-free if requesting GF dressing."
+    },
+    {
+      "id": "tdc_salmon_rice",
+      "name": "Teriyaki Salmon Bowl (Brown Rice)",
+      "emoji": "\ud83d\udc1f",
+      "price": 17.9,
+      "calories": 560,
+      "protein": 38,
+      "carbs": 54,
+      "fat": 18,
+      "sodium": 820,
+      "category": "Signature Bowls",
+      "compatibleWith": [
+        "no_pork"
+      ],
+      "isPopular": true,
+      "source": "official_sg",
+      "sourceUrl": "https://www.thedailycut.com.sg/menu",
+      "verified": true,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "tdc_beef_rice",
+      "name": "Slow-Cooked Beef Bowl (Brown Rice)",
+      "emoji": "\ud83e\udd69",
+      "price": 16.9,
+      "calories": 580,
+      "protein": 42,
+      "carbs": 50,
+      "fat": 20,
+      "sodium": 860,
+      "category": "Signature Bowls",
+      "compatibleWith": [
+        "no_pork",
+        "gluten_free"
+      ],
+      "isPopular": true,
+      "source": "official_sg",
+      "sourceUrl": "https://www.thedailycut.com.sg/menu",
+      "verified": true,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "tdc_chicken_quinoa",
+      "name": "Grilled Chicken Thigh Bowl (Quinoa)",
+      "emoji": "\ud83e\udd57",
+      "price": 15.9,
+      "calories": 490,
+      "protein": 42,
+      "carbs": 44,
+      "fat": 14,
+      "sodium": 760,
+      "category": "Signature Bowls",
+      "compatibleWith": [
+        "no_pork",
+        "gluten_free"
+      ],
+      "isPopular": false,
+      "source": "official_sg",
+      "sourceUrl": "https://www.thedailycut.com.sg/menu",
+      "verified": true,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "tdc_salad_base",
+      "name": "Grilled Chicken Salad (Greens base)",
+      "emoji": "\ud83e\udd57",
+      "price": 14.9,
+      "calories": 380,
+      "protein": 38,
+      "carbs": 16,
+      "fat": 16,
+      "sodium": 680,
+      "category": "Salads",
+      "compatibleWith": [
+        "no_pork",
+        "gluten_free"
+      ],
+      "isPopular": false,
+      "source": "official_sg",
+      "sourceUrl": "https://www.thedailycut.com.sg/menu",
+      "verified": true,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "tdc_tofu_bowl",
+      "name": "Pan-Fried Tofu Bowl (Brown Rice)",
+      "emoji": "\ud83c\udf31",
+      "price": 13.9,
+      "calories": 440,
+      "protein": 22,
+      "carbs": 54,
+      "fat": 14,
+      "sodium": 680,
+      "category": "Signature Bowls",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian",
+        "vegan"
+      ],
+      "isPopular": false,
+      "source": "official_sg",
+      "sourceUrl": "https://www.thedailycut.com.sg/menu",
+      "verified": true,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "tdc_protein_smoothie",
+      "name": "Protein Smoothie",
+      "emoji": "\ud83e\udd64",
+      "price": 9.5,
+      "calories": 240,
+      "protein": 22,
+      "carbs": 28,
+      "fat": 4,
+      "sodium": 140,
+      "category": "Drinks",
+      "compatibleWith": [
+        "no_pork",
+        "vegetarian"
+      ],
+      "isPopular": false,
+      "source": "community",
+      "sourceUrl": "https://www.thedailycut.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    }
+  ]
+}

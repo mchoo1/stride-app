@@ -1,0 +1,160 @@
+{
+  "id": "makisan",
+  "name": "Maki-San",
+  "emoji": "\ud83c\udf2f",
+  "cuisine": "Japanese / Sushi Rolls",
+  "tier": "partial_menu",
+  "serviceTypes": [
+    "dine_in",
+    "grab_go",
+    "delivery"
+  ],
+  "aliases": [
+    "maki san",
+    "makisan",
+    "maki-san"
+  ],
+  "dietTags": [
+    "halal"
+  ],
+  "priceRange": "$",
+  "nutritionUrl": "https://www.maki-san.com.sg/menu",
+  "lastUpdated": "2026-05-01",
+  "menu": [
+    {
+      "id": "makisan_classic_6pc",
+      "name": "Classic Sushi Roll (6 pc)",
+      "emoji": "\ud83c\udf2f",
+      "price": 8.5,
+      "calories": 280,
+      "protein": 10,
+      "carbs": 44,
+      "fat": 6,
+      "sodium": 480,
+      "category": "Classic Rolls",
+      "compatibleWith": [
+        "halal",
+        "no_pork"
+      ],
+      "isPopular": true,
+      "description": "6-piece customisable sushi roll. Choose your fish, sauce, and toppings. Calories are approximate for a standard chicken + avocado roll.",
+      "source": "community",
+      "sourceUrl": "https://www.maki-san.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01",
+      "nutritionNote": "Halal-certified. Macros vary significantly by filling and sauce choice."
+    },
+    {
+      "id": "makisan_salmon_6pc",
+      "name": "Salmon Sushi Roll (6 pc)",
+      "emoji": "\ud83c\udf63",
+      "price": 9.5,
+      "calories": 310,
+      "protein": 14,
+      "carbs": 42,
+      "fat": 8,
+      "sodium": 500,
+      "category": "Classic Rolls",
+      "compatibleWith": [
+        "halal",
+        "no_pork"
+      ],
+      "isPopular": true,
+      "source": "community",
+      "sourceUrl": "https://www.maki-san.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "makisan_spicy_tuna_6pc",
+      "name": "Spicy Tuna Roll (6 pc)",
+      "emoji": "\ud83c\udf36\ufe0f",
+      "price": 9.5,
+      "calories": 300,
+      "protein": 15,
+      "carbs": 40,
+      "fat": 8,
+      "sodium": 520,
+      "category": "Classic Rolls",
+      "compatibleWith": [
+        "halal",
+        "no_pork"
+      ],
+      "isPopular": true,
+      "source": "community",
+      "sourceUrl": "https://www.maki-san.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "makisan_veg_6pc",
+      "name": "Vegetable Roll (6 pc)",
+      "emoji": "\ud83e\udd51",
+      "price": 7.5,
+      "calories": 220,
+      "protein": 5,
+      "carbs": 42,
+      "fat": 4,
+      "sodium": 360,
+      "category": "Classic Rolls",
+      "compatibleWith": [
+        "halal",
+        "no_pork",
+        "vegetarian",
+        "vegan"
+      ],
+      "isPopular": false,
+      "description": "Avocado, cucumber, and pickled radish roll.",
+      "source": "community",
+      "sourceUrl": "https://www.maki-san.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "makisan_sashimi_bowl",
+      "name": "Sashimi Don (Rice Bowl)",
+      "emoji": "\ud83c\udf71",
+      "price": 12.9,
+      "calories": 450,
+      "protein": 28,
+      "carbs": 56,
+      "fat": 8,
+      "sodium": 680,
+      "category": "Rice Bowls",
+      "compatibleWith": [
+        "halal",
+        "no_pork"
+      ],
+      "isPopular": true,
+      "description": "Sashimi slices (salmon/tuna) over seasoned sushi rice with toppings.",
+      "source": "community",
+      "sourceUrl": "https://www.maki-san.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    },
+    {
+      "id": "makisan_edamame",
+      "name": "Edamame",
+      "emoji": "\ud83e\uded8",
+      "price": 3.0,
+      "calories": 120,
+      "protein": 10,
+      "carbs": 8,
+      "fat": 5,
+      "sodium": 280,
+      "category": "Sides",
+      "compatibleWith": [
+        "halal",
+        "no_pork",
+        "vegetarian",
+        "vegan",
+        "gluten_free"
+      ],
+      "isPopular": false,
+      "source": "community",
+      "sourceUrl": "https://www.maki-san.com.sg/menu",
+      "verified": false,
+      "lastVerified": "2026-05-01"
+    }
+  ]
+}
