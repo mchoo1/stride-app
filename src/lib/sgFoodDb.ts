@@ -11878,3 +11878,79 @@ export const SG_MACRO_FOODS: SGMacroFood[] = [
     dietTags: ['lactose_free'],
   },
 ];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SG_UNRESEARCHED_CHAINS
+// ─────────────────────────────────────────────────────────────────────────────
+// Restaurants / chains that appear in GPS results but do NOT yet have a
+// menu entry in SG_RESTAURANTS. Used by the scheduled food-research task
+// to know which chains to prioritise next.
+//
+// Fields:
+//   name        – display name (as it appears on Google Maps)
+//   aliases     – lowercase variants for GPS name matching
+//   outletType  – outlet category
+//   cuisine     – cuisine/category tag
+//   priority    – 'high' (chains people search for often) | 'medium' | 'low'
+//   notes       – source hint or reason for priority
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface UnresearchedChain {
+  name:       string;
+  aliases:    string[];
+  outletType: OutletType;
+  cuisine:    string;
+  priority:   'high' | 'medium' | 'low';
+  notes?:     string;
+}
+
+export const SG_UNRESEARCHED_CHAINS: UnresearchedChain[] = [
+  // ── Fast food / burgers ────────────────────────────────────────────────────
+  { name: 'McDonald\'s',           aliases: ['mcdonalds', 'mcd', 'mac'],               outletType: 'grab_go',    cuisine: 'Fast Food',        priority: 'high',   notes: 'Official PDF available at mcdonalds.com.sg/nutrition' },
+  { name: 'Llaollao',              aliases: ['llaollao', 'llao llao'],                  outletType: 'grab_go',    cuisine: 'Frozen Yogurt',     priority: 'medium', notes: 'Nutrition on website' },
+  { name: 'Wendy\'s',              aliases: ["wendy's", 'wendys'],                      outletType: 'grab_go',    cuisine: 'Fast Food',         priority: 'medium' },
+  { name: 'Shake Shack',           aliases: ['shake shack'],                            outletType: 'restaurant', cuisine: 'Burgers',           priority: 'medium', notes: 'Nutrition PDF on website' },
+
+  // ── Coffee / café ──────────────────────────────────────────────────────────
+  { name: 'Luckin Coffee',         aliases: ['luckin', 'luckin coffee'],                outletType: 'grab_go',    cuisine: 'Coffee',            priority: 'medium' },
+  { name: 'The Coffee Bean & Tea Leaf', aliases: ['coffee bean', 'cbtl'],              outletType: 'grab_go',    cuisine: 'Coffee',            priority: 'medium' },
+  { name: 'Coffeesmith',           aliases: ['coffeesmith'],                            outletType: 'grab_go',    cuisine: 'Coffee',            priority: 'low' },
+  { name: 'Hollin',                aliases: ['hollin'],                                 outletType: 'grab_go',    cuisine: 'Milk Tea',          priority: 'low' },
+
+  // ── Bakery / pastry ────────────────────────────────────────────────────────
+  { name: 'Four Leaves',           aliases: ['four leaves'],                            outletType: 'grab_go',    cuisine: 'Bakery',            priority: 'low' },
+  { name: 'Bengawan Solo',         aliases: ['bengawan solo'],                          outletType: 'grab_go',    cuisine: 'Nyonya Kueh',       priority: 'low' },
+  { name: 'Paris Baguette',        aliases: ['paris baguette'],                         outletType: 'grab_go',    cuisine: 'Bakery',            priority: 'medium' },
+  { name: 'Swensen\'s',            aliases: ["swensen's", 'swensens'],                  outletType: 'restaurant', cuisine: 'Ice Cream / Western', priority: 'low' },
+
+  // ── Hawker / local ─────────────────────────────────────────────────────────
+  { name: 'Kopitiam',              aliases: ['kopitiam'],                               outletType: 'hawker',     cuisine: 'Hawker',            priority: 'high',   notes: 'Use HPB nutrient data for generic hawker dishes' },
+  { name: 'Koufu',                 aliases: ['koufu'],                                  outletType: 'hawker',     cuisine: 'Hawker',            priority: 'high',   notes: 'Use HPB nutrient data for generic hawker dishes' },
+  { name: 'Foodfare',              aliases: ['foodfare'],                               outletType: 'hawker',     cuisine: 'Hawker',            priority: 'high',   notes: 'Use HPB nutrient data for generic hawker dishes' },
+  { name: 'Banquet',               aliases: ['banquet'],                                outletType: 'hawker',     cuisine: 'Hawker',            priority: 'medium', notes: 'Use HPB nutrient data for generic hawker dishes' },
+
+  // ── Convenience / ready-to-eat ─────────────────────────────────────────────
+  { name: 'FairPrice Xpress',      aliases: ['fairprice xpress', 'ntuc xpress'],        outletType: 'ready_to_eat', cuisine: 'Convenience',     priority: 'high',   notes: 'Packaged ready meals — use FairPrice website nutritional panels' },
+  { name: 'Cheers',                aliases: ['cheers'],                                 outletType: 'ready_to_eat', cuisine: 'Convenience',     priority: 'medium', notes: 'Packaged items — use product nutrition labels' },
+  { name: 'OK Convenience',        aliases: ['ok convenience', 'ok store'],             outletType: 'ready_to_eat', cuisine: 'Convenience',     priority: 'low' },
+
+  // ── Salads / healthy ───────────────────────────────────────────────────────
+  { name: 'SaladStop!',            aliases: ['saladstop', 'salad stop'],                outletType: 'grab_go',    cuisine: 'Salads',            priority: 'high',   notes: 'Nutrition data in docs/food-data/grab-and-go/saladstop_sg.json' },
+  { name: 'Grain',                 aliases: ['grain'],                                  outletType: 'grab_go',    cuisine: 'Healthy',           priority: 'high',   notes: 'Nutrition data in docs/food-data/grab-and-go/grain_sg.json' },
+  { name: 'Saladbox',              aliases: ['saladbox'],                               outletType: 'grab_go',    cuisine: 'Salads',            priority: 'medium', notes: 'Nutrition data in docs/food-data/grab-and-go/saladbox_sg.json' },
+  { name: 'Soulgreen',             aliases: ['soulgreen', 'soul green'],                outletType: 'grab_go',    cuisine: 'Healthy',           priority: 'medium' },
+
+  // ── Japanese ───────────────────────────────────────────────────────────────
+  { name: 'Sushi Express',         aliases: ['sushi express'],                          outletType: 'restaurant', cuisine: 'Japanese',          priority: 'medium' },
+  { name: 'Ichiban Boshi',         aliases: ['ichiban boshi', 'ichiban'],               outletType: 'restaurant', cuisine: 'Japanese',          priority: 'medium' },
+  { name: 'Saizeriya',             aliases: ['saizeriya'],                              outletType: 'restaurant', cuisine: 'Italian / Japanese', priority: 'medium', notes: 'Japanese-Italian chain, nutrition PDF on website' },
+
+  // ── Korean ─────────────────────────────────────────────────────────────────
+  { name: 'Bonchon',               aliases: ['bonchon'],                                outletType: 'restaurant', cuisine: 'Korean',            priority: 'medium' },
+  { name: 'Gen Korean BBQ',        aliases: ['gen korean bbq', 'gen bbq'],              outletType: 'restaurant', cuisine: 'Korean BBQ',        priority: 'low' },
+
+  // ── Western / steak ────────────────────────────────────────────────────────
+  { name: 'Aston\'s Specialities', aliases: ["aston's", 'astons', 'astons specialties'], outletType: 'restaurant', cuisine: 'Western',          priority: 'high',   notes: 'Popular budget western — check astons.com.sg' },
+  { name: 'TGI Fridays',           aliases: ['tgi fridays', 'tgif'],                   outletType: 'restaurant', cuisine: 'Western',           priority: 'low' },
+  { name: 'Eighteen Chefs',        aliases: ['eighteen chefs', '18 chefs'],             outletType: 'restaurant', cuisine: 'Western',           priority: 'low' },
+];

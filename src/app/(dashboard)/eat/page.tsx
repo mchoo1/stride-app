@@ -47,29 +47,7 @@ interface PooledItem {
   tier:       RestaurantTier;
 }
 
-/* ── Cuisine fallbacks ── */
-interface FallbackDish {
-  dish: string; emoji: string; price: number;
-  calories: number; protein: number; carbs: number; fat: number;
-  compatibleWith: DietaryFlag[];
-}
-const CUISINE_FALLBACK: Record<string, FallbackDish> = {
-  'halal restaurant':     { dish: 'Chicken Rice',         emoji: '🍗', price: 4.50, calories: 450, protein: 32, carbs: 55, fat:  9, compatibleWith: ['halal', 'gluten_free', 'lactose_free'] },
-  'restaurant':           { dish: 'Grilled Chicken Set',  emoji: '🍽️', price: 12.0, calories: 480, protein: 38, carbs: 35, fat: 12, compatibleWith: ['gluten_free'] },
-  'fast food restaurant': { dish: 'Chicken Burger Meal',  emoji: '🍔', price: 6.50, calories: 650, protein: 28, carbs: 70, fat: 22, compatibleWith: [] },
-  'cafe':                 { dish: 'Egg Breakfast Set',    emoji: '🍳', price: 12.0, calories: 420, protein: 22, carbs: 30, fat: 18, compatibleWith: ['vegetarian', 'gluten_free'] },
-  'bakery':               { dish: 'Tuna Sandwich',        emoji: '🥪', price: 4.00, calories: 320, protein: 18, carbs: 42, fat:  8, compatibleWith: ['lactose_free'] },
-  'meal takeaway':        { dish: 'Mixed Rice (2 sides)', emoji: '🍱', price: 4.00, calories: 480, protein: 20, carbs: 65, fat: 10, compatibleWith: ['vegetarian', 'vegan', 'gluten_free', 'halal', 'lactose_free'] },
-  'bar and grill':        { dish: 'Grilled Chicken',      emoji: '🍗', price: 14.0, calories: 380, protein: 32, carbs:  5, fat: 22, compatibleWith: ['gluten_free', 'keto', 'lactose_free'] },
-  'seafood restaurant':   { dish: 'Steamed Fish Fillet',  emoji: '🐟', price: 15.0, calories: 280, protein: 35, carbs:  5, fat:  8, compatibleWith: ['gluten_free', 'lactose_free', 'halal', 'keto'] },
-  'chinese restaurant':   { dish: 'Steamed Chicken Rice', emoji: '🍗', price: 5.00, calories: 420, protein: 30, carbs: 50, fat:  8, compatibleWith: ['gluten_free', 'lactose_free'] },
-  'japanese restaurant':  { dish: 'Chicken Teriyaki Set', emoji: '🍱', price: 14.0, calories: 520, protein: 32, carbs: 60, fat: 10, compatibleWith: ['lactose_free'] },
-  'korean restaurant':    { dish: 'Bibimbap',             emoji: '🥘', price: 14.0, calories: 560, protein: 25, carbs: 80, fat: 12, compatibleWith: ['gluten_free'] },
-  'indian restaurant':    { dish: 'Dal & Roti',           emoji: '🫓', price: 8.00, calories: 480, protein: 18, carbs: 72, fat: 12, compatibleWith: ['vegetarian', 'vegan', 'halal', 'lactose_free'] },
-  'thai restaurant':      { dish: 'Thai Basil Chicken',   emoji: '🌿', price: 10.0, calories: 450, protein: 28, carbs: 45, fat: 12, compatibleWith: ['gluten_free', 'halal'] },
-  'western restaurant':   { dish: 'Grilled Salmon',       emoji: '🐟', price: 18.0, calories: 450, protein: 40, carbs: 25, fat: 18, compatibleWith: ['gluten_free', 'lactose_free', 'keto'] },
-};
-const FALLBACK_DEFAULT: FallbackDish = { dish: 'House Special', emoji: '🍽️', price: 10.0, calories: 480, protein: 25, carbs: 50, fat: 15, compatibleWith: [] };
+
 
 const DIET_LABEL: Record<DietaryFlag, string> = {
   vegetarian: '🥦 Vegetarian', vegan: '🌱 Vegan',
@@ -1000,18 +978,13 @@ export default function EatPage() {
       const c = p.dbMatch ? p.dbMatch.cuisine : p.type;
       return c.toLowerCase().includes(filterCuisine.toLowerCase());
     });
-    if (filterHighProtein) list = list.filter(p => {
-      if (p.dbMatch && p.dbMatch.menu.length > 0)
-        return p.dbMatch.menu.some(i => i.protein >= HIGH_PROTEIN_THRESHOLD);
-      return (CUISINE_FALLBACK[p.type] ?? FALLBACK_DEFAULT).protein >= HIGH_PROTEIN_THRESHOLD;
-    });
+    if (filterHighProtein) list = list.filter(p =>
+      p.dbMatch?.menu.some(i => i.protein >= HIGH_PROTEIN_THRESHOLD) ?? false
+    );
     if (filterDietMatch && userFlags.length > 0) {
-      list = list.filter(p => {
-        if (p.dbMatch && p.dbMatch.menu.length > 0)
-          return p.dbMatch.menu.some(i => userFlags.every(f => i.compatibleWith.includes(f)));
-        const fb = CUISINE_FALLBACK[p.type] ?? FALLBACK_DEFAULT;
-        return userFlags.some(f => fb.compatibleWith.includes(f));
-      });
+      list = list.filter(p =>
+        p.dbMatch?.menu.some(i => userFlags.every(f => i.compatibleWith.includes(f))) ?? false
+      );
     }
 
     // ── Sort comparator — applied within each tier independently ────────────
@@ -1020,22 +993,23 @@ export default function EatPage() {
       if (sortBy === 'protein_dollar') {
         const ppd = (p: EnrichedPlace) => p.dbMatch && p.dbMatch.menu.length
           ? Math.max(...p.dbMatch.menu.map(i => proteinPerDollar(i.protein, i.price)))
-          : proteinPerDollar((CUISINE_FALLBACK[p.type] ?? FALLBACK_DEFAULT).protein, (CUISINE_FALLBACK[p.type] ?? FALLBACK_DEFAULT).price);
+          : -1;  // no data → sort last
         return ppd(b) - ppd(a);
       }
       if (sortBy === 'price') {
         const minP = (p: EnrichedPlace) => p.dbMatch && p.dbMatch.menu.length
           ? Math.min(...p.dbMatch.menu.map(i => i.price))
-          : (CUISINE_FALLBACK[p.type] ?? FALLBACK_DEFAULT).price;
+          : 9999;  // no data → sort last
         return minP(a) - minP(b);
       }
-      // best_match
+      // best_match — places with menu data ranked by macro score; no-data places go last
       if (a.dbMatch?.menu.length && b.dbMatch?.menu.length) {
         const sc = (p: EnrichedPlace) => Math.max(...p.dbMatch!.menu.map(i => macroMatchScore(i, macroRem)));
         return sc(b) - sc(a);
       }
-      const fb = (p: EnrichedPlace) => CUISINE_FALLBACK[p.type] ?? FALLBACK_DEFAULT;
-      return proteinPerDollar(fb(b).protein, fb(b).price) - proteinPerDollar(fb(a).protein, fb(a).price);
+      if (a.dbMatch?.menu.length) return -1;
+      if (b.dbMatch?.menu.length) return  1;
+      return (a.distKm ?? 999) - (b.distKm ?? 999);  // both no data → sort by distance
     };
 
     const t1 = list.filter(p => p.tier === 'full_menu').sort(sortFn);
@@ -1379,8 +1353,6 @@ export default function EatPage() {
                       color={FG3} note="No menu data yet"
                     />
                     {tier3Places.map(place => {
-                      const fallback = CUISINE_FALLBACK[place.type] ?? FALLBACK_DEFAULT;
-                      const fit      = getDietFit(fallback.compatibleWith, userFlags);
                       return (
                         <div key={place.id} style={{ background: CARD, borderRadius: 18, padding: 14, border: `1px solid ${BORDER}`, marginBottom: 10, boxShadow: SHADOW }}>
                           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
@@ -1395,13 +1367,7 @@ export default function EatPage() {
                               <div style={{ fontSize: 11, color: FG3, marginBottom: 6 }}>
                                 {place.type} · {place.distance}{place.rating ? ` · ⭐ ${place.rating.toFixed(1)}` : ''} · {place.hours}
                               </div>
-                              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginBottom: 6 }}>
-                                <span style={{ fontSize: 10, color: FG3 }}>Typical dish:</span>
-                                <span style={{ fontSize: 11, fontWeight: 700, color: FG2 }}>{fallback.emoji} {fallback.dish}</span>
-                                <span style={{ fontSize: 10, color: FG3 }}>${fallback.price.toFixed(2)} · P{fallback.protein}g · {fallback.calories}kcal</span>
-                                <PpdBadge protein={fallback.protein} price={fallback.price} />
-                                <DietBadge fit={fit} />
-                              </div>
+
                               <a
                                 href={`mailto:hello@strideapp.sg?subject=Menu data for ${encodeURIComponent(place.name)}&body=Hi, I'd like to submit nutrition data for ${encodeURIComponent(place.name)}.`}
                                 style={{ fontSize: 11, color: '#2E6FB8', fontWeight: 600, textDecoration: 'none' }}
