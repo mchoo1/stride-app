@@ -1,3 +1,14 @@
+// ── Food Outlet ───────────────────────────────────────────────────────────────
+/** How a food outlet serves food */
+export type ServiceType = 'dine_in' | 'grab_go' | 'delivery';
+
+/** Category of food outlet */
+export type OutletType =
+  | 'restaurant'   // sit-down restaurant
+  | 'hawker'       // hawker centre / food court
+  | 'grab_go'      // takeaway counter (BreadTalk, Old Chang Kee, Gong Cha)
+  | 'ready_to_eat';// convenience store or packaged ready meals (7-Eleven, Cheers, FairPrice Xpress)
+
 // ── Profile ───────────────────────────────────────────────────────────────────
 export type GoalType = 'weight_loss' | 'muscle_gain' | 'maintenance';
 export type DietaryFlag =

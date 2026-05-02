@@ -8,7 +8,7 @@ import {
   SG_RESTAURANTS, SG_RECIPES,
   type SGRestaurant, type SGMenuItem, type SGRecipe, type ServiceType, type RestaurantTier,
 } from '@/lib/sgFoodDb';
-import type { DietaryFlag } from '@/types';
+import type { DietaryFlag, OutletType } from '@/types';
 
 /* ── Design tokens ── */
 const BG     = '#F7F8FB';
@@ -32,11 +32,20 @@ interface EnrichedPlace extends NearbyPlace {
   tier: RestaurantTier;
 }
 
-type MealType     = 'breakfast' | 'lunch' | 'snack' | 'dinner';
-type SortKey      = 'best_match' | 'protein_dollar' | 'price' | 'distance';
-type DietFit      = 'great' | 'check' | 'warn' | 'neutral';
-type EatTab       = 'food' | 'store';
-type ServiceFilter = 'all' | ServiceType;
+type MealType    = 'breakfast' | 'lunch' | 'snack' | 'dinner';
+type SortKey     = 'best_match' | 'protein_dollar' | 'price' | 'distance';
+type DietFit     = 'great' | 'check' | 'warn' | 'neutral';
+type EatTab      = 'food' | 'store';
+/** Unified filter covering both service type and outlet type */
+type FilterMode  = 'all' | 'dine_in' | 'grab_go' | 'ready_to_eat' | 'delivery';
+
+/** A single pooled item from any source (GPS or DB), with context */
+interface PooledItem {
+  item:       SGMenuItem;
+  restaurant: SGRestaurant;
+  distKm?:    number;         // undefined = came from DB chains (no GPS data)
+  tier:       RestaurantTier;
+}
 
 /* ── Cuisine fallbacks ── */
 interface FallbackDish {
@@ -175,8 +184,9 @@ function SearchBar({ value, onChange, placeholder }: {
   );
 }
 
-function SortBar({ active, onChange, showDistance }: {
+function SortBar({ active, onChange, showDistance, recommendedKey }: {
   active: SortKey; onChange: (k: SortKey) => void; showDistance: boolean;
+  recommendedKey?: SortKey;
 }) {
   const opts: { key: SortKey; label: string }[] = [
     { key: 'best_match',     label: '🎯 Best Match' },
@@ -193,7 +203,14 @@ function SortBar({ active, onChange, showDistance }: {
           border: `1px solid ${active === o.key ? 'rgba(30,127,92,0.30)' : BORDER}`,
           background: active === o.key ? 'rgba(30,127,92,0.10)' : CARD,
           color: active === o.key ? GREEN : FG3, transition: 'all .2s',
-        }}>{o.label}</button>
+        }}>
+          {o.label}
+          {recommendedKey === o.key && (
+            <span style={{ fontSize: 8, fontWeight: 800, background: 'rgba(30,127,92,0.18)', color: GREEN, borderRadius: 4, padding: '1px 5px', marginLeft: 4, verticalAlign: 'middle' }}>
+              REC
+            </span>
+          )}
+        </button>
       ))}
     </div>
   );
@@ -201,7 +218,7 @@ function SortBar({ active, onChange, showDistance }: {
 
 /* ── 2. FilterBar ── */
 function FilterBar({
-  filterService, setFilterService,
+  filterMode, setFilterMode,
   filterOpenNow, setFilterOpenNow,
   filterMaxDist, setFilterMaxDist,
   filterCuisine, setFilterCuisine,
@@ -209,7 +226,7 @@ function FilterBar({
   filterDietMatch, setFilterDietMatch,
   cuisineOptions, hasDietPrefs,
 }: {
-  filterService: ServiceFilter;  setFilterService: (v: ServiceFilter) => void;
+  filterMode: FilterMode;        setFilterMode: (v: FilterMode) => void;
   filterOpenNow: boolean;        setFilterOpenNow: (v: boolean) => void;
   filterMaxDist: null|0.5|1|2;  setFilterMaxDist: (v: null|0.5|1|2) => void;
   filterCuisine: string;         setFilterCuisine: (v: string) => void;
@@ -228,20 +245,21 @@ function FilterBar({
     { val: null, label: 'All' }, { val: 0.5, label: '< 500m' },
     { val: 1, label: '< 1km'  }, { val: 2,   label: '< 2km'  },
   ];
-  const serviceOpts: { val: ServiceFilter; label: string; soon?: boolean }[] = [
-    { val: 'all',      label: '🍴 All'       },
-    { val: 'dine_in',  label: '🍽️ Dine In'  },
-    { val: 'grab_go',  label: '🥡 Takeaway'  },
-    { val: 'delivery', label: '🛵 Delivery', soon: true },
+  const modeOpts: { val: FilterMode; label: string; soon?: boolean }[] = [
+    { val: 'all',         label: '🍴 All'          },
+    { val: 'dine_in',     label: '🍽️ Dine In'     },
+    { val: 'grab_go',     label: '🥡 Takeaway'     },
+    { val: 'ready_to_eat',label: '🏪 Ready-to-Eat' },
+    { val: 'delivery',    label: '🛵 Delivery', soon: true },
   ];
   return (
     <div style={{ marginBottom: 14, display: 'flex', flexDirection: 'column', gap: 6 }}>
-      {/* Row 0: Service type */}
+      {/* Row 0: Mode filter */}
       <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2 }}>
-        {serviceOpts.map(s => (
-          <button key={s.val} onClick={() => !s.soon && setFilterService(s.val)}
+        {modeOpts.map(s => (
+          <button key={s.val} onClick={() => !s.soon && setFilterMode(s.val)}
             style={{
-              ...chip(filterService === s.val),
+              ...chip(filterMode === s.val),
               opacity: s.soon ? 0.45 : 1, cursor: s.soon ? 'not-allowed' : 'pointer',
               position: 'relative' as const,
             }}
@@ -255,9 +273,15 @@ function FilterBar({
         {hasDietPrefs && (
           <button
             onClick={() => setFilterDietMatch(!filterDietMatch)}
-            style={{ ...chip(filterDietMatch), border: `1px solid ${filterDietMatch ? 'rgba(30,127,92,0.35)' : BORDER}`, background: filterDietMatch ? 'rgba(30,127,92,0.12)' : CARD, color: filterDietMatch ? GREEN : FG3, fontWeight: 800 }}
+            style={{
+              ...chip(filterDietMatch),
+              border: `1px solid ${filterDietMatch ? 'rgba(30,127,92,0.45)' : BORDER}`,
+              background: filterDietMatch ? 'rgba(30,127,92,0.15)' : CARD,
+              color: filterDietMatch ? GREEN : FG3, fontWeight: 800,
+              boxShadow: filterDietMatch ? '0 0 0 1px rgba(30,127,92,0.20)' : 'none',
+            }}
           >
-            🥗 My Diet
+            {filterDietMatch ? '🔒' : '🥗'} My Diet
           </button>
         )}
         <button onClick={() => setFilterOpenNow(!filterOpenNow)} style={chip(filterOpenNow)}>
@@ -449,6 +473,85 @@ function RestaurantMenuPanel({
           ))
         )}
       </div>
+    </div>
+  );
+}
+
+/* ── MenuFirstGroup: items are the primary element, restaurant header is compact ── */
+function MenuFirstGroup({
+  restaurant, userFlags, remaining, onLog, logged,
+  distanceLabel, rating, mapsUrl, badge,
+}: {
+  restaurant: SGRestaurant;
+  userFlags: DietaryFlag[];
+  remaining: { protein: number; calories: number; carbs: number };
+  onLog: (item: SGMenuItem, r: SGRestaurant) => void;
+  logged: Set<string>;
+  distanceLabel?: string;
+  rating?: number | null;
+  mapsUrl?: string;
+  badge?: React.ReactNode;
+}) {
+  const [showAll, setShowAll] = useState(false);
+
+  const sortedItems = useMemo(() =>
+    [...restaurant.menu].sort((a, b) => macroMatchScore(b, remaining) - macroMatchScore(a, remaining)),
+    [restaurant.menu, remaining],
+  );
+
+  const PREVIEW = 3;
+  const visibleItems = showAll ? sortedItems : sortedItems.slice(0, PREVIEW);
+  const hasMore     = sortedItems.length > PREVIEW;
+  const dietFit     = getDietFit(restaurant.dietTags, userFlags);
+
+  return (
+    <div style={{ marginBottom: 12, background: CARD, borderRadius: 18, border: `1px solid ${BORDER}`, overflow: 'hidden', boxShadow: SHADOW }}>
+      {/* Compact restaurant header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 14px 8px', borderBottom: `1px solid ${BORDER}`, background: 'rgba(15,27,45,0.025)' }}>
+        <span style={{ fontSize: 19, flexShrink: 0 }}>{restaurant.emoji}</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 13, fontWeight: 800, color: FG1 }}>{restaurant.name}</span>
+            <span style={{ fontSize: 10, color: FG3 }}>{restaurant.priceRange}</span>
+            {badge}
+          </div>
+          <div style={{ fontSize: 10, color: FG3, marginTop: 1 }}>
+            {restaurant.cuisine}
+            {distanceLabel ? ` · 📍 ${distanceLabel}` : ''}
+            {rating != null ? ` · ⭐ ${rating.toFixed(1)}` : ''}
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
+          <DietBadge fit={dietFit} />
+          {mapsUrl && (
+            <a href={mapsUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+              style={{ fontSize: 10, fontWeight: 700, color: '#2E6FB8', background: 'rgba(46,111,184,0.08)', border: '1px solid rgba(46,111,184,0.18)', borderRadius: 7, padding: '4px 8px', textDecoration: 'none', flexShrink: 0 }}>
+              Map
+            </a>
+          )}
+        </div>
+      </div>
+
+      {/* Items listed directly */}
+      {restaurant.menu.length === 0 ? (
+        <div style={{ padding: '12px 14px', fontSize: 12, color: FG3, fontStyle: 'italic' }}>Menu data coming soon</div>
+      ) : (
+        <>
+          {visibleItems.map(item => (
+            <MenuItemRow key={item.id} item={item} userFlags={userFlags}
+              onLog={i => onLog(i, restaurant)} logged={logged.has(item.id)} />
+          ))}
+          {hasMore && (
+            <button onClick={() => setShowAll(!showAll)} style={{
+              width: '100%', padding: '9px 0', background: 'rgba(15,27,45,0.025)',
+              border: 'none', borderTop: `1px solid ${BORDER}`,
+              fontSize: 11, fontWeight: 700, color: FG3, cursor: 'pointer', transition: 'color .15s',
+            }}>
+              {showAll ? '▲ Show less' : `▼ Show all ${restaurant.menu.length} items`}
+            </button>
+          )}
+        </>
+      )}
     </div>
   );
 }
@@ -665,6 +768,75 @@ function RecipeCard({ recipe, userFlags, onLog, logged }: {
   );
 }
 
+/* ── MenuItemCard — flat item card for pooled browse view ── */
+const OUTLET_LABEL: Record<OutletType, { label: string; emoji: string }> = {
+  restaurant:   { label: 'Restaurant',   emoji: '🍽️' },
+  hawker:       { label: 'Hawker',       emoji: '🍜' },
+  grab_go:      { label: 'Takeaway',     emoji: '🥡' },
+  ready_to_eat: { label: 'Ready-to-Eat', emoji: '🏪' },
+};
+
+function MenuItemCard({
+  item, restaurant, distKm, userFlags, onLog, logged,
+}: {
+  item: SGMenuItem; restaurant: SGRestaurant; distKm?: number;
+  userFlags: DietaryFlag[]; onLog: (item: SGMenuItem, r: SGRestaurant) => void; logged: boolean;
+}) {
+  const fit   = getDietFit(item.compatibleWith, userFlags);
+  const score = macroMatchScore(item, { protein: 0, calories: 0, carbs: 0 }); // placeholder — overridden below
+  const outlet = OUTLET_LABEL[restaurant.outletType] ?? OUTLET_LABEL.restaurant;
+  return (
+    <div style={{
+      background: CARD, borderRadius: 18, border: `1px solid ${BORDER}`,
+      padding: '12px 14px', marginBottom: 8, boxShadow: SHADOW,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        {/* Emoji */}
+        <div style={{ width: 44, height: 44, borderRadius: 13, background: 'rgba(30,127,92,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
+          {item.emoji}
+        </div>
+        {/* Content */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {/* Row 1: item name + badges */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 13, fontWeight: 800, color: FG1 }}>{item.name}</span>
+            {item.isPopular && (
+              <span style={{ fontSize: 9, fontWeight: 800, color: '#C98A2E', background: 'rgba(242,169,59,0.10)', borderRadius: 5, padding: '1px 5px' }}>⭐ POPULAR</span>
+            )}
+          </div>
+          {/* Row 2: restaurant + outlet type + distance */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 10, color: FG3 }}>{restaurant.emoji} {restaurant.name}</span>
+            <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 5, background: 'rgba(91,101,118,0.07)', border: `1px solid ${BORDER}`, color: FG3 }}>
+              {outlet.emoji} {outlet.label}
+            </span>
+            {distKm !== undefined && (
+              <span style={{ fontSize: 9, color: FG3 }}>📍 {distKm < 1 ? `${Math.round(distKm * 1000)}m` : `${distKm.toFixed(1)}km`}</span>
+            )}
+          </div>
+          {/* Row 3: price + macros + Protein/$ */}
+          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center', marginBottom: 4 }}>
+            <span style={{ fontSize: 13, fontWeight: 800, color: GREEN }}>${item.price.toFixed(2)}</span>
+            <span style={{ fontSize: 10, color: FG3 }}>{item.calories}kcal · P{item.protein}g · C{item.carbs}g · F{item.fat}g</span>
+            <PpdBadge protein={item.protein} price={item.price} />
+            <DietBadge fit={fit} />
+          </div>
+        </div>
+        {/* Log button */}
+        <button onClick={() => onLog(item, restaurant)} style={{
+          flexShrink: 0, borderRadius: 10, padding: '8px 12px',
+          fontSize: 11, fontWeight: 800, cursor: 'pointer',
+          border: `1px solid ${logged ? 'rgba(30,127,92,0.25)' : BORDER}`,
+          background: logged ? 'rgba(30,127,92,0.10)' : CARD,
+          color: logged ? GREEN : FG2, transition: 'all .2s',
+        }}>
+          {logged ? '✓' : '+ Log'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ── Tier section header ── */
 function TierSectionHeader({
   emoji, title, count, color, note,
@@ -696,6 +868,23 @@ function EmptyState({ emoji, title, subtitle }: { emoji: string; title: string; 
   );
 }
 
+/* ── Smart sort recommendation ── */
+function getRecommendedSort(
+  goalType: string,
+  remProtein: number,
+  remCal: number,
+  targetProtein: number,
+  targetCalories: number,
+): { key: SortKey; reason: string } {
+  const proteinPct = targetProtein   > 0 ? remProtein / targetProtein   : 0;
+  const calPct     = targetCalories  > 0 ? remCal     / targetCalories  : 0;
+  if (goalType === 'muscle_gain' || proteinPct > 0.5)
+    return { key: 'protein_dollar', reason: 'Maximise protein per dollar for your muscle goal' };
+  if (goalType === 'weight_loss' && calPct < 0.3)
+    return { key: 'price', reason: 'Budget options to stay within your calorie deficit' };
+  return { key: 'best_match', reason: 'Best macro fit for your remaining daily targets' };
+}
+
 /* ═══════════════════════════════ Main page ══════════════════════════════════ */
 export default function EatPage() {
   const store   = useStrideStore();
@@ -720,17 +909,36 @@ export default function EatPage() {
   const [logged,        setLogged      ] = useState<Set<string>>(new Set());
   const [recipeLogged,  setRecipeLogged] = useState<Set<string>>(new Set());
 
+  /* Smart sort — auto-apply once on mount based on user's goal */
+  const sortInitialised = useRef(false);
+  const recommendedSort = useMemo(
+    () => getRecommendedSort(
+      profile.goalType ?? 'maintenance',
+      remProtein, remCal,
+      profile.targetProtein || 0, profile.targetCalories,
+    ),
+    [profile.goalType, remProtein, remCal, profile.targetProtein, profile.targetCalories],
+  );
+  useEffect(() => {
+    if (!sortInitialised.current) {
+      setSortBy(recommendedSort.key);
+      sortInitialised.current = true;
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   /* Filter state */
-  const [filterService,     setFilterService    ] = useState<ServiceFilter>('all');
+  const [filterMode,        setFilterMode       ] = useState<FilterMode>('all');
   const [filterOpenNow,     setFilterOpenNow    ] = useState(false);
-  const [filterMaxDist,     setFilterMaxDist    ] = useState<null|0.5|1|2>(null);
+  const [filterMaxDist,     setFilterMaxDist    ] = useState<null|0.5|1|2>(1);
   const [filterCuisine,     setFilterCuisine    ] = useState('All');
   const [filterHighProtein, setFilterHighProtein] = useState(false);
   const [filterDietMatch,   setFilterDietMatch  ] = useState(userFlags.length > 0);
+  /* Show More in pooled browse view */
+  const [showMore,          setShowMore         ] = useState(false);
 
   const switchTab = (t: EatTab) => {
-    setTab(t); setQuery(''); setExpandedId(null);
-    setFilterService('all'); setFilterOpenNow(false); setFilterMaxDist(null);
+    setTab(t); setQuery(''); setExpandedId(null); setShowMore(false);
+    setFilterMode('all'); setFilterOpenNow(false); setFilterMaxDist(1);
     setFilterCuisine('All'); setFilterHighProtein(false);
   };
 
@@ -780,10 +988,12 @@ export default function EatPage() {
     let list = [...enrichedPlaces];
 
     // ── Shared filters ──────────────────────────────────────────────────────
-    // Service type filter on DB-matched places
-    if (filterService !== 'all') list = list.filter(p =>
-      !p.dbMatch || p.dbMatch.serviceTypes.includes(filterService as ServiceType)
-    );
+    if (filterMode !== 'all') list = list.filter(p => {
+      if (!p.dbMatch) return true;
+      if (filterMode === 'ready_to_eat') return p.dbMatch.outletType === 'ready_to_eat';
+      if (filterMode === 'delivery')     return p.dbMatch.serviceTypes.includes('delivery');
+      return p.dbMatch.serviceTypes.includes(filterMode as ServiceType);
+    });
     if (filterOpenNow)           list = list.filter(p => p.hours === 'Open now');
     if (filterMaxDist !== null)  list = list.filter(p => (p.distKm ?? 999) <= filterMaxDist);
     if (filterCuisine !== 'All') list = list.filter(p => {
@@ -833,7 +1043,7 @@ export default function EatPage() {
     const t3 = list.filter(p => p.tier === 'place_only').sort(sortFn);
 
     return { tier1Places: t1, tier2Places: t2, tier3Places: t3 };
-  }, [enrichedPlaces, sortBy, filterOpenNow, filterMaxDist, filterCuisine, filterHighProtein, filterDietMatch, userFlags, macroRem]);
+  }, [enrichedPlaces, sortBy, filterOpenNow, filterMaxDist, filterCuisine, filterHighProtein, filterDietMatch, userFlags, macroRem, filterMode]);
 
   /* Keep a flat list for the "N places · M with menu" count line */
   const sortedFilteredPlaces = useMemo(
@@ -841,25 +1051,39 @@ export default function EatPage() {
     [tier1Places, tier2Places, tier3Places],
   );
 
-  const anyFilterActive = filterOpenNow || filterMaxDist !== null || filterCuisine !== 'All' || filterHighProtein || (filterDietMatch && userFlags.length > 0);
+  const anyFilterActive = filterMode !== 'all' || filterOpenNow || filterMaxDist !== 1 || filterCuisine !== 'All' || filterHighProtein || (filterDietMatch && userFlags.length > 0);
 
   const searchResults = useMemo(() => {
     if (!query.trim()) return null;
     if (tab === 'store') return { type: 'recipes' as const, recipes: searchRecipes(query) };
-    const svcFilter = filterService !== 'all' && filterService !== 'delivery'
-      ? filterService as ServiceType : undefined;
+    const svcFilter = (filterMode === 'dine_in' || filterMode === 'grab_go')
+      ? filterMode as ServiceType : undefined;
     const { restaurants, items } = searchAll(query, svcFilter);
     return { type: 'food' as const, restaurants, items };
-  }, [query, tab, filterService]);
+  }, [query, tab, filterMode]);
 
-  /* DB chains — shown when GPS is unavailable or below GPS section.
+  /* Detect whether the search query is targeting a restaurant by name */
+  const isRestaurantSearch = useMemo(() => {
+    if (!query.trim() || tab !== 'food') return false;
+    const q = query.toLowerCase().trim();
+    return SG_RESTAURANTS.some(r =>
+      r.name.toLowerCase().includes(q) ||
+      r.aliases.some(a => a.includes(q) || q.includes(a))
+    );
+  }, [query, tab]);
+
+  /* DB chains — shown below GPS results or when GPS unavailable.
      Excludes any outlet already surfaced by GPS (avoid duplicates). */
   const dbChains = useMemo(() => {
     const gpsMatchedIds = new Set(enrichedPlaces.filter(p => p.dbMatch).map(p => p.dbMatch!.id));
     let base = SG_RESTAURANTS
-      .filter(r => r.tier === 'full_menu')                   // only verified chains
-      .filter(r => !gpsMatchedIds.has(r.id))                 // not already shown via GPS
-      .filter(r => filterService === 'all' || r.serviceTypes.includes(filterService as ServiceType))
+      .filter(r => !gpsMatchedIds.has(r.id))
+      .filter(r => {
+        if (filterMode === 'all') return true;
+        if (filterMode === 'ready_to_eat') return r.outletType === 'ready_to_eat';
+        if (filterMode === 'delivery')     return r.serviceTypes.includes('delivery');
+        return r.serviceTypes.includes(filterMode as ServiceType);
+      })
       .filter(r => !filterDietMatch || !userFlags.length ||
         r.menu.some(i => userFlags.every(f => i.compatibleWith.includes(f))));
     return [...base].sort((a, b) => {
@@ -874,7 +1098,43 @@ export default function EatPage() {
       const sc = (r: SGRestaurant) => r.menu.length ? Math.max(...r.menu.map(i => macroMatchScore(i, macroRem))) : 0;
       return sc(b) - sc(a);
     });
-  }, [enrichedPlaces, sortBy, macroRem, filterService, filterDietMatch, userFlags]);
+  }, [enrichedPlaces, sortBy, macroRem, filterMode, filterDietMatch, userFlags]);
+
+  /* ── Pooled items: all menu items from GPS places + DB chains, ranked by macro match ── */
+  const pooledItems = useMemo((): PooledItem[] => {
+    const items: PooledItem[] = [];
+    // From GPS tier1 + tier2 places
+    [...tier1Places, ...tier2Places].forEach(place => {
+      if (place.dbMatch) {
+        place.dbMatch.menu.forEach(item => {
+          items.push({ item, restaurant: place.dbMatch!, distKm: place.distKm, tier: place.tier });
+        });
+      }
+    });
+    // From DB chains (no distance)
+    dbChains.forEach(r => {
+      r.menu.forEach(item => {
+        items.push({ item, restaurant: r, distKm: undefined, tier: r.tier });
+      });
+    });
+    // Apply item-level filters
+    let filtered = items;
+    if (filterHighProtein) filtered = filtered.filter(p => p.item.protein >= HIGH_PROTEIN_THRESHOLD);
+    if (filterDietMatch && userFlags.length > 0)
+      filtered = filtered.filter(p => userFlags.every(f => p.item.compatibleWith.includes(f)));
+    // Sort by macro match score against remaining macros
+    return filtered.sort((a, b) => macroMatchScore(b.item, macroRem) - macroMatchScore(a.item, macroRem));
+  }, [tier1Places, tier2Places, dbChains, filterHighProtein, filterDietMatch, userFlags, macroRem]);
+
+  /* Slice rules for pooled browse:
+     - Initial: top 8 items regardless of distance
+     - Expanded: items within 1km (or from DB with no distance), capped at 20 */
+  const pooledInitial  = pooledItems.slice(0, 8);
+  const pooledExpanded = pooledItems
+    .filter(p => p.distKm === undefined || p.distKm <= 1)
+    .slice(0, 20);
+  const visiblePooled  = showMore ? pooledExpanded : pooledInitial;
+  const hasMore        = !showMore && pooledItems.length > 8;
 
   /* Log helpers — use meal context mealType */
   const logMenuItem = useCallback((item: SGMenuItem, restaurant: SGRestaurant) => {
@@ -955,8 +1215,8 @@ export default function EatPage() {
 
         {/* Tab bar — 2 tabs */}
         <div style={{ background: CARD, borderRadius: 16, padding: 4, display: 'flex', gap: 4, border: `1px solid ${BORDER}`, marginBottom: 14, boxShadow: SHADOW }}>
-          <button style={tabBtn(tab === 'food')}  onClick={() => switchTab('food')}>🍴 Find Food</button>
-          <button style={tabBtn(tab === 'store')} onClick={() => switchTab('store')}>🛒 Store</button>
+          <button style={tabBtn(tab === 'food')}  onClick={() => switchTab('food')}>🍴 Eat Out</button>
+          <button style={tabBtn(tab === 'store')} onClick={() => switchTab('store')}>🥗 Cook / Prep</button>
         </div>
 
         <SearchBar
@@ -965,13 +1225,13 @@ export default function EatPage() {
         />
 
         {!query && tab === 'food' && (
-          <SortBar active={sortBy} onChange={setSortBy} showDistance={locState === 'done'} />
+          <SortBar active={sortBy} onChange={setSortBy} showDistance={locState === 'done'} recommendedKey={recommendedSort.key} />
         )}
 
         {/* Filter bar: Food tab */}
         {tab === 'food' && !query && (
           <FilterBar
-            filterService={filterService}         setFilterService={setFilterService}
+            filterMode={filterMode}               setFilterMode={setFilterMode}
             filterOpenNow={filterOpenNow}         setFilterOpenNow={setFilterOpenNow}
             filterMaxDist={filterMaxDist}         setFilterMaxDist={setFilterMaxDist}
             filterCuisine={filterCuisine}         setFilterCuisine={setFilterCuisine}
@@ -981,41 +1241,53 @@ export default function EatPage() {
           />
         )}
 
-        {/* ══ FOOD TAB ══ */}
+
+        {/* ══ EAT OUT TAB ══ */}
         {tab === 'food' && (
           <>
-            {searchResults?.type === 'food' && (
+            {/* ── SEARCH MODE ── */}
+            {query && searchResults?.type === 'food' && (
               <>
-                {searchResults.restaurants.length > 0 && (
+                {/* Restaurant-name search → show restaurant card with full menu */}
+                {isRestaurantSearch && searchResults.restaurants.length > 0 && (
                   <>
                     <div style={{ fontSize: 12, fontWeight: 700, color: FG3, marginBottom: 10 }}>
-                      {searchResults.restaurants.length} restaurant{searchResults.restaurants.length !== 1 ? 's' : ''} in database
+                      {searchResults.restaurants.length} restaurant{searchResults.restaurants.length !== 1 ? 's' : ''} found
                     </div>
                     {searchResults.restaurants.map(r => (
-                      <RestaurantCard key={r.id} restaurant={r}
-                        isExpanded={expandedId === r.id}
-                        onToggle={() => setExpandedId(expandedId === r.id ? null : r.id)}
+                      <MenuFirstGroup key={r.id} restaurant={r}
                         userFlags={userFlags} remaining={macroRem} onLog={logMenuItem} logged={logged}
                         badge={<span style={{ fontSize: 9, fontWeight: 800, background: 'rgba(46,111,184,0.10)', color: '#2E6FB8', borderRadius: 5, padding: '1px 5px' }}>📋 IN DATABASE</span>}
                       />
                     ))}
                   </>
                 )}
-                {searchResults.items.length > 0 && (
+
+                {/* Dish/macro search → flat item cards ranked by macro match */}
+                {!isRestaurantSearch && (
                   <>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: FG3, margin: '14px 0 10px' }}>
-                      {searchResults.items.length} menu item{searchResults.items.length !== 1 ? 's' : ''}
-                    </div>
-                    <div style={{ background: CARD, borderRadius: 18, border: `1px solid ${BORDER}`, overflow: 'hidden', boxShadow: SHADOW }}>
-                      {searchResults.items.map(({ restaurant, item }) => (
-                        <div key={`${restaurant.id}-${item.id}`}>
-                          <div style={{ padding: '6px 14px 0', fontSize: 10, fontWeight: 700, color: FG3 }}>{restaurant.name}</div>
-                          <MenuItemRow item={item} userFlags={userFlags} onLog={i => logMenuItem(i, restaurant)} logged={logged.has(item.id)} />
+                    {searchResults.items.length > 0 && (
+                      <>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: FG3, marginBottom: 10 }}>
+                          {searchResults.items.length} item{searchResults.items.length !== 1 ? 's' : ''} found
                         </div>
-                      ))}
-                    </div>
+                        {[...searchResults.items]
+                          .sort((a, b) => macroMatchScore(b.item, macroRem) - macroMatchScore(a.item, macroRem))
+                          .map(({ restaurant, item }) => (
+                            <MenuItemCard
+                              key={`${restaurant.id}-${item.id}`}
+                              item={item} restaurant={restaurant}
+                              userFlags={userFlags}
+                              onLog={logMenuItem}
+                              logged={logged.has(item.id)}
+                            />
+                          ))}
+                      </>
+                    )}
                   </>
                 )}
+
+                {/* No results */}
                 {searchResults.restaurants.length === 0 && searchResults.items.length === 0 && (
                   query.trim().length > 0 ? (
                     <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, padding: '28px 20px', textAlign: 'center', boxShadow: SHADOW }}>
@@ -1023,37 +1295,28 @@ export default function EatPage() {
                       <div style={{ fontSize: 15, fontWeight: 700, color: FG2, marginBottom: 8 }}>Not in our database yet</div>
                       <a
                         href={`https://www.google.com/maps/search/${encodeURIComponent(query)}+Singapore`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          display: 'inline-block',
-                          background: 'rgba(46,111,184,0.08)',
-                          color: '#2E6FB8',
-                          borderRadius: 12,
-                          padding: '10px 16px',
-                          fontSize: 13,
-                          fontWeight: 700,
-                          textDecoration: 'none',
-                          marginBottom: 8,
-                        }}
+                        target="_blank" rel="noopener noreferrer"
+                        style={{ display: 'inline-block', background: 'rgba(46,111,184,0.08)', color: '#2E6FB8', borderRadius: 12, padding: '10px 16px', fontSize: 13, fontWeight: 700, textDecoration: 'none', marginBottom: 8 }}
                       >
                         📍 Search on Google Maps →
                       </a>
                       <div style={{ fontSize: 11, color: '#8B95A7' }}>Opens Google Maps for nearby options</div>
                     </div>
                   ) : (
-                    <EmptyState emoji="🔍" title="No results" subtitle={`"${query}" not found in the database yet.\nCheck back as more restaurants are added.`} />
+                    <EmptyState emoji="🔍" title="No results" subtitle={`"${query}" not found yet. Try a dish name or restaurant.`} />
                   )
                 )}
               </>
             )}
 
+            {/* ── BROWSE MODE (no query) ── */}
             {!query && (
               <>
+                {/* GPS status banners */}
                 {(locState === 'locating' || locState === 'fetching') && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 0' }}>
                     <div style={{ width: 18, height: 18, borderRadius: '50%', border: `2.5px solid ${BORDER}`, borderTopColor: GREEN, animation: 'spin 1s linear infinite' }} />
-                    <span style={{ fontSize: 13, color: FG3 }}>{locState === 'locating' ? 'Getting your location…' : 'Finding nearby restaurants…'}</span>
+                    <span style={{ fontSize: 13, color: FG3 }}>{locState === 'locating' ? 'Getting your location…' : 'Finding nearby places…'}</span>
                   </div>
                 )}
                 {locState === 'error' && (
@@ -1065,63 +1328,52 @@ export default function EatPage() {
                   <div style={{ background: 'rgba(46,111,184,0.06)', borderRadius: 14, padding: '12px 14px', marginBottom: 12, display: 'flex', gap: 8, border: '1px solid rgba(46,111,184,0.15)' }}>
                     <span>💡</span>
                     <span style={{ fontSize: 12, color: '#2E6FB8' }}>
-                      Add <code style={{ background: BORDER, borderRadius: 4, padding: '1px 4px', color: FG1 }}>GOOGLE_PLACES_API_KEY</code> to show restaurants near you.
+                      Add <code style={{ background: BORDER, borderRadius: 4, padding: '1px 4px', color: FG1 }}>GOOGLE_PLACES_API_KEY</code> to show places near you.
                     </span>
                   </div>
                 )}
+
+                {/* GPS summary line */}
                 {locState === 'done' && (
+                  <div style={{ fontSize: 12, fontWeight: 700, color: FG3, marginBottom: 4 }}>
+                    {enrichedPlaces.length} places nearby
+                    {' · '}<span style={{ color: GREEN }}>{enrichedPlaces.filter(p => p.tier === 'full_menu').length} full menu</span>
+                    {' · '}<span style={{ color: '#C98A2E' }}>{enrichedPlaces.filter(p => p.tier === 'estimated_menu').length} estimated</span>
+                    {anyFilterActive ? ` · ${sortedFilteredPlaces.length} shown` : ''}
+                  </div>
+                )}
+
+                {/* ── Pooled items — items-first ranked browse ── */}
+                {pooledItems.length === 0 && (locState === 'done' || locState === 'error' || locState === 'no_key') && (
+                  <EmptyState emoji="🍽️" title="No items match your filters" subtitle="Try adjusting the filters above." />
+                )}
+
+                {visiblePooled.map(p => (
+                  <MenuItemCard
+                    key={`${p.restaurant.id}-${p.item.id}`}
+                    item={p.item} restaurant={p.restaurant} distKm={p.distKm}
+                    userFlags={userFlags} onLog={logMenuItem} logged={logged.has(p.item.id)}
+                  />
+                ))}
+
+                {/* Show More button — expands to 20 items within 1km */}
+                {hasMore && (
+                  <button
+                    onClick={() => setShowMore(true)}
+                    style={{
+                      width: '100%', padding: '12px 0', borderRadius: 14, marginBottom: 12,
+                      fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                      background: CARD, border: `1px solid ${BORDER}`, color: FG2,
+                      boxShadow: SHADOW, transition: 'all .2s',
+                    }}
+                  >
+                    Show more within 1km ({Math.min(pooledItems.filter(p => p.distKm === undefined || p.distKm <= 1).length, 20)} items) ↓
+                  </button>
+                )}
+
+                {/* ── Tier 3: GPS-only places with no DB match ── */}
+                {locState === 'done' && tier3Places.length > 0 && (
                   <>
-                    {/* Summary line */}
-                    <div style={{ fontSize: 12, fontWeight: 700, color: FG3, marginBottom: 4 }}>
-                      {enrichedPlaces.length} places nearby
-                      {' · '}<span style={{ color: GREEN }}>{enrichedPlaces.filter(p => p.tier === 'full_menu').length} full menu</span>
-                      {' · '}<span style={{ color: '#C98A2E' }}>{enrichedPlaces.filter(p => p.tier === 'estimated_menu').length} estimated</span>
-                      {anyFilterActive ? ` · ${sortedFilteredPlaces.length} shown` : ''}
-                    </div>
-
-                    {sortedFilteredPlaces.length === 0 && (
-                      <EmptyState emoji="🗺️" title="No restaurants match your filters" subtitle="Try adjusting or clearing the filters above." />
-                    )}
-
-                    {/* ── TIER 1: Full menu ── */}
-                    <TierSectionHeader
-                      emoji="📋" title="Full Menu Available" count={tier1Places.length}
-                      color={GREEN} note="Verified prices, macros & diet tags"
-                    />
-                    {tier1Places.map(place => (
-                      <RestaurantCard key={place.id} restaurant={place.dbMatch!}
-                        isExpanded={expandedId === place.dbMatch!.id}
-                        onToggle={() => setExpandedId(expandedId === place.dbMatch!.id ? null : place.dbMatch!.id)}
-                        userFlags={userFlags} remaining={macroRem} onLog={logMenuItem} logged={logged}
-                        badge={
-                          <span style={{ fontSize: 9, fontWeight: 800, background: 'rgba(30,127,92,0.10)', color: GREEN, borderRadius: 5, padding: '1px 5px' }}>
-                            ✓ FULL MENU
-                          </span>
-                        }
-                        distanceLabel={place.distance} rating={place.rating} mapsUrl={place.mapsUrl}
-                      />
-                    ))}
-
-                    {/* ── TIER 2: Estimated menu (hawkers) ── */}
-                    <TierSectionHeader
-                      emoji="🍜" title="Popular Dishes Available" count={tier2Places.length}
-                      color="#C98A2E" note="Estimated from HPB data — macros may vary"
-                    />
-                    {tier2Places.map(place => (
-                      <RestaurantCard key={place.id} restaurant={place.dbMatch!}
-                        isExpanded={expandedId === place.dbMatch!.id}
-                        onToggle={() => setExpandedId(expandedId === place.dbMatch!.id ? null : place.dbMatch!.id)}
-                        userFlags={userFlags} remaining={macroRem} onLog={logMenuItem} logged={logged}
-                        badge={
-                          <span style={{ fontSize: 9, fontWeight: 800, background: 'rgba(201,138,46,0.10)', color: '#C98A2E', borderRadius: 5, padding: '1px 5px' }}>
-                            ~ ESTIMATED
-                          </span>
-                        }
-                        distanceLabel={place.distance} rating={place.rating} mapsUrl={place.mapsUrl}
-                      />
-                    ))}
-
-                    {/* ── TIER 3: GPS-only, no menu data ── */}
                     <TierSectionHeader
                       emoji="📍" title="Other Nearby Places" count={tier3Places.length}
                       color={FG3} note="No menu data yet"
@@ -1167,38 +1419,12 @@ export default function EatPage() {
                     })}
                   </>
                 )}
-
-                {/* ── DB chains: always shown when not searching ──
-                    "Also in database" after GPS results; "Browse" when GPS unavailable */}
-                {dbChains.length > 0 && (
-                  <>
-                    <TierSectionHeader
-                      emoji="🏪"
-                      title={locState === 'done' ? 'Also In Our Database' : 'Browse Our Database'}
-                      count={dbChains.length}
-                      color={FG2}
-                      note={locState === 'done' ? 'Not detected nearby' : "Enable location to see what's nearby"}
-                    />
-                    {dbChains.map(r => (
-                      <RestaurantCard key={r.id} restaurant={r}
-                        isExpanded={expandedId === r.id}
-                        onToggle={() => setExpandedId(expandedId === r.id ? null : r.id)}
-                        userFlags={userFlags} remaining={macroRem} onLog={logMenuItem} logged={logged}
-                        badge={
-                          <span style={{ fontSize: 9, fontWeight: 800, background: 'rgba(46,111,184,0.10)', color: '#2E6FB8', borderRadius: 5, padding: '1px 5px' }}>
-                            📋 IN DATABASE
-                          </span>
-                        }
-                      />
-                    ))}
-                  </>
-                )}
               </>
             )}
           </>
         )}
 
-        {/* ══ STORE / RECIPES ══ */}
+        {/* ══ COOK / PREP TAB ══ */}
         {tab === 'store' && (
           <>
             {query && searchResults?.type === 'recipes' && (
@@ -1210,7 +1436,7 @@ export default function EatPage() {
             )}
             {!query && (
               SG_RECIPES.length === 0 ? (
-                <EmptyState emoji="🛒" title="Recipes coming soon" subtitle={"We're building budget-friendly, macro-optimised recipes using FairPrice and Cold Storage ingredients.\n\nHigh Protein, Meal Prep, and Budget Meals will be the first categories."} />
+                <EmptyState emoji="🥗" title="Recipes coming soon" subtitle={"We're building budget-friendly, macro-optimised recipes using FairPrice and Cold Storage ingredients.\n\nHigh Protein, Meal Prep, and Budget Meals will be the first categories."} />
               ) : (
                 SG_RECIPES.map(r => <RecipeCard key={r.id} recipe={r} userFlags={userFlags} onLog={logRecipe} logged={recipeLogged.has(r.id)} />)
               )
