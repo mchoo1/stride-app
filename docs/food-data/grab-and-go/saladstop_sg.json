@@ -1,9 +1,13 @@
 {
   "id": "saladstop",
   "name": "SaladStop!",
-  "emoji": "\ud83e\udd59",
+  "emoji": "🥙",
   "cuisine": "Healthy Salads",
-  "tab": "grab_go",
+  "tier": "full_menu",
+  "serviceTypes": [
+    "dine_in",
+    "grab_go"
+  ],
   "aliases": [
     "saladstop",
     "salad stop",
@@ -13,12 +17,12 @@
   "priceRange": "$$",
   "nutritionUrl": "https://saladstop.com.sg",
   "lastUpdated": "2026-04-19",
-  "_note": "Macro data from MyNetDiary SG community submissions (medium confidence). Prices not available from this source \u2014 set to 0.0. Needs price data from official menu.",
+  "_note": "Macro data from MyNetDiary SG community submissions (medium confidence). Prices not available from this source — set to 0.0. Needs price data from official menu.",
   "menu": [
     {
       "id": "saladstop_jai_ho",
       "name": "Jai Ho!",
-      "emoji": "\ud83e\udd57",
+      "emoji": "🥗",
       "price": 0.0,
       "calories": 325,
       "protein": 22,
@@ -37,7 +41,7 @@
     {
       "id": "saladstop_habibi",
       "name": "Habibi",
-      "emoji": "\ud83e\udd57",
+      "emoji": "🥗",
       "price": 0.0,
       "calories": 405,
       "protein": 11,
@@ -56,7 +60,7 @@
     {
       "id": "saladstop_iron_wo_man",
       "name": "Iron 'Wo' Man",
-      "emoji": "\ud83e\udd57",
+      "emoji": "🥗",
       "price": 0.0,
       "calories": 450,
       "protein": 13,
@@ -75,7 +79,7 @@
     {
       "id": "saladstop_omega_3_baby",
       "name": "Omega 3 Baby!",
-      "emoji": "\ud83e\udd57",
+      "emoji": "🥗",
       "price": 0.0,
       "calories": 432,
       "protein": 21,
@@ -94,7 +98,7 @@
     {
       "id": "saladstop_big_bird",
       "name": "Big Bird",
-      "emoji": "\ud83e\udd57",
+      "emoji": "🥗",
       "price": 0.0,
       "calories": 351,
       "protein": 23,
@@ -113,7 +117,7 @@
     {
       "id": "saladstop_go_geisha",
       "name": "Go Geisha",
-      "emoji": "\ud83e\udd57",
+      "emoji": "🥗",
       "price": 0.0,
       "calories": 275,
       "protein": 11,
@@ -132,7 +136,7 @@
     {
       "id": "saladstop_hail_caesar_w_o_chicken",
       "name": "Hail Caesar (w/o Chicken)",
-      "emoji": "\ud83e\udd57",
+      "emoji": "🥗",
       "price": 0.0,
       "calories": 458,
       "protein": 24,
@@ -151,7 +155,7 @@
     {
       "id": "saladstop_oh_crab_lah",
       "name": "Oh Crab Lah!",
-      "emoji": "\ud83e\udd57",
+      "emoji": "🥗",
       "price": 0.0,
       "calories": 522,
       "protein": 16,
@@ -170,7 +174,7 @@
     {
       "id": "saladstop_tuna_san",
       "name": "Tuna San",
-      "emoji": "\ud83e\udd57",
+      "emoji": "🥗",
       "price": 0.0,
       "calories": 374,
       "protein": 22,
@@ -189,7 +193,7 @@
     {
       "id": "saladstop_tuna_san",
       "name": "Tuna San",
-      "emoji": "\ud83e\udd57",
+      "emoji": "🥗",
       "price": 0.0,
       "calories": 650,
       "protein": 26,
@@ -208,7 +212,7 @@
     {
       "id": "saladstop_omega_3_baby",
       "name": "Omega 3 Baby!",
-      "emoji": "\ud83e\udd57",
+      "emoji": "🥗",
       "price": 0.0,
       "calories": 692,
       "protein": 28,
@@ -227,7 +231,7 @@
     {
       "id": "saladstop_hail_caesar_w_o_chicken",
       "name": "Hail Caesar (w/o Chicken)",
-      "emoji": "\ud83e\udd57",
+      "emoji": "🥗",
       "price": 0.0,
       "calories": 722,
       "protein": 31,
@@ -246,7 +250,7 @@
     {
       "id": "saladstop_jai_ho",
       "name": "Jai Ho!",
-      "emoji": "\ud83e\udd57",
+      "emoji": "🥗",
       "price": 0.0,
       "calories": 611,
       "protein": 29,
@@ -265,7 +269,7 @@
     {
       "id": "saladstop_oh_crab_lah",
       "name": "Oh Crab Lah!",
-      "emoji": "\ud83e\udd57",
+      "emoji": "🥗",
       "price": 0.0,
       "calories": 794,
       "protein": 22,
@@ -283,8 +287,8 @@
     },
     {
       "id": "saladstop_warm_quinoa_bowl_yeobo",
-      "name": "Warm Quinoa Bowl \u2013 Yeobo",
-      "emoji": "\ud83e\udd57",
+      "name": "Warm Quinoa Bowl – Yeobo",
+      "emoji": "🥗",
       "price": 0.0,
       "calories": 359,
       "protein": 31,
@@ -302,8 +306,8 @@
     },
     {
       "id": "saladstop_superfood_bowl_green",
-      "name": "Superfood Bowl \u2013 Green",
-      "emoji": "\ud83e\udd57",
+      "name": "Superfood Bowl – Green",
+      "emoji": "🥗",
       "price": 0.0,
       "calories": 300,
       "protein": 6,
@@ -322,7 +326,7 @@
     {
       "id": "saladstop_acai_bowl",
       "name": "Acai Bowl",
-      "emoji": "\ud83e\udd57",
+      "emoji": "🥗",
       "price": 0.0,
       "calories": 320,
       "protein": 7,
@@ -341,7 +345,7 @@
     {
       "id": "saladstop_berrylicious",
       "name": "Berrylicious",
-      "emoji": "\ud83e\udd57",
+      "emoji": "🥗",
       "price": 0.0,
       "calories": 178,
       "protein": 4,
@@ -360,7 +364,7 @@
     {
       "id": "saladstop_chori_chori_salad",
       "name": "Chori Chori Salad",
-      "emoji": "\ud83e\udd57",
+      "emoji": "🥗",
       "price": 0.0,
       "calories": 613,
       "protein": 0,
@@ -377,7 +381,7 @@
     {
       "id": "saladstop_dolce_vita_salad",
       "name": "Dolce Vita Salad",
-      "emoji": "\ud83e\udd57",
+      "emoji": "🥗",
       "price": 0.0,
       "calories": 509,
       "protein": 0,
@@ -394,7 +398,7 @@
     {
       "id": "saladstop_chori_chori_wrap",
       "name": "Chori Chori Wrap",
-      "emoji": "\ud83e\udd57",
+      "emoji": "🥗",
       "price": 0.0,
       "calories": 605,
       "protein": 0,
@@ -411,7 +415,7 @@
     {
       "id": "saladstop_dolce_vita_wrap",
       "name": "Dolce Vita Wrap",
-      "emoji": "\ud83e\udd57",
+      "emoji": "🥗",
       "price": 0.0,
       "calories": 509,
       "protein": 0,

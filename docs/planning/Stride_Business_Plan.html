@@ -572,4 +572,54 @@
     <div class="w"><h5>Weaknesses</h5><ul>
       <li>Solo / small team — capacity is the constraint</li>
       <li>No brand awareness in SG yet</li>
-      <li>AI photo scan accuracy unpro
+      <li>AI photo scan accuracy unproven at scale</li>
+      <li>No marketplace supply at launch</li>
+    </ul></div>
+    <div class="o"><h5>Opportunities</h5><ul>
+      <li>HPB &amp; Healthier SG tailwinds; corporate wellness budgets</li>
+      <li>Underserved SG-specific food data niche</li>
+      <li>Regional expansion (MY, HK, AU) once playbook works</li>
+      <li>Creator economy in SG fitness/food still emerging</li>
+    </ul></div>
+    <div class="t"><h5>Threats</h5><ul>
+      <li>MyFitnessPal/Yazio could localise SG content</li>
+      <li>Apple/Google tightening health data permissions</li>
+      <li>API cost inflation (Vision, Places) could squeeze margins</li>
+      <li>HPB Healthy 365 adding tracker features</li>
+    </ul></div>
+  </div>
+  <h3>Top risks &amp; mitigations</h3>
+  <table>
+    <thead><tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr></thead>
+    <tbody>
+      <tr><td>AI scan accuracy below user tolerance</td><td><span class="pill amber">Med</span></td><td><span class="pill red">High</span></td><td>Always show DB suggestions alongside scan; "tap to correct" flow that improves model</td></tr>
+      <tr><td>Database build can't keep pace with users' diversity</td><td><span class="pill amber">Med</span></td><td><span class="pill amber">Med</span></td><td>Community-add flow with confidence score; partner CSV pipelines</td></tr>
+      <tr><td>Low D30 retention</td><td><span class="pill amber">Med</span></td><td><span class="pill red">High</span></td><td>Weekly PDF + push nudges + body trend chart as habit hooks</td></tr>
+      <tr><td>API cost spike (Vision / Places)</td><td><span class="pill amber">Med</span></td><td><span class="pill amber">Med</span></td><td>Cache aggressively; rate-limit free tier scans; renegotiate at volume</td></tr>
+      <tr><td>Incumbent localises SG content first</td><td><span class="pill gray">Low</span></td><td><span class="pill amber">Med</span></td><td>Move fast on partner exclusives + creator narrative</td></tr>
+      <tr><td>Privacy / health data compliance (PDPA)</td><td><span class="pill gray">Low</span></td><td><span class="pill red">High</span></td><td>PDPA-aligned data handling from day one; clear privacy policy; data export &amp; delete</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="nextsteps">
+  <h2><span class="num">15.</span>Next Steps — First 90 Days</h2>
+  <ol class="next-steps">
+    <li><strong>Week 1–2:</strong> Lock v2.0 spec sign-off. Finalise visual design system (typography, spacing, hero number treatment). Confirm tech stack &amp; cloud account setup.</li>
+    <li><strong>Week 3–6:</strong> Build the 5-tab nav, Home (net cal + log), Scan (AI + manual), Me (weight/BF%/BMR/TDEE). Wire wearable sync (Apple Health + Fitbit). Seed DB with 352 SG SKUs.</li>
+    <li><strong>Week 7–8:</strong> Build Eat (Google Places list view + ready-to-eat cards) and Move (Places map + activity logger). Onboarding 3-screen flow. PDPA-aligned privacy policy live.</li>
+    <li><strong>Week 9:</strong> Internal dogfooding — 2-week bug bash with 10–15 trusted users. Crash-free sessions ≥99%, cold start &lt;1.5s.</li>
+    <li><strong>Week 10–12:</strong> Closed TestFlight + Play beta with 150 invited users. Weekly cohort retention readout. Decide go/no-go for public launch.</li>
+    <li><strong>Parallel BD:</strong> Warm-intro outreach to 1 anchor in each of: gym chain, healthier-eating chain, supermarket, wellness clinic, 1 corporate. Goal: 1 LOI by week 12.</li>
+    <li><strong>Parallel marketing:</strong> Stand up landing page + waitlist + 4 short demo videos for ProductHunt + IG + TikTok. Begin creator long-list (target 30, sign 8–12).</li>
+  </ol>
+  <div class="quote">North-star metric for the first 6 months: <strong>weekly active users who log ≥3 days/week.</strong> If that grows, everything else follows.</div>
+</section>
+
+<div class="footer">
+  Stride · Business Plan v1.0 · April 2026 · Prepared by Ming · For internal planning &amp; partner conversations
+</div>
+
+</div>
+</body>
+</html>

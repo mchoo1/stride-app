@@ -1,9 +1,13 @@
 {
   "id": "grain",
   "name": "Grain",
-  "emoji": "\ud83e\udd58",
+  "emoji": "🥘",
   "cuisine": "Healthy Meals",
-  "tab": "grab_go",
+  "tier": "full_menu",
+  "serviceTypes": [
+    "grab_go",
+    "delivery"
+  ],
   "aliases": [
     "grain",
     "grain sg",
@@ -17,7 +21,7 @@
     {
       "id": "grain_grain_s_curry_chicken_stew_and_buns",
       "name": "Grain's Curry Chicken Stew (and Buns)",
-      "emoji": "\ud83c\udf57",
+      "emoji": "🍗",
       "price": 15.0,
       "calories": 832,
       "protein": 39,
@@ -34,7 +38,7 @@
     {
       "id": "grain_marinara_fish_pasta",
       "name": "Marinara Fish Pasta",
-      "emoji": "\ud83d\udc1f",
+      "emoji": "🐟",
       "price": 16.0,
       "calories": 831,
       "protein": 43,
@@ -51,7 +55,7 @@
     {
       "id": "grain_ayam_kampung_masak_merah",
       "name": "Ayam Kampung Masak Merah",
-      "emoji": "\ud83e\udd58",
+      "emoji": "🥘",
       "price": 15.5,
       "calories": 887,
       "protein": 41,
@@ -70,7 +74,7 @@
     {
       "id": "grain_grilled_farm_fresh_chicken",
       "name": "Grilled Farm Fresh Chicken",
-      "emoji": "\ud83c\udf57",
+      "emoji": "🍗",
       "price": 15.0,
       "calories": 772,
       "protein": 51,
@@ -89,7 +93,7 @@
     {
       "id": "grain_honey_duo_mustard_chicken",
       "name": "Honey Duo Mustard Chicken",
-      "emoji": "\ud83c\udf57",
+      "emoji": "🍗",
       "price": 15.5,
       "calories": 941,
       "protein": 56,
@@ -108,7 +112,7 @@
     {
       "id": "grain_mentai_mayonnaise_aburi_salmon",
       "name": "Mentai Mayonnaise Aburi Salmon",
-      "emoji": "\ud83d\udc1f",
+      "emoji": "🐟",
       "price": 20.0,
       "calories": 796,
       "protein": 41,
@@ -125,7 +129,7 @@
     {
       "id": "grain_basil_thunder_tea_rice",
       "name": "Basil Thunder Tea Rice",
-      "emoji": "\ud83c\udf75",
+      "emoji": "🍵",
       "price": 14.0,
       "calories": 627,
       "protein": 27,
@@ -144,7 +148,7 @@
     {
       "id": "grain_thai_fiesta_salad",
       "name": "Thai Fiesta Salad",
-      "emoji": "\ud83e\udd57",
+      "emoji": "🥗",
       "price": 15.5,
       "calories": 541,
       "protein": 16,
@@ -165,7 +169,7 @@
     {
       "id": "grain_impossible_ground_beef_hamburg_with_japanese_curry",
       "name": "Impossible Ground Beef Hamburg with Japanese Curry",
-      "emoji": "\ud83e\udd58",
+      "emoji": "🥘",
       "price": 21.5,
       "calories": 747,
       "protein": 30,
@@ -185,7 +189,7 @@
     {
       "id": "grain_grilled_forest_mushroom_salad",
       "name": "Grilled Forest Mushroom Salad",
-      "emoji": "\ud83e\udd57",
+      "emoji": "🥗",
       "price": 7.0,
       "calories": 103,
       "protein": 4,
@@ -206,7 +210,7 @@
     {
       "id": "grain_piri_piri_chicken_bites",
       "name": "Piri-piri Chicken Bites",
-      "emoji": "\ud83c\udf57",
+      "emoji": "🍗",
       "price": 8.0,
       "calories": 199,
       "protein": 27,
@@ -226,7 +230,7 @@
     {
       "id": "grain_ondeh_ondeh_pandan_cake",
       "name": "Ondeh Ondeh Pandan Cake",
-      "emoji": "\ud83c\udf70",
+      "emoji": "🍰",
       "price": 6.5,
       "calories": 358,
       "protein": 7,
@@ -245,7 +249,7 @@
     {
       "id": "grain_greek_yoghurt_granola_cup",
       "name": "Greek Yoghurt Granola Cup",
-      "emoji": "\ud83c\udf70",
+      "emoji": "🍰",
       "price": 7.0,
       "calories": 475,
       "protein": 14,
@@ -264,7 +268,7 @@
     {
       "id": "grain_seasonal_fruit_parcel",
       "name": "Seasonal Fruit Parcel",
-      "emoji": "\ud83c\udf70",
+      "emoji": "🍰",
       "price": 7.0,
       "calories": 93,
       "protein": 1,
@@ -284,7 +288,7 @@
     {
       "id": "grain_bandung_gao",
       "name": "Bandung Gao",
-      "emoji": "\ud83c\udf75",
+      "emoji": "🍵",
       "price": 5.5,
       "calories": 107,
       "protein": 4,
@@ -303,7 +307,7 @@
     {
       "id": "grain_teh_c_floral",
       "name": "Teh C Floral",
-      "emoji": "\ud83c\udf75",
+      "emoji": "🍵",
       "price": 5.5,
       "calories": 103,
       "protein": 2,
@@ -322,7 +326,7 @@
     {
       "id": "grain_honey_yuzu_tea",
       "name": "Honey Yuzu Tea",
-      "emoji": "\ud83c\udf75",
+      "emoji": "🍵",
       "price": 5.5,
       "calories": 100,
       "protein": 0,
@@ -341,7 +345,7 @@
     {
       "id": "grain_white_cold_brew",
       "name": "White Cold Brew",
-      "emoji": "\ud83c\udf75",
+      "emoji": "🍵",
       "price": 6.0,
       "calories": 91,
       "protein": 0,
@@ -361,7 +365,7 @@
     {
       "id": "grain_straight_guava_oj",
       "name": "Straight Guava OJ",
-      "emoji": "\ud83c\udf75",
+      "emoji": "🍵",
       "price": 6.5,
       "calories": 118,
       "protein": 2,
@@ -381,7 +385,7 @@
     {
       "id": "grain_watermelime_crush",
       "name": "Watermelime Crush",
-      "emoji": "\ud83c\udf75",
+      "emoji": "🍵",
       "price": 6.5,
       "calories": 99,
       "protein": 0,

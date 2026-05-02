@@ -1,9 +1,13 @@
 {
   "id": "stuffd",
   "name": "Stuffd",
-  "emoji": "\ud83c\udf2f",
+  "emoji": "🌯",
   "cuisine": "Kebabs & Wraps",
-  "tab": "grab_go",
+  "tier": "full_menu",
+  "serviceTypes": [
+    "dine_in",
+    "grab_go"
+  ],
   "aliases": [
     "stuffd",
     "stuffd sg"
@@ -19,7 +23,7 @@
     {
       "id": "stuffd_chicken_kebab",
       "name": "Chicken Kebab",
-      "emoji": "\ud83c\udf2f",
+      "emoji": "🌯",
       "price": 9.9,
       "calories": 442,
       "protein": 21,
@@ -40,7 +44,7 @@
     {
       "id": "stuffd_chicken_rendang_kebab",
       "name": "Chicken Rendang Kebab",
-      "emoji": "\ud83c\udf2f",
+      "emoji": "🌯",
       "price": 9.9,
       "calories": 428,
       "protein": 28,
@@ -61,7 +65,7 @@
     {
       "id": "stuffd_beef_kebab",
       "name": "Beef Kebab",
-      "emoji": "\ud83c\udf2f",
+      "emoji": "🌯",
       "price": 9.9,
       "calories": 409,
       "protein": 16,
@@ -82,7 +86,7 @@
     {
       "id": "stuffd_chicken_burrito",
       "name": "Chicken Burrito",
-      "emoji": "\ud83c\udf2f",
+      "emoji": "🌯",
       "price": 12.9,
       "calories": 633,
       "protein": 25,
@@ -103,7 +107,7 @@
     {
       "id": "stuffd_beef_burrito",
       "name": "Beef Burrito",
-      "emoji": "\ud83c\udf2f",
+      "emoji": "🌯",
       "price": 12.9,
       "calories": 633,
       "protein": 25,
@@ -124,7 +128,7 @@
     {
       "id": "stuffd_chicken_rendang_daily_bowl",
       "name": "Chicken Rendang Daily Bowl",
-      "emoji": "\ud83e\udd63",
+      "emoji": "🥣",
       "price": 10.9,
       "calories": 255,
       "protein": 23,
@@ -145,7 +149,7 @@
     {
       "id": "stuffd_chicken_daily_bowl",
       "name": "Chicken Daily Bowl",
-      "emoji": "\ud83e\udd63",
+      "emoji": "🥣",
       "price": 10.9,
       "calories": 255,
       "protein": 23,

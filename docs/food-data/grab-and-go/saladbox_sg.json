@@ -1,9 +1,13 @@
 {
   "id": "saladbox",
   "name": "The Salad Box",
-  "emoji": "\ud83e\udd57",
+  "emoji": "🥗",
   "cuisine": "Healthy Salads",
-  "tab": "grab_go",
+  "tier": "full_menu",
+  "serviceTypes": [
+    "dine_in",
+    "grab_go"
+  ],
   "aliases": [
     "salad box",
     "saladbox",
@@ -18,7 +22,7 @@
     {
       "id": "saladbox_cajun_chicken_salad",
       "name": "Cajun Chicken Salad",
-      "emoji": "\ud83c\udf57",
+      "emoji": "🍗",
       "price": 10.9,
       "calories": 255,
       "protein": 0,
@@ -27,7 +31,7 @@
       "category": "All-Day-Favourites",
       "compatibleWith": [],
       "isPopular": true,
-      "description": "(Macros not published \u2014 calories only). Calories only published. w/o dressing: 255 kcal; with 30g dressing: 382 kcal. Cajun chicken, hard boiled egg, almond strips, orange, potatoes, cherry tomatoes, chickpeas, romaine lettuce.",
+      "description": "(Macros not published — calories only). Calories only published. w/o dressing: 255 kcal; with 30g dressing: 382 kcal. Cajun chicken, hard boiled egg, almond strips, orange, potatoes, cherry tomatoes, chickpeas, romaine lettuce.",
       "source": "official_sg",
       "verified": false,
       "lastVerified": "2026-04-19"
@@ -35,7 +39,7 @@
     {
       "id": "saladbox_crispy_caesar_salad",
       "name": "Crispy Caesar Salad",
-      "emoji": "\ud83e\udd57",
+      "emoji": "🥗",
       "price": 8.9,
       "calories": 261,
       "protein": 0,
@@ -44,7 +48,7 @@
       "category": "All-Day-Favourites",
       "compatibleWith": [],
       "isPopular": true,
-      "description": "(Macros not published \u2014 calories only). Calories only published. w/o dressing: 261 kcal; with 30g dressing: 368 kcal. Grilled chicken, cherry tomatoes, bacon bits, tortilla chips, croutons, parmesan, romaine lettuce.",
+      "description": "(Macros not published — calories only). Calories only published. w/o dressing: 261 kcal; with 30g dressing: 368 kcal. Grilled chicken, cherry tomatoes, bacon bits, tortilla chips, croutons, parmesan, romaine lettuce.",
       "source": "official_sg",
       "verified": false,
       "lastVerified": "2026-04-19"
@@ -52,7 +56,7 @@
     {
       "id": "saladbox_garden_salad",
       "name": "Garden Salad",
-      "emoji": "\ud83c\udf08",
+      "emoji": "🌈",
       "price": 8.2,
       "calories": 130,
       "protein": 0,
@@ -61,7 +65,7 @@
       "category": "All-Day-Favourites",
       "compatibleWith": [],
       "isPopular": true,
-      "description": "(Macros not published \u2014 calories only). Calories only published. w/o dressing: 130 kcal; with 30g dressing: 156 kcal. Dried cranberries, apple, grapes, corn, sweet potatoes, cherry tomatoes, romaine lettuce.",
+      "description": "(Macros not published — calories only). Calories only published. w/o dressing: 130 kcal; with 30g dressing: 156 kcal. Dried cranberries, apple, grapes, corn, sweet potatoes, cherry tomatoes, romaine lettuce.",
       "source": "official_sg",
       "verified": false,
       "lastVerified": "2026-04-19"
@@ -69,7 +73,7 @@
     {
       "id": "saladbox_teriyaki_chicken_salad",
       "name": "Teriyaki Chicken Salad",
-      "emoji": "\ud83c\udf57",
+      "emoji": "🍗",
       "price": 10.5,
       "calories": 353,
       "protein": 0,
@@ -78,7 +82,7 @@
       "category": "All-Day-Favourites",
       "compatibleWith": [],
       "isPopular": true,
-      "description": "(Macros not published \u2014 calories only). Calories only published. w/o dressing: 353 kcal; with 30g dressing: 396 kcal. Teriyaki chicken, cucumber, cherry tomatoes, carrots, hard boiled egg, pasta, romaine lettuce.",
+      "description": "(Macros not published — calories only). Calories only published. w/o dressing: 353 kcal; with 30g dressing: 396 kcal. Teriyaki chicken, cucumber, cherry tomatoes, carrots, hard boiled egg, pasta, romaine lettuce.",
       "source": "official_sg",
       "verified": false,
       "lastVerified": "2026-04-19"
@@ -86,7 +90,7 @@
     {
       "id": "saladbox_tofu_salad",
       "name": "Tofu Salad",
-      "emoji": "\ud83e\uddc6",
+      "emoji": "🧆",
       "price": 8.2,
       "calories": 243,
       "protein": 0,
@@ -95,7 +99,7 @@
       "category": "All-Day-Favourites",
       "compatibleWith": [],
       "isPopular": true,
-      "description": "(Macros not published \u2014 calories only). Calories only published. w/o dressing: 243 kcal; with 30g dressing: 369 kcal. Tofu, chickpeas, sweet potatoes, cucumber, carrots, almond strips, romaine lettuce.",
+      "description": "(Macros not published — calories only). Calories only published. w/o dressing: 243 kcal; with 30g dressing: 369 kcal. Tofu, chickpeas, sweet potatoes, cucumber, carrots, almond strips, romaine lettuce.",
       "source": "official_sg",
       "verified": false,
       "lastVerified": "2026-04-19"
@@ -103,7 +107,7 @@
     {
       "id": "saladbox_rainbow_salad",
       "name": "Rainbow Salad",
-      "emoji": "\ud83c\udf08",
+      "emoji": "🌈",
       "price": 13.8,
       "calories": 442,
       "protein": 0,
@@ -112,7 +116,7 @@
       "category": "All-Day-Favourites",
       "compatibleWith": [],
       "isPopular": true,
-      "description": "(Macros not published \u2014 calories only). Calories only published. w/o dressing: 442 kcal; with 30g dressing: 468 kcal. Grilled chicken, cranberries, carrots, cucumber, kidney beans, tomatoes, olives, sweet potatoes, corn, purple cabbage, grapes, hard boiled egg, romaine lettuce.",
+      "description": "(Macros not published — calories only). Calories only published. w/o dressing: 442 kcal; with 30g dressing: 468 kcal. Grilled chicken, cranberries, carrots, cucumber, kidney beans, tomatoes, olives, sweet potatoes, corn, purple cabbage, grapes, hard boiled egg, romaine lettuce.",
       "source": "official_sg",
       "verified": false,
       "lastVerified": "2026-04-19"
@@ -120,7 +124,7 @@
     {
       "id": "saladbox_apple_turkey_bacon_salad",
       "name": "Apple Turkey Bacon Salad",
-      "emoji": "\ud83e\udd83",
+      "emoji": "🦃",
       "price": 11.3,
       "calories": 405,
       "protein": 0,
@@ -129,7 +133,7 @@
       "category": "All-Day-Favourites",
       "compatibleWith": [],
       "isPopular": true,
-      "description": "(Macros not published \u2014 calories only). Calories only published. w/o dressing: 405 kcal; with 30g dressing: 512 kcal. Turkey bacon, apple, hard boiled egg, pasta, potatoes, broccoli, cherry tomatoes, romaine lettuce.",
+      "description": "(Macros not published — calories only). Calories only published. w/o dressing: 405 kcal; with 30g dressing: 512 kcal. Turkey bacon, apple, hard boiled egg, pasta, potatoes, broccoli, cherry tomatoes, romaine lettuce.",
       "source": "official_sg",
       "verified": false,
       "lastVerified": "2026-04-19"
@@ -137,7 +141,7 @@
     {
       "id": "saladbox_immune_booster_beetroot_apple_carrot_chia_seed",
       "name": "Immune Booster (Beetroot Apple Carrot Chia Seed)",
-      "emoji": "\ud83e\uddc3",
+      "emoji": "🧃",
       "price": 4.9,
       "calories": 144,
       "protein": 0,
@@ -146,7 +150,7 @@
       "category": "Juice Cleanse",
       "compatibleWith": [],
       "isPopular": false,
-      "description": "(Macros not published \u2014 calories only). Calories only published.",
+      "description": "(Macros not published — calories only). Calories only published.",
       "source": "official_sg",
       "verified": false,
       "lastVerified": "2026-04-19"
@@ -154,7 +158,7 @@
     {
       "id": "saladbox_powerup_booster_banana_muesli_milk_chia_seed",
       "name": "PowerUp Booster (Banana Muesli Milk Chia Seed)",
-      "emoji": "\ud83e\uddc3",
+      "emoji": "🧃",
       "price": 4.9,
       "calories": 251,
       "protein": 0,
@@ -163,7 +167,7 @@
       "category": "Juice Cleanse",
       "compatibleWith": [],
       "isPopular": false,
-      "description": "(Macros not published \u2014 calories only). Calories only published.",
+      "description": "(Macros not published — calories only). Calories only published.",
       "source": "official_sg",
       "verified": false,
       "lastVerified": "2026-04-19"
@@ -171,7 +175,7 @@
     {
       "id": "saladbox_detox_booster_cucumber_celery_apple_chia_seed",
       "name": "Detox Booster (Cucumber Celery Apple Chia Seed)",
-      "emoji": "\ud83e\uddc3",
+      "emoji": "🧃",
       "price": 4.9,
       "calories": 88,
       "protein": 0,
@@ -180,7 +184,7 @@
       "category": "Juice Cleanse",
       "compatibleWith": [],
       "isPopular": false,
-      "description": "(Macros not published \u2014 calories only). Calories only published.",
+      "description": "(Macros not published — calories only). Calories only published.",
       "source": "official_sg",
       "verified": false,
       "lastVerified": "2026-04-19"
@@ -188,7 +192,7 @@
     {
       "id": "saladbox_liver_booster_apple_and_chia_seed",
       "name": "Liver Booster (Apple and Chia Seed)",
-      "emoji": "\ud83e\uddc3",
+      "emoji": "🧃",
       "price": 4.9,
       "calories": 152,
       "protein": 0,
@@ -197,7 +201,7 @@
       "category": "Juice Cleanse",
       "compatibleWith": [],
       "isPopular": false,
-      "description": "(Macros not published \u2014 calories only). Calories only published.",
+      "description": "(Macros not published — calories only). Calories only published.",
       "source": "official_sg",
       "verified": false,
       "lastVerified": "2026-04-19"
@@ -205,7 +209,7 @@
     {
       "id": "saladbox_anti_acid_booster_cucumber_celery_carrot_chia_seed",
       "name": "Anti-Acid Booster (Cucumber Celery Carrot Chia Seed)",
-      "emoji": "\ud83e\uddc3",
+      "emoji": "🧃",
       "price": 4.9,
       "calories": 82,
       "protein": 0,
@@ -214,11 +218,11 @@
       "category": "Juice Cleanse",
       "compatibleWith": [],
       "isPopular": false,
-      "description": "(Macros not published \u2014 calories only). Calories only published.",
+      "description": "(Macros not published — calories only). Calories only published.",
       "source": "official_sg",
       "verified": false,
       "lastVerified": "2026-04-19"
     }
   ],
-  "_note": "Calories only available from official source. Protein/carbs/fat set to 0. Use community sources (MyNetDiary SG) to fill macros \u2014 mark verified: false."
+  "_note": "Calories only available from official source. Protein/carbs/fat set to 0. Use community sources (MyNetDiary SG) to fill macros — mark verified: false."
 }

@@ -1,17 +1,20 @@
 # Stride Food Data — Research Task Brief
 
 > **Purpose:** This file defines exactly what a Cowork session must do to research a restaurant and produce a ready-to-merge data file. Follow every step in order. Do not skip or improvise.
+>
+> **Limit:** Research a maximum of **2 restaurants per run**. Claim both upfront, complete one fully before starting the next.
 
 ---
 
-## Before You Start — Claim a Restaurant
+## Before You Start — Claim Up to 2 Restaurants
 
 1. Read `docs/food-data/_index.json`
-2. Find the first entry where `"status": "todo"` (or `"partial"` if no `todo` entries remain)
-3. **Immediately update that entry:**
+2. Find the first **1–2** entries where `"status": "todo"` (or `"partial"` if no `todo` entries remain)
+3. **Immediately update each claimed entry:**
    - `"status"` → `"in_progress"`
    - `"assignee"` → `"cowork-session-A"` or `"cowork-session-B"` (whichever you are)
-4. Save `_index.json` — this prevents the other parallel session from picking the same restaurant
+4. Save `_index.json` — this prevents another parallel session from picking the same restaurants
+5. Complete the first restaurant fully (Steps 1–6) before starting the second
 
 ---
 
@@ -25,7 +28,7 @@ Open `_index.json` and note these fields for your claimed restaurant:
 | `name` | Official brand name — use exactly as written |
 | `emoji` | Starting emoji — can be changed if a better one exists |
 | `cuisine` | Cuisine label — use the value from the index |
-| `tab` | `"restaurant"` or `"grab_go"` — copy exactly |
+| `serviceTypes` | Array of service modes — see Reference Values below |
 | `nutritionUrl` | **Start here** for official nutrition data |
 | `outputFile` | Path where your JSON must be saved (relative to `docs/food-data/`) |
 | `notes` | Read these — they tell you what data is already available and any gotchas |
@@ -86,7 +89,37 @@ Go through this fallback list in order and **stop at the first one that has data
 
 ---
 
-## Step 3 — Build the JSON File
+## Step 3 — Determine `tier` and `serviceTypes`
+
+Every restaurant entry needs both fields. Choose from the values below.
+
+### `tier`
+| Value | When to use |
+|-------|-------------|
+| `"full_menu"` | Chain with a defined menu and at least partial nutrition data |
+| `"estimated_menu"` | Hawker centre or local stall — items reference `SG_MACRO_FOODS` via `macroDbRef` |
+| `"place_only"` | GPS-detected place with no menu data — **do not add to the DB** |
+
+All research-file restaurants will be `"full_menu"` unless explicitly a hawker centre.
+
+### `serviceTypes`
+Use an **array** — outlets can support multiple modes:
+
+| Value | When to use |
+|-------|-------------|
+| `"dine_in"` | Has seating — guests eat on-premise |
+| `"grab_go"` | Counter/kiosk service — food taken away |
+| `"delivery"` | Confirmed on GrabFood, foodpanda, or Deliveroo |
+
+Common patterns:
+- Restaurant chains (McDonald's, KFC, Jollibee): `["dine_in", "grab_go"]`
+- Kiosks / bubble tea / bakeries (Gong Cha, BreadTalk): `["grab_go"]`
+- Online-first meal delivery (Grain): `["grab_go", "delivery"]`
+- Add `"delivery"` only when confirmed on a delivery platform
+
+---
+
+## Step 4 — Build the JSON File
 
 Save as a single JSON object matching the `sgFoodDb.ts` schema exactly:
 
@@ -96,7 +129,8 @@ Save as a single JSON object matching the `sgFoodDb.ts` schema exactly:
   "name": "Official Brand Name",
   "emoji": "🍽️",
   "cuisine": "Cuisine Label",
-  "tab": "grab_go",
+  "tier": "full_menu",
+  "serviceTypes": ["dine_in", "grab_go"],
   "aliases": ["brand name", "short name", "alternate spelling"],
   "dietTags": [],
   "priceRange": "$$",
@@ -130,11 +164,68 @@ Save as a single JSON object matching the `sgFoodDb.ts` schema exactly:
 
 ---
 
-## Reference Values
+## Step 5 — Save the File
 
-### `tab`
-- `"restaurant"` — dine-in chains (A&W, Jollibee, Popeyes)
-- `"grab_go"` — delivery brands, quick counters, cafes, bubble tea (Starbucks, Toast Box, LiHo, KOI)
+The workspace is mounted at `/sessions/<session-id>/mnt/Fitness App/`. Find your session path with:
+
+```bash
+ls /sessions/
+```
+
+Then save to:
+```
+/sessions/<session-id>/mnt/Fitness App/docs/food-data/{outputFile}
+```
+
+Example — if `outputFile` is `"grab-and-go/starbucks_sg.json"`:
+```
+/sessions/<session-id>/mnt/Fitness App/docs/food-data/grab-and-go/starbucks_sg.json
+```
+
+---
+
+## Step 6 — Update `_index.json`
+
+Update the restaurant's entry:
+
+```jsonc
+{
+  "status": "ready",
+  "assignee": null,
+  "tier": "full_menu",
+  "serviceTypes": ["dine_in", "grab_go"],
+  "itemCount": 24,              // actual count of menu items in your file
+  "macroCompleteness": "high",  // "high" | "medium" | "low" | "none"
+  "priceAvailable": true,
+  "dataSource": "official_sg",  // primary source used: "official_sg" | "hpb" | "community"
+  "sourceUrl": "https://...",   // exact URL where data was found (or null)
+  "lastChecked": "YYYY-MM-DD"
+}
+```
+
+`macroCompleteness`:
+- `"high"` — protein/carbs/fat all populated from official or HPB source
+- `"medium"` — macros from community source, or some items missing macros
+- `"low"` — calories only, no macros
+- `"none"` — no nutrition data found at all
+
+---
+
+## Step 7 — Self-Verify
+
+- [ ] Every menu item has a unique `id`
+- [ ] Every menu item has a `sourceUrl` field (or explicitly `null`)
+- [ ] `source` matches what `sourceUrl` points to
+- [ ] `verified` is `true` only for `official_sg` / `hpb` sources
+- [ ] No `price` is `0.00` unless genuinely free (note it in description)
+- [ ] `tier` is `"full_menu"` (or `"estimated_menu"` for hawker centres)
+- [ ] `serviceTypes` is an **array** — never a bare string
+- [ ] File is valid JSON (no trailing commas, no comments)
+- [ ] `_index.json` updated with `"status": "ready"` and all metadata filled
+
+---
+
+## Reference Values
 
 ### `source` + `sourceUrl`
 | `source` | When to use | `verified` | `sourceUrl` example |
@@ -149,7 +240,7 @@ Save as a single JSON object matching the `sgFoodDb.ts` schema exactly:
 - `"$"` — under $10/meal  ·  `"$$"` — $10–20  ·  `"$$$"` — $20–40  ·  `"$$$$"` — over $40
 
 ### `compatibleWith` (item-level dietary flags)
-`"halal"` · `"vegetarian"` · `"vegan"` · `"gluten_free"` · `"dairy_free"` · `"nut_free"` · `"low_carb"` · `"high_protein"`
+`"halal"` · `"vegetarian"` · `"vegan"` · `"gluten_free"` · `"dairy_free"` · `"nut_free"` · `"low_carb"` · `"high_protein"` · `"no_pork"` · `"pescatarian"` · `"keto"` · `"lactose_free"`
 
 ### `dietTags` (restaurant-level)
 Only apply if the **entire brand** is certified (e.g. fully halal-certified chain). Item-level flags go in `compatibleWith`.
@@ -165,57 +256,6 @@ Only apply if the **entire brand** is certified (e.g. fully halal-certified chai
 
 ---
 
-## Step 4 — Save the File
-
-Full path:
-```
-/sessions/pensive-laughing-hopper/mnt/Fitness App/docs/food-data/{outputFile}
-```
-
-Example — if `outputFile` is `"grab-and-go/starbucks_sg.json"`:
-```
-/sessions/pensive-laughing-hopper/mnt/Fitness App/docs/food-data/grab-and-go/starbucks_sg.json
-```
-
----
-
-## Step 5 — Update `_index.json`
-
-Update the restaurant's entry:
-
-```jsonc
-{
-  "status": "ready",
-  "assignee": null,
-  "itemCount": 24,              // actual count of menu items in your file
-  "macroCompleteness": "high",  // "high" | "medium" | "low" | "none"
-  "priceAvailable": true,
-  "dataSource": "official_sg",  // primary source used: "official_sg" | "hpb" | "community"
-  "sourceUrl": "https://...",   // exact URL where data was found (or null)
-  "lastChecked": "2026-04-19"
-}
-```
-
-`macroCompleteness`:
-- `"high"` — protein/carbs/fat all populated from official or HPB source
-- `"medium"` — macros from community source, or some items missing macros
-- `"low"` — calories only, no macros
-- `"none"` — no nutrition data found at all
-
----
-
-## Step 6 — Self-Verify
-
-- [ ] Every menu item has a unique `id`
-- [ ] Every menu item has a `sourceUrl` field (or explicitly `null`)
-- [ ] `source` matches what `sourceUrl` points to
-- [ ] `verified` is `true` only for `official_sg` / `hpb` sources
-- [ ] No `price` is `0.00` unless genuinely free (note it in description)
-- [ ] `tab` is exactly `"restaurant"` or `"grab_go"` — no other values
-- [ ] File is valid JSON (no trailing commas, no comments)
-
----
-
 ## Examples
 
 | File | What it shows |
@@ -223,10 +263,11 @@ Update the restaurant's entry:
 | `grab-and-go/grain_sg.json` | Full macros from official source (`source: "official_sg"`) |
 | `grab-and-go/saladbox_sg.json` | Calories only — macros set to `0` with note in description |
 | `grab-and-go/saladstop_sg.json` | Community macros (`source: "community"`, `verified: false`) |
+| `restaurants/aw_sg.json` | Community macros sourced from international nutrition PDF |
 | `_template.restaurant.json` | Blank template — copy this as your starting point |
 
 ---
 
 ## What Happens Next
 
-Files marked `status: "ready"` in `_index.json` are merged into `src/lib/sgFoodDb.ts` in the next sprint. The JSON format is identical to the `SG_RESTAURANTS` entries in that file — merging is a direct copy of the menu array.
+Files marked `status: "ready"` in `_index.json` are merged into `src/lib/sgFoodDb.ts` in the next sprint. The JSON format mirrors the `SG_RESTAURANTS` entries in that file — merging is a direct copy of the `menu` array into the corresponding restaurant block.
