@@ -761,7 +761,6 @@ function MenuItemCard({
   userFlags: DietaryFlag[]; onLog: (item: SGMenuItem, r: SGRestaurant) => void; logged: boolean;
 }) {
   const fit   = getDietFit(item.compatibleWith, userFlags);
-  const score = macroMatchScore(item, { protein: 0, calories: 0, carbs: 0 }); // placeholder — overridden below
   const outlet = OUTLET_LABEL[restaurant.outletType] ?? OUTLET_LABEL.restaurant;
   return (
     <div style={{
@@ -911,11 +910,12 @@ export default function EatPage() {
   const [filterCuisine,     setFilterCuisine    ] = useState('All');
   const [filterHighProtein, setFilterHighProtein] = useState(false);
   const [filterDietMatch,   setFilterDietMatch  ] = useState(userFlags.length > 0);
-  /* Show More in pooled browse view */
-  const [showMore,          setShowMore         ] = useState(false);
+  /* Show More — separate for GPS-nearby vs DB-only sections */
+  const [showMoreNearby, setShowMoreNearby] = useState(false);
+  const [showMoreDb,     setShowMoreDb    ] = useState(false);
 
   const switchTab = (t: EatTab) => {
-    setTab(t); setQuery(''); setExpandedId(null); setShowMore(false);
+    setTab(t); setQuery(''); setExpandedId(null); setShowMoreNearby(false); setShowMoreDb(false);
     setFilterMode('all'); setFilterOpenNow(false); setFilterMaxDist(1);
     setFilterCuisine('All'); setFilterHighProtein(false);
   };
@@ -1100,15 +1100,18 @@ export default function EatPage() {
     return filtered.sort((a, b) => macroMatchScore(b.item, macroRem) - macroMatchScore(a.item, macroRem));
   }, [tier1Places, tier2Places, dbChains, filterHighProtein, filterDietMatch, userFlags, macroRem]);
 
-  /* Slice rules for pooled browse:
-     - Initial: top 8 items regardless of distance
-     - Expanded: items within 1km (or from DB with no distance), capped at 20 */
-  const pooledInitial  = pooledItems.slice(0, 8);
-  const pooledExpanded = pooledItems
-    .filter(p => p.distKm === undefined || p.distKm <= 1)
-    .slice(0, 20);
-  const visiblePooled  = showMore ? pooledExpanded : pooledInitial;
-  const hasMore        = !showMore && pooledItems.length > 8;
+  /* Split pooled items into two sections:
+     - nearbyItems: GPS-matched places with menu data (distKm defined)
+     - dbItems:     DB chains not found by GPS (distKm undefined) */
+  const nearbyItems = pooledItems.filter(p => p.distKm !== undefined);
+  const dbItems     = pooledItems.filter(p => p.distKm === undefined);
+
+  const NEARBY_INITIAL = 6;
+  const DB_INITIAL     = 6;
+  const visibleNearby   = showMoreNearby ? nearbyItems : nearbyItems.slice(0, NEARBY_INITIAL);
+  const visibleDb       = showMoreDb     ? dbItems     : dbItems.slice(0, DB_INITIAL);
+  const hasMoreNearby   = !showMoreNearby && nearbyItems.length > NEARBY_INITIAL;
+  const hasMoreDb       = !showMoreDb     && dbItems.length     > DB_INITIAL;
 
   /* Log helpers — use meal context mealType */
   const logMenuItem = useCallback((item: SGMenuItem, restaurant: SGRestaurant) => {
@@ -1317,73 +1320,141 @@ export default function EatPage() {
                   </div>
                 )}
 
-                {/* ── Pooled items — items-first ranked browse ── */}
-                {pooledItems.length === 0 && (locState === 'done' || locState === 'error' || locState === 'no_key') && (
+                {/* ── Empty state when nothing at all ── */}
+                {pooledItems.length === 0 && tier3Places.length === 0 && (locState === 'done' || locState === 'error' || locState === 'no_key') && (
                   <EmptyState emoji="🍽️" title="No items match your filters" subtitle="Try adjusting the filters above." />
                 )}
 
-                {visiblePooled.map(p => (
-                  <MenuItemCard
-                    key={`${p.restaurant.id}-${p.item.id}`}
-                    item={p.item} restaurant={p.restaurant} distKm={p.distKm}
-                    userFlags={userFlags} onLog={logMenuItem} logged={logged.has(p.item.id)}
-                  />
-                ))}
-
-                {/* Show More button — expands to 20 items within 1km */}
-                {hasMore && (
-                  <button
-                    onClick={() => setShowMore(true)}
-                    style={{
-                      width: '100%', padding: '12px 0', borderRadius: 14, marginBottom: 12,
-                      fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                      background: CARD, border: `1px solid ${BORDER}`, color: FG2,
-                      boxShadow: SHADOW, transition: 'all .2s',
-                    }}
-                  >
-                    Show more within 1km ({Math.min(pooledItems.filter(p => p.distKm === undefined || p.distKm <= 1).length, 20)} items) ↓
-                  </button>
+                {/* ════ CARD 1: Nearby menu items (GPS-matched, has DB data) ════ */}
+                {nearbyItems.length > 0 && (
+                  <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, marginBottom: 14, overflow: 'hidden', boxShadow: SHADOW }}>
+                    {/* Section header */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderBottom: `1px solid ${BORDER}`, background: 'rgba(30,127,92,0.03)' }}>
+                      <span style={{ fontSize: 14 }}>📍</span>
+                      <div style={{ flex: 1 }}>
+                        <span style={{ fontSize: 12, fontWeight: 800, color: GREEN }}>Nearby Menu</span>
+                        <span style={{ fontSize: 10, color: FG3, marginLeft: 6 }}>Verified prices &amp; macros</span>
+                      </div>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: GREEN, background: 'rgba(30,127,92,0.10)', borderRadius: 999, padding: '2px 8px' }}>
+                        {nearbyItems.length}
+                      </span>
+                    </div>
+                    {/* Item rows */}
+                    <div style={{ padding: '4px 0' }}>
+                      {visibleNearby.map(p => (
+                        <MenuItemCard
+                          key={`${p.restaurant.id}-${p.item.id}`}
+                          item={p.item} restaurant={p.restaurant} distKm={p.distKm}
+                          userFlags={userFlags} onLog={logMenuItem} logged={logged.has(p.item.id)}
+                        />
+                      ))}
+                    </div>
+                    {hasMoreNearby && (
+                      <button
+                        onClick={() => setShowMoreNearby(true)}
+                        style={{
+                          width: '100%', padding: '11px 0',
+                          background: 'rgba(15,27,45,0.025)', border: 'none',
+                          borderTop: `1px solid ${BORDER}`,
+                          fontSize: 11, fontWeight: 700, color: FG3, cursor: 'pointer',
+                        }}
+                      >
+                        ▼ Show {nearbyItems.length - NEARBY_INITIAL} more nearby items
+                      </button>
+                    )}
+                  </div>
                 )}
 
-                {/* ── Tier 3: GPS-only places with no DB match ── */}
-                {locState === 'done' && tier3Places.length > 0 && (
-                  <>
-                    <TierSectionHeader
-                      emoji="📍" title="Other Nearby Places" count={tier3Places.length}
-                      color={FG3} note="No menu data yet"
-                    />
-                    {tier3Places.map(place => {
-                      return (
-                        <div key={place.id} style={{ background: CARD, borderRadius: 18, padding: 14, border: `1px solid ${BORDER}`, marginBottom: 10, boxShadow: SHADOW }}>
-                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                            <div style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(139,149,167,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>
-                              {place.emoji}
-                            </div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2, flexWrap: 'wrap' }}>
-                                <span style={{ fontSize: 14, fontWeight: 800, color: FG1 }}>{place.name}</span>
-                                <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 6, background: 'rgba(139,149,167,0.10)', border: `1px solid ${BORDER}`, color: FG3 }}>No data</span>
-                              </div>
-                              <div style={{ fontSize: 11, color: FG3, marginBottom: 6 }}>
-                                {place.type} · {place.distance}{place.rating ? ` · ⭐ ${place.rating.toFixed(1)}` : ''} · {place.hours}
-                              </div>
+                {/* ════ CARD 2: DB chains not found nearby ════ */}
+                {dbItems.length > 0 && (
+                  <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, marginBottom: 14, overflow: 'hidden', boxShadow: SHADOW }}>
+                    {/* Section header */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderBottom: `1px solid ${BORDER}`, background: 'rgba(91,101,118,0.025)' }}>
+                      <span style={{ fontSize: 14 }}>📋</span>
+                      <div style={{ flex: 1 }}>
+                        <span style={{ fontSize: 12, fontWeight: 800, color: FG2 }}>More in Our Database</span>
+                        <span style={{ fontSize: 10, color: FG3, marginLeft: 6 }}>Not found nearby</span>
+                      </div>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: FG3, background: BORDER, borderRadius: 999, padding: '2px 8px' }}>
+                        {dbItems.length}
+                      </span>
+                    </div>
+                    {/* Item rows */}
+                    <div style={{ padding: '4px 0' }}>
+                      {visibleDb.map(p => (
+                        <MenuItemCard
+                          key={`${p.restaurant.id}-${p.item.id}`}
+                          item={p.item} restaurant={p.restaurant}
+                          userFlags={userFlags} onLog={logMenuItem} logged={logged.has(p.item.id)}
+                        />
+                      ))}
+                    </div>
+                    {hasMoreDb && (
+                      <button
+                        onClick={() => setShowMoreDb(true)}
+                        style={{
+                          width: '100%', padding: '11px 0',
+                          background: 'rgba(15,27,45,0.025)', border: 'none',
+                          borderTop: `1px solid ${BORDER}`,
+                          fontSize: 11, fontWeight: 700, color: FG3, cursor: 'pointer',
+                        }}
+                      >
+                        ▼ Show {dbItems.length - DB_INITIAL} more options
+                      </button>
+                    )}
+                  </div>
+                )}
 
-                              <a
-                                href={`mailto:hello@strideapp.sg?subject=Menu data for ${encodeURIComponent(place.name)}&body=Hi, I'd like to submit nutrition data for ${encodeURIComponent(place.name)}.`}
-                                style={{ fontSize: 11, color: '#2E6FB8', fontWeight: 600, textDecoration: 'none' }}
-                              >
-                                📋 Help add {place.name}&apos;s menu →
-                              </a>
+                {/* ════ CARD 3: GPS-only places with no DB match ════ */}
+                {locState === 'done' && tier3Places.length > 0 && (
+                  <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, marginBottom: 14, overflow: 'hidden', boxShadow: SHADOW }}>
+                    {/* Section header */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderBottom: `1px solid ${BORDER}`, background: 'rgba(139,149,167,0.04)' }}>
+                      <span style={{ fontSize: 14 }}>🗺️</span>
+                      <div style={{ flex: 1 }}>
+                        <span style={{ fontSize: 12, fontWeight: 800, color: FG3 }}>Other Nearby Places</span>
+                        <span style={{ fontSize: 10, color: FG3, marginLeft: 6 }}>No menu data yet · help us expand</span>
+                      </div>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: FG3, background: BORDER, borderRadius: 999, padding: '2px 8px' }}>
+                        {tier3Places.length}
+                      </span>
+                    </div>
+                    {/* Restaurant rows */}
+                    <div>
+                      {tier3Places.map((place, idx) => (
+                        <div key={place.id} style={{
+                          display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
+                          borderBottom: idx < tier3Places.length - 1 ? `1px solid ${BORDER}` : 'none',
+                        }}>
+                          {/* Icon */}
+                          <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(139,149,167,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
+                            {place.emoji}
+                          </div>
+                          {/* Info */}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2, flexWrap: 'wrap' }}>
+                              <span style={{ fontSize: 13, fontWeight: 800, color: FG1 }}>{place.name}</span>
+                              <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 5, background: 'rgba(139,149,167,0.10)', border: `1px solid ${BORDER}`, color: FG3 }}>No data</span>
                             </div>
-                            <a href={place.mapsUrl} target="_blank" rel="noopener noreferrer"
-                              style={{ flexShrink: 0, background: 'rgba(139,149,167,0.12)', color: FG2, borderRadius: 10, padding: '8px 12px', fontSize: 11, fontWeight: 700, textDecoration: 'none', alignSelf: 'flex-start', border: `1px solid ${BORDER}` }}>
-                              Map →
+                            <div style={{ fontSize: 11, color: FG3, marginBottom: 5 }}>
+                              {place.type} · {place.distance}{place.rating ? ` · ⭐ ${place.rating.toFixed(1)}` : ''} · {place.hours}
+                            </div>
+                            <a
+                              href={`mailto:hello@strideapp.sg?subject=Menu data for ${encodeURIComponent(place.name)}&body=Hi, I'd like to submit nutrition data for ${encodeURIComponent(place.name)}.`}
+                              style={{ fontSize: 11, color: '#2E6FB8', fontWeight: 600, textDecoration: 'none' }}
+                            >
+                              📋 Help add {place.name}&apos;s menu →
                             </a>
                           </div>
+                          {/* Map link */}
+                          <a href={place.mapsUrl} target="_blank" rel="noopener noreferrer"
+                            style={{ flexShrink: 0, background: 'rgba(46,111,184,0.07)', color: '#2E6FB8', borderRadius: 9, padding: '7px 11px', fontSize: 11, fontWeight: 700, textDecoration: 'none', border: '1px solid rgba(46,111,184,0.16)' }}>
+                            Map →
+                          </a>
                         </div>
-                      );
-                    })}
-                  </>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </>
             )}
