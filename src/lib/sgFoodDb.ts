@@ -11954,3 +11954,114 @@ export const SG_UNRESEARCHED_CHAINS: UnresearchedChain[] = [
   { name: 'TGI Fridays',           aliases: ['tgi fridays', 'tgif'],                   outletType: 'restaurant', cuisine: 'Western',           priority: 'low' },
   { name: 'Eighteen Chefs',        aliases: ['eighteen chefs', '18 chefs'],             outletType: 'restaurant', cuisine: 'Western',           priority: 'low' },
 ];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helper functions
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Fuzzy-match a Google Places display name to an SGRestaurant. Returns null if no match. */
+export function matchRestaurant(placeName: string): SGRestaurant | null {
+  const norm = placeName.toLowerCase().trim();
+  return (
+    SG_RESTAURANTS.find(r =>
+      r.aliases.some(alias => norm.includes(alias) || alias.includes(norm))
+    ) ?? null
+  );
+}
+
+/** Unified search across all restaurants + ingredients + recipes. */
+export function searchAll(
+  query: string,
+  serviceFilter?: string
+): { restaurants: SGRestaurant[]; items: { item: SGMenuItem; restaurant: SGRestaurant }[] } {
+  const q = query.toLowerCase().trim();
+  if (!q) return { restaurants: [], items: [] };
+
+  const restaurants: SGRestaurant[] = [];
+  const items: { item: SGMenuItem; restaurant: SGRestaurant }[] = [];
+
+  for (const r of SG_RESTAURANTS) {
+    if (serviceFilter && r.tab !== serviceFilter) continue;
+    const nameMatch = r.name.toLowerCase().includes(q) || r.aliases.some(a => a.includes(q));
+    const matchingItems = r.menu.filter(
+      i => i.name.toLowerCase().includes(q) || (i.category ?? '').toLowerCase().includes(q)
+    );
+    if (nameMatch) restaurants.push(r);
+    for (const item of matchingItems) {
+      items.push({ item, restaurant: r });
+    }
+  }
+
+  return { restaurants, items };
+}
+
+/** Search recipes by name or ingredient. */
+export function searchRecipes(query: string): SGRecipe[] {
+  const q = query.toLowerCase().trim();
+  if (!q) return SG_RECIPES;
+  return SG_RECIPES.filter(
+    r =>
+      r.name.toLowerCase().includes(q) ||
+      r.tags?.some((t: string) => t.toLowerCase().includes(q)) ||
+      r.ingredients?.some((i: SGRecipeIngredient) => i.ingredientId.toLowerCase().includes(q))
+  );
+}
+
+/** Get unique categories from a restaurant's menu. */
+export function getMenuCategories(restaurant: SGRestaurant): string[] {
+  const cats = restaurant.menu.map(i => i.category ?? 'Other');
+  return [...new Set(cats)];
+}
+
+/** Macro match score: how well an item fits remaining daily macros. Returns 0–1. */
+export function macroMatchScore(
+  item: SGMenuItem,
+  remaining: { protein: number; calories: number; carbs: number }
+): number {
+  const protScore = remaining.protein > 0
+    ? Math.min(item.protein / remaining.protein, 1)
+    : 0;
+  const calScore = remaining.calories > 0
+    ? 1 - Math.abs(item.calories - remaining.calories * 0.35) / (remaining.calories * 0.35 + 1)
+    : 0;
+  const carbScore = remaining.carbs > 0
+    ? Math.min(item.carbs / remaining.carbs, 1)
+    : 0;
+  return Math.max(0, protScore * 0.55 + calScore * 0.30 + carbScore * 0.15);
+}
+
+/** Protein per dollar (g/$), rounded to 1 decimal. Returns 0 if price is 0. */
+export function proteinPerDollar(protein: number, price: number): number {
+  if (!price) return 0;
+  return Math.round((protein / price) * 10) / 10;
+}
+
+/** Colour code for protein/$ value. Green ≥6, yellow 3–6, red <3. */
+export function ppdColor(value: number): string {
+  if (value >= 6) return '#1E7F5C';   // green
+  if (value >= 3) return '#C98A2E';   // amber
+  return '#D04E36';                   // red
+}
+
+/** Filter menu items to those compatible with all of the user's dietary flags. */
+export function filterItemsByDiet(items: SGMenuItem[], flags: string[]): SGMenuItem[] {
+  if (!flags.length) return items;
+  return items.filter(i => flags.every(f => (i.compatibleWith ?? []).includes(f)));
+}
+
+/** Resolve recipe ingredients into ingredient objects (returns raw ingredient refs). */
+export function resolveIngredients(recipe: SGRecipe): SGRecipeIngredient[] {
+  return recipe.ingredients ?? [];
+}
+
+/** Calculate actual cost per serving based on ingredient prices. Returns null if no ingredients. */
+export function calcCostPerServing(recipe: SGRecipe): number | null {
+  if (!recipe.ingredients || recipe.ingredients.length === 0) return null;
+  const total = recipe.ingredients.reduce((sum, ing) => {
+    const ingredient = SG_INGREDIENTS.find(i => i.id === ing.ingredientId);
+    if (!ingredient || !ingredient.price) return sum;
+    const kgPrice = ingredient.price / (ingredient.packageSize ?? 1000);
+    return sum + kgPrice * ing.quantityG;
+  }, 0);
+  return Math.round(total * 100) / 100;
+}
