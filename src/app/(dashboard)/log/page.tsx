@@ -466,6 +466,7 @@ function LogInner() {
               </div>
             ) : (
               <>
+                {/* Combined search + portion card */}
                 <div style={cardStyle}>
                   <input style={inputStyle} placeholder="Search food…"
                     value={query}
@@ -495,51 +496,50 @@ function LogInner() {
                       ))}
                     </div>
                   )}
+
+                  {/* Portion picker — shown inline once a food is selected */}
+                  {selectedFood && (
+                    <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${BORDER}` }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: FG3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>
+                        Portion (g)
+                      </div>
+                      <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                        {PORTION_PRESETS.map(p => (
+                          <button key={p} onClick={() => { setPortion(p); setCustomPortion(''); }} style={{
+                            flex: 1, padding: '5px 0', borderRadius: 20,
+                            fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                            background: portion === p && !customPortion ? 'rgba(30,127,92,0.10)' : BG,
+                            color:      portion === p && !customPortion ? GREEN : FG3,
+                            border: `1px solid ${portion === p && !customPortion ? 'rgba(30,127,92,0.25)' : BORDER}`,
+                            transition: 'all .15s',
+                          }}>{p}</button>
+                        ))}
+                      </div>
+                      <input style={{ ...inputStyle, padding: '8px 12px', fontSize: 13 }} type="number" placeholder="Custom grams…"
+                        value={customPortion} onChange={e => setCustomPortion(e.target.value)}/>
+                    </div>
+                  )}
                 </div>
 
                 {selectedFood && (
                   <>
-                    {/* Portion picker */}
-                    <div style={cardStyle}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: FG2, marginBottom: 10 }}>Portion (g)</div>
-                      <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-                        {PORTION_PRESETS.map(p => (
-                          <button key={p} onClick={() => { setPortion(p); setCustomPortion(''); }} style={{
-                            flex: 1, padding: '9px 0', borderRadius: 12,
-                            fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                            background: portion === p && !customPortion ? 'rgba(30,127,92,0.10)' : BG,
-                            color:      portion === p && !customPortion ? GREEN : FG3,
-                            border: `1px solid ${portion === p && !customPortion ? 'rgba(30,127,92,0.25)' : BORDER}`,
-                            transition: 'all .2s',
-                          }}>{p}</button>
-                        ))}
-                      </div>
-                      <input style={inputStyle} type="number" placeholder="Custom grams…"
-                        value={customPortion} onChange={e => setCustomPortion(e.target.value)}/>
-                    </div>
-
-                    {/* Macro preview */}
-                    <div style={{ ...cardStyle, background: 'rgba(30,127,92,0.04)', border: '1px solid rgba(30,127,92,0.15)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ fontSize: 24 }}>{selectedFood.emoji}</span>
-                          <span style={{ fontSize: 14, fontWeight: 700, color: FG1 }}>{selectedFood.name}</span>
-                        </div>
-                        <span style={{ fontSize: 11, color: FG3 }}>{effectivePortion}g</span>
-                      </div>
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        {[
-                          { label: 'CAL',  val: previewCal,  color: '#D04E36', bg: 'rgba(208,78,54,0.08)'   },
-                          { label: 'PRO',  val: previewProt, color: '#2E6FB8', bg: 'rgba(46,111,184,0.08)'  },
-                          { label: 'CARB', val: previewCarb, color: '#C98A2E', bg: 'rgba(201,138,46,0.08)'  },
-                          { label: 'FAT',  val: previewFat,  color: GREEN,     bg: 'rgba(30,127,92,0.08)'   },
-                        ].map(m => (
-                          <div key={m.label} style={{ flex: 1, borderRadius: 12, padding: '8px 4px', textAlign: 'center', background: m.bg }}>
-                            <div style={{ fontSize: 16, fontWeight: 800, color: m.color }}>{m.val}</div>
-                            <div style={{ fontSize: 9, fontWeight: 700, color: FG3, marginTop: 2 }}>{m.label}</div>
-                          </div>
-                        ))}
-                      </div>
+                    {/* Macro preview — simplified single row */}
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      background: 'rgba(30,127,92,0.05)', border: '1px solid rgba(30,127,92,0.14)',
+                      borderRadius: 14, padding: '10px 14px',
+                    }}>
+                      <span style={{ fontSize: 18 }}>{selectedFood.emoji}</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: FG1, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {selectedFood.name}
+                      </span>
+                      <span style={{ fontSize: 12, color: '#D04E36', fontWeight: 700 }}>{previewCal} cal</span>
+                      <span style={{ fontSize: 11, color: FG3 }}>·</span>
+                      <span style={{ fontSize: 12, color: '#2E6FB8', fontWeight: 600 }}>P{previewProt}</span>
+                      <span style={{ fontSize: 11, color: FG3 }}>·</span>
+                      <span style={{ fontSize: 12, color: '#C98A2E', fontWeight: 600 }}>C{previewCarb}</span>
+                      <span style={{ fontSize: 11, color: FG3 }}>·</span>
+                      <span style={{ fontSize: 12, color: GREEN, fontWeight: 600 }}>F{previewFat}</span>
                     </div>
 
                     <button onClick={logFood} style={{
