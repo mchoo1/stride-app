@@ -162,129 +162,72 @@ function SearchBar({ value, onChange, placeholder }: {
   );
 }
 
-function SortBar({ active, onChange, showDistance, recommendedKey }: {
+function SortDropdown({ active, onChange, showDistance }: {
   active: SortKey; onChange: (k: SortKey) => void; showDistance: boolean;
-  recommendedKey?: SortKey;
 }) {
   const opts: { key: SortKey; label: string }[] = [
-    { key: 'best_match',     label: '🎯 Best Match' },
-    { key: 'protein_dollar', label: '💪 Protein/$'  },
-    { key: 'price',          label: '💰 Price ↑'    },
+    { key: 'best_match',     label: '🎯 Best Match'  },
+    { key: 'protein_dollar', label: '💪 Protein/$'   },
+    { key: 'price',          label: '💰 Price: Low → High' },
     ...(showDistance ? [{ key: 'distance' as SortKey, label: '📍 Nearest' }] : []),
   ];
   return (
-    <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2, marginBottom: 8, scrollbarWidth: 'none' }}>
-      {opts.map(o => (
-        <button key={o.key} onClick={() => onChange(o.key)} style={{
-          flexShrink: 0, borderRadius: 999, padding: '6px 14px',
-          fontSize: 11, fontWeight: 700, cursor: 'pointer',
-          border: `1px solid ${active === o.key ? 'rgba(30,127,92,0.30)' : BORDER}`,
-          background: active === o.key ? 'rgba(30,127,92,0.10)' : CARD,
-          color: active === o.key ? GREEN : FG3, transition: 'all .2s',
-        }}>
-          {o.label}
-          {recommendedKey === o.key && (
-            <span style={{ fontSize: 8, fontWeight: 800, background: 'rgba(30,127,92,0.18)', color: GREEN, borderRadius: 4, padding: '1px 5px', marginLeft: 4, verticalAlign: 'middle' }}>
-              REC
-            </span>
-          )}
-        </button>
-      ))}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10 }}>
+      <span style={{ fontSize: 11, fontWeight: 600, color: FG3, flexShrink: 0 }}>Sort</span>
+      <select
+        value={active}
+        onChange={e => onChange(e.target.value as SortKey)}
+        style={{
+          fontSize: 12, fontWeight: 600, color: FG2,
+          border: `1px solid ${BORDER}`, borderRadius: 10,
+          padding: '6px 10px', background: CARD, cursor: 'pointer',
+          outline: 'none', flex: 1,
+        }}
+      >
+        {opts.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
+      </select>
     </div>
   );
 }
 
-/* ── 2. FilterBar ── */
+/* ── 2. FilterBar — single scrollable row ── */
 function FilterBar({
   filterMode, setFilterMode,
   filterOpenNow, setFilterOpenNow,
-  filterMaxDist, setFilterMaxDist,
-  filterCuisine, setFilterCuisine,
-  filterHighProtein, setFilterHighProtein,
-  filterDietMatch, setFilterDietMatch,
-  cuisineOptions, hasDietPrefs,
+  filter500m, setFilter500m,
 }: {
-  filterMode: FilterMode;        setFilterMode: (v: FilterMode) => void;
-  filterOpenNow: boolean;        setFilterOpenNow: (v: boolean) => void;
-  filterMaxDist: null|0.5|1|2;  setFilterMaxDist: (v: null|0.5|1|2) => void;
-  filterCuisine: string;         setFilterCuisine: (v: string) => void;
-  filterHighProtein: boolean;    setFilterHighProtein: (v: boolean) => void;
-  filterDietMatch: boolean;      setFilterDietMatch: (v: boolean) => void;
-  cuisineOptions: string[];      hasDietPrefs: boolean;
+  filterMode: FilterMode; setFilterMode: (v: FilterMode) => void;
+  filterOpenNow: boolean; setFilterOpenNow: (v: boolean) => void;
+  filter500m: boolean;    setFilter500m: (v: boolean) => void;
 }) {
-  const chip = (active: boolean): React.CSSProperties => ({
+  const chip = (active: boolean, accent?: string): React.CSSProperties => ({
     flexShrink: 0, borderRadius: 999, padding: '5px 12px',
-    fontSize: 11, fontWeight: 700, cursor: 'pointer',
-    border: `1px solid ${active ? 'rgba(30,127,92,0.30)' : BORDER}`,
-    background: active ? 'rgba(30,127,92,0.10)' : CARD,
-    color: active ? GREEN : FG3, transition: 'all .15s', whiteSpace: 'nowrap' as const,
+    fontSize: 11, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' as const,
+    border: `1px solid ${active ? (accent ?? 'rgba(30,127,92,0.30)') : BORDER}`,
+    background: active ? (accent ? `${accent}18` : 'rgba(30,127,92,0.10)') : CARD,
+    color: active ? (accent ?? GREEN) : FG3, transition: 'all .15s',
   });
-  const distOpts: { val: null|0.5|1|2; label: string }[] = [
-    { val: null, label: 'All' }, { val: 0.5, label: '< 500m' },
-    { val: 1, label: '< 1km'  }, { val: 2,   label: '< 2km'  },
-  ];
-  const modeOpts: { val: FilterMode; label: string; soon?: boolean }[] = [
-    { val: 'all',         label: '🍴 All'          },
-    { val: 'dine_in',     label: '🍽️ Dine In'     },
-    { val: 'grab_go',     label: '🥡 Takeaway'     },
-    { val: 'ready_to_eat',label: '🏪 Ready-to-Eat' },
-    { val: 'delivery',    label: '🛵 Delivery', soon: true },
+  const modeOpts: { val: FilterMode; label: string }[] = [
+    { val: 'all',          label: 'All'          },
+    { val: 'dine_in',      label: '🍽 Dine In'   },
+    { val: 'grab_go',      label: '🥡 Takeaway'  },
+    { val: 'ready_to_eat', label: '🏪 Ready-to-Eat' },
   ];
   return (
-    <div style={{ marginBottom: 14, display: 'flex', flexDirection: 'column', gap: 6 }}>
-      {/* Row 0: Mode filter */}
-      <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2 }}>
-        {modeOpts.map(s => (
-          <button key={s.val} onClick={() => !s.soon && setFilterMode(s.val)}
-            style={{
-              ...chip(filterMode === s.val),
-              opacity: s.soon ? 0.45 : 1, cursor: s.soon ? 'not-allowed' : 'pointer',
-              position: 'relative' as const,
-            }}
-          >
-            {s.label}{s.soon && <span style={{ fontSize: 8, marginLeft: 3, verticalAlign: 'super', color: FG3 }}>soon</span>}
-          </button>
-        ))}
-      </div>
-      {/* Row 1: Diet Match + Open Now + High Protein + Distance */}
-      <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2 }}>
-        {hasDietPrefs && (
-          <button
-            onClick={() => setFilterDietMatch(!filterDietMatch)}
-            style={{
-              ...chip(filterDietMatch),
-              border: `1px solid ${filterDietMatch ? 'rgba(30,127,92,0.45)' : BORDER}`,
-              background: filterDietMatch ? 'rgba(30,127,92,0.15)' : CARD,
-              color: filterDietMatch ? GREEN : FG3, fontWeight: 800,
-              boxShadow: filterDietMatch ? '0 0 0 1px rgba(30,127,92,0.20)' : 'none',
-            }}
-          >
-            {filterDietMatch ? '🔒' : '🥗'} My Diet
-          </button>
-        )}
-        <button onClick={() => setFilterOpenNow(!filterOpenNow)} style={chip(filterOpenNow)}>
-          🟢 Open Now
+    <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2, marginBottom: 12 }}>
+      {modeOpts.map(s => (
+        <button key={s.val} onClick={() => setFilterMode(s.val)} style={chip(filterMode === s.val)}>
+          {s.label}
         </button>
-        <button
-          onClick={() => setFilterHighProtein(!filterHighProtein)}
-          style={{ ...chip(filterHighProtein), border: `1px solid ${filterHighProtein ? 'rgba(46,111,184,0.35)' : BORDER}`, background: filterHighProtein ? 'rgba(46,111,184,0.10)' : CARD, color: filterHighProtein ? '#2E6FB8' : FG3 }}
-        >
-          💪 High Protein
-        </button>
-        {distOpts.map(d => (
-          <button key={String(d.val)} onClick={() => setFilterMaxDist(d.val)} style={chip(filterMaxDist === d.val)}>
-            {d.label}
-          </button>
-        ))}
-      </div>
-      {/* Row 2: Cuisine types */}
-      {cuisineOptions.length > 0 && (
-        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2 }}>
-          {['All', ...cuisineOptions].map(c => (
-            <button key={c} onClick={() => setFilterCuisine(c)} style={chip(filterCuisine === c)}>{c}</button>
-          ))}
-        </div>
-      )}
+      ))}
+      {/* Divider */}
+      <div style={{ width: 1, background: BORDER, flexShrink: 0, margin: '4px 2px' }} />
+      <button onClick={() => setFilterOpenNow(!filterOpenNow)} style={chip(filterOpenNow)}>
+        🟢 Open Now
+      </button>
+      <button onClick={() => setFilter500m(!filter500m)} style={chip(filter500m)}>
+        📍 &lt; 500m
+      </button>
     </div>
   );
 }
@@ -909,7 +852,7 @@ export default function EatPage() {
   const [filterMaxDist,     setFilterMaxDist    ] = useState<null|0.5|1|2>(1);
   const [filterCuisine,     setFilterCuisine    ] = useState('All');
   const [filterHighProtein, setFilterHighProtein] = useState(false);
-  const [filterDietMatch,   setFilterDietMatch  ] = useState(userFlags.length > 0);
+  const [filterDietMatch,   setFilterDietMatch  ] = useState(false);
   /* Show More — separate for GPS-nearby vs DB-only sections */
   const [showMoreNearby, setShowMoreNearby] = useState(false);
   const [showMoreDb,     setShowMoreDb    ] = useState(false);
@@ -917,7 +860,6 @@ export default function EatPage() {
   const switchTab = (t: EatTab) => {
     setTab(t); setQuery(''); setExpandedId(null); setShowMoreNearby(false); setShowMoreDb(false);
     setFilterMode('all'); setFilterOpenNow(false); setFilterMaxDist(1);
-    setFilterCuisine('All'); setFilterHighProtein(false);
   };
 
   const [places,   setPlaces  ] = useState<NearbyPlace[]>([]);
@@ -1025,7 +967,7 @@ export default function EatPage() {
     [tier1Places, tier2Places, tier3Places],
   );
 
-  const anyFilterActive = filterMode !== 'all' || filterOpenNow || filterMaxDist !== 1 || filterCuisine !== 'All' || filterHighProtein || (filterDietMatch && userFlags.length > 0);
+  const anyFilterActive = filterMode !== 'all' || filterOpenNow || filterMaxDist !== 1;
 
   const searchResults = useMemo(() => {
     if (!query.trim()) return null;
@@ -1096,9 +1038,21 @@ export default function EatPage() {
     if (filterHighProtein) filtered = filtered.filter(p => p.item.protein >= HIGH_PROTEIN_THRESHOLD);
     if (filterDietMatch && userFlags.length > 0)
       filtered = filtered.filter(p => userFlags.every(f => p.item.compatibleWith.includes(f)));
-    // Sort by macro match score against remaining macros
-    return filtered.sort((a, b) => macroMatchScore(b.item, macroRem) - macroMatchScore(a.item, macroRem));
-  }, [tier1Places, tier2Places, dbChains, filterHighProtein, filterDietMatch, userFlags, macroRem]);
+    // Sort pooled items by selected sort key
+    return filtered.sort((a, b) => {
+      if (sortBy === 'price')
+        return a.item.price - b.item.price;
+      if (sortBy === 'protein_dollar')
+        return proteinPerDollar(b.item.protein, b.item.price) - proteinPerDollar(a.item.protein, a.item.price);
+      if (sortBy === 'distance') {
+        if (a.distKm !== undefined && b.distKm !== undefined) return a.distKm - b.distKm;
+        if (a.distKm !== undefined) return -1;
+        if (b.distKm !== undefined) return  1;
+        return 0;
+      }
+      return macroMatchScore(b.item, macroRem) - macroMatchScore(a.item, macroRem);
+    });
+  }, [tier1Places, tier2Places, dbChains, filterHighProtein, filterDietMatch, userFlags, macroRem, sortBy]);
 
   /* Split pooled items into two sections:
      - nearbyItems: GPS-matched places with menu data (distKm defined)
@@ -1201,21 +1155,17 @@ export default function EatPage() {
           placeholder={tab === 'food' ? 'Search restaurants, chains, or dishes…' : 'Search recipes or ingredients…'}
         />
 
-        {!query && tab === 'food' && (
-          <SortBar active={sortBy} onChange={setSortBy} showDistance={locState === 'done'} recommendedKey={recommendedSort.key} />
-        )}
-
-        {/* Filter bar: Food tab */}
-        {tab === 'food' && !query && (
-          <FilterBar
-            filterMode={filterMode}               setFilterMode={setFilterMode}
-            filterOpenNow={filterOpenNow}         setFilterOpenNow={setFilterOpenNow}
-            filterMaxDist={filterMaxDist}         setFilterMaxDist={setFilterMaxDist}
-            filterCuisine={filterCuisine}         setFilterCuisine={setFilterCuisine}
-            filterHighProtein={filterHighProtein} setFilterHighProtein={setFilterHighProtein}
-            filterDietMatch={filterDietMatch}     setFilterDietMatch={setFilterDietMatch}
-            cuisineOptions={cuisineOptions}       hasDietPrefs={userFlags.length > 0}
-          />
+        {/* Sort + filter — always visible on food tab */}
+        {tab === 'food' && (
+          <>
+            <SortDropdown active={sortBy} onChange={setSortBy} showDistance={locState === 'done'} />
+            <FilterBar
+              filterMode={filterMode}       setFilterMode={setFilterMode}
+              filterOpenNow={filterOpenNow} setFilterOpenNow={setFilterOpenNow}
+              filter500m={filterMaxDist === 0.5}
+              setFilter500m={v => setFilterMaxDist(v ? 0.5 : 1)}
+            />
+          </>
         )}
 
 
