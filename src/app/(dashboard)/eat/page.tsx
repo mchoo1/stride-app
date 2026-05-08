@@ -232,95 +232,38 @@ function FilterBar({
   );
 }
 
-/* ── 4. MenuItemRow with swipe-to-log ── */
+/* ── 4. MenuItemRow — clean two-line row ── */
 function MenuItemRow({
-  item, userFlags, onLog, logged,
+  item, onLog, logged,
 }: {
-  item: SGMenuItem; userFlags: DietaryFlag[];
+  item: SGMenuItem; userFlags?: DietaryFlag[];
   onLog: (item: SGMenuItem) => void; logged: boolean;
 }) {
-  const [swipeX, setSwipeX]     = useState(0);
-  const touchStartX              = useRef(0);
-  const touchStartY              = useRef(0);
-  const isHorizSwipe             = useRef(false);
-  const THRESHOLD                = 65;
-
-  const fit = getDietFit(item.compatibleWith, userFlags);
-
-  const onTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current  = e.touches[0].clientX;
-    touchStartY.current  = e.touches[0].clientY;
-    isHorizSwipe.current = false;
-  };
-  const onTouchMove = (e: React.TouchEvent) => {
-    const dx = touchStartX.current - e.touches[0].clientX;
-    const dy = Math.abs(touchStartY.current - e.touches[0].clientY);
-    if (!isHorizSwipe.current && Math.abs(dx) > dy * 1.2 && dx > 4) isHorizSwipe.current = true;
-    if (isHorizSwipe.current && dx > 0) setSwipeX(Math.min(dx, THRESHOLD + 20));
-  };
-  const onTouchEnd = () => {
-    if (swipeX >= THRESHOLD) onLog(item);
-    setSwipeX(0);
-    isHorizSwipe.current = false;
-  };
-
-  const revealed = swipeX > 10;
-
+  const ppd  = proteinPerDollar(item.protein, item.price);
+  const ppdC = ppdColor(ppd);
   return (
-    <div style={{ position: 'relative', overflow: 'hidden', borderBottom: `1px solid ${BORDER}` }}>
-      {/* Green swipe-reveal background */}
-      <div style={{
-        position: 'absolute', right: 0, top: 0, bottom: 0, width: 80,
-        background: logged ? 'rgba(30,127,92,0.12)' : GREEN,
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
-        opacity: revealed ? 1 : 0, transition: 'opacity .15s',
-      }}>
-        <span style={{ fontSize: 16 }}>{logged ? '✓' : '⚡'}</span>
-        <span style={{ fontSize: 9, fontWeight: 800, color: logged ? GREEN : '#fff' }}>
-          {logged ? 'Logged' : 'Log'}
-        </span>
-      </div>
-
-      {/* Swipeable content row */}
-      <div
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px',
-          transform: `translateX(-${swipeX}px)`,
-          transition: swipeX === 0 ? 'transform .2s ease' : 'none',
-          background: CARD, position: 'relative', zIndex: 1,
-        }}
-      >
-        <span style={{ fontSize: 22, flexShrink: 0, width: 32, textAlign: 'center' }}>{item.emoji}</span>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 2 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: FG1 }}>{item.name}</span>
-            {item.isPopular && (
-              <span style={{ fontSize: 9, fontWeight: 800, color: '#C98A2E', background: 'rgba(242,169,59,0.10)', borderRadius: 5, padding: '1px 5px' }}>⭐ POPULAR</span>
-            )}
-          </div>
-          {item.description && (
-            <div style={{ fontSize: 11, color: FG3, marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.description}</div>
-          )}
-          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ fontSize: 13, fontWeight: 800, color: GREEN }}>${item.price.toFixed(2)}</span>
-            <span style={{ fontSize: 10, color: FG3 }}>{item.calories}kcal · P{item.protein}g · C{item.carbs}g · F{item.fat}g</span>
-            <PpdBadge protein={item.protein} price={item.price} />
-            <DietBadge fit={fit} />
-          </div>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: `1px solid ${BORDER}` }}>
+      <span style={{ fontSize: 22, flexShrink: 0, width: 28, textAlign: 'center' }}>{item.emoji}</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: FG1, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+          {item.name}{item.isPopular ? ' ⭐' : ''}
         </div>
-        <button onClick={() => onLog(item)} style={{
-          flexShrink: 0, borderRadius: 10, padding: '7px 10px',
-          fontSize: 11, fontWeight: 800, cursor: 'pointer',
-          border: `1px solid ${logged ? 'rgba(30,127,92,0.25)' : BORDER}`,
-          background: logged ? 'rgba(30,127,92,0.10)' : CARD,
-          color: logged ? GREEN : FG2, transition: 'all .2s',
-        }}>
-          {logged ? '✓' : '+ Log'}
-        </button>
+        <div style={{ fontSize: 11, color: FG3 }}>
+          <span style={{ color: GREEN, fontWeight: 700 }}>${item.price.toFixed(2)}</span>
+          {' · '}{item.calories} kcal · P{item.protein}g
+          {' · '}<span style={{ color: ppdC, fontWeight: 700 }}>{ppd}g/$</span>
+        </div>
       </div>
+      <button onClick={() => onLog(item)} style={{
+        flexShrink: 0, width: 30, height: 30, borderRadius: '50%',
+        border: `1px solid ${logged ? 'rgba(30,127,92,0.30)' : BORDER}`,
+        background: logged ? 'rgba(30,127,92,0.10)' : CARD,
+        color: logged ? GREEN : FG2, fontSize: 18, fontWeight: 700, cursor: 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .2s',
+        padding: 0,
+      }}>
+        {logged ? '✓' : '+'}
+      </button>
     </div>
   );
 }
@@ -701,58 +644,39 @@ function MenuItemCard({
   item, restaurant, distKm, userFlags, onLog, logged,
 }: {
   item: SGMenuItem; restaurant: SGRestaurant; distKm?: number;
-  userFlags: DietaryFlag[]; onLog: (item: SGMenuItem, r: SGRestaurant) => void; logged: boolean;
+  userFlags?: DietaryFlag[]; onLog: (item: SGMenuItem, r: SGRestaurant) => void; logged: boolean;
 }) {
-  const fit   = getDietFit(item.compatibleWith, userFlags);
-  const outlet = OUTLET_LABEL[restaurant.outletType] ?? OUTLET_LABEL.restaurant;
+  const ppd  = proteinPerDollar(item.protein, item.price);
+  const ppdC = ppdColor(ppd);
+  const distLabel = distKm !== undefined
+    ? (distKm < 1 ? `${Math.round(distKm * 1000)}m` : `${distKm.toFixed(1)}km`)
+    : undefined;
   return (
-    <div style={{
-      background: CARD, borderRadius: 18, border: `1px solid ${BORDER}`,
-      padding: '12px 14px', marginBottom: 8, boxShadow: SHADOW,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        {/* Emoji */}
-        <div style={{ width: 44, height: 44, borderRadius: 13, background: 'rgba(30,127,92,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
-          {item.emoji}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: `1px solid ${BORDER}` }}>
+      <span style={{ fontSize: 22, flexShrink: 0, width: 28, textAlign: 'center' }}>{item.emoji}</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: FG1, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+          {item.name}{item.isPopular ? ' ⭐' : ''}
         </div>
-        {/* Content */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          {/* Row 1: item name + badges */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 13, fontWeight: 800, color: FG1 }}>{item.name}</span>
-            {item.isPopular && (
-              <span style={{ fontSize: 9, fontWeight: 800, color: '#C98A2E', background: 'rgba(242,169,59,0.10)', borderRadius: 5, padding: '1px 5px' }}>⭐ POPULAR</span>
-            )}
-          </div>
-          {/* Row 2: restaurant + outlet type + distance */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 10, color: FG3 }}>{restaurant.emoji} {restaurant.name}</span>
-            <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 5, background: 'rgba(91,101,118,0.07)', border: `1px solid ${BORDER}`, color: FG3 }}>
-              {outlet.emoji} {outlet.label}
-            </span>
-            {distKm !== undefined && (
-              <span style={{ fontSize: 9, color: FG3 }}>📍 {distKm < 1 ? `${Math.round(distKm * 1000)}m` : `${distKm.toFixed(1)}km`}</span>
-            )}
-          </div>
-          {/* Row 3: price + macros + Protein/$ */}
-          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center', marginBottom: 4 }}>
-            <span style={{ fontSize: 13, fontWeight: 800, color: GREEN }}>${item.price.toFixed(2)}</span>
-            <span style={{ fontSize: 10, color: FG3 }}>{item.calories}kcal · P{item.protein}g · C{item.carbs}g · F{item.fat}g</span>
-            <PpdBadge protein={item.protein} price={item.price} />
-            <DietBadge fit={fit} />
-          </div>
+        <div style={{ fontSize: 11, color: FG3, marginBottom: 1 }}>
+          {restaurant.emoji} {restaurant.name}{distLabel ? ` · ${distLabel}` : ''}
         </div>
-        {/* Log button */}
-        <button onClick={() => onLog(item, restaurant)} style={{
-          flexShrink: 0, borderRadius: 10, padding: '8px 12px',
-          fontSize: 11, fontWeight: 800, cursor: 'pointer',
-          border: `1px solid ${logged ? 'rgba(30,127,92,0.25)' : BORDER}`,
-          background: logged ? 'rgba(30,127,92,0.10)' : CARD,
-          color: logged ? GREEN : FG2, transition: 'all .2s',
-        }}>
-          {logged ? '✓' : '+ Log'}
-        </button>
+        <div style={{ fontSize: 11, color: FG3 }}>
+          <span style={{ color: GREEN, fontWeight: 700 }}>${item.price.toFixed(2)}</span>
+          {' · '}{item.calories} kcal · P{item.protein}g
+          {' · '}<span style={{ color: ppdC, fontWeight: 700 }}>{ppd}g/$</span>
+        </div>
       </div>
+      <button onClick={() => onLog(item, restaurant)} style={{
+        flexShrink: 0, width: 30, height: 30, borderRadius: '50%',
+        border: `1px solid ${logged ? 'rgba(30,127,92,0.30)' : BORDER}`,
+        background: logged ? 'rgba(30,127,92,0.10)' : CARD,
+        color: logged ? GREEN : FG2, fontSize: 18, fontWeight: 700, cursor: 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .2s',
+        padding: 0,
+      }}>
+        {logged ? '✓' : '+'}
+      </button>
     </div>
   );
 }
@@ -774,6 +698,70 @@ function TierSectionHeader({
       <span style={{ fontSize: 10, fontWeight: 700, color: FG3, background: BORDER, borderRadius: 999, padding: '2px 8px' }}>
         {count}
       </span>
+    </div>
+  );
+}
+
+/* ── RestaurantGroup — grouped browse card ── */
+function RestaurantGroup({
+  restaurant, items, distKm, hours, mapsUrl, macroRem, onLog, logged,
+}: {
+  restaurant: SGRestaurant;
+  items: PooledItem[];
+  distKm?: number;
+  hours?: string;
+  mapsUrl?: string;
+  macroRem: { protein: number; calories: number; carbs: number };
+  onLog: (item: SGMenuItem, r: SGRestaurant) => void;
+  logged: Set<string>;
+}) {
+  const [showAll, setShowAll] = useState(false);
+  const PREVIEW = 3;
+
+  const sortedItems = useMemo(() =>
+    [...items].sort((a, b) => macroMatchScore(b.item, macroRem) - macroMatchScore(a.item, macroRem)),
+    [items, macroRem],
+  );
+
+  const visible  = showAll ? sortedItems : sortedItems.slice(0, PREVIEW);
+  const hasMore  = sortedItems.length > PREVIEW;
+  const distLabel = distKm !== undefined
+    ? (distKm < 1 ? `${Math.round(distKm * 1000)}m` : `${distKm.toFixed(1)}km`)
+    : undefined;
+
+  const metaStr = [distLabel, hours].filter(Boolean).join(' · ');
+
+  return (
+    <div style={{ background: CARD, borderRadius: 18, border: `1px solid ${BORDER}`, marginBottom: 10, overflow: 'hidden', boxShadow: SHADOW }}>
+      {/* Restaurant header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: `1px solid ${BORDER}`, background: 'rgba(15,27,45,0.02)' }}>
+        <span style={{ fontSize: 20, flexShrink: 0 }}>{restaurant.emoji}</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: FG1 }}>{restaurant.name}</div>
+          {metaStr && <div style={{ fontSize: 11, color: FG3, marginTop: 1 }}>{metaStr} · {items.length} items</div>}
+          {!metaStr && <div style={{ fontSize: 11, color: FG3, marginTop: 1 }}>{items.length} items</div>}
+        </div>
+        {mapsUrl && (
+          <a href={mapsUrl} target="_blank" rel="noopener noreferrer"
+            style={{ fontSize: 10, fontWeight: 700, color: '#2E6FB8', background: 'rgba(46,111,184,0.07)', border: '1px solid rgba(46,111,184,0.15)', borderRadius: 8, padding: '5px 9px', textDecoration: 'none', flexShrink: 0 }}>
+            Map
+          </a>
+        )}
+      </div>
+      {/* Items */}
+      {visible.map(p => (
+        <MenuItemRow key={p.item.id} item={p.item}
+          onLog={i => onLog(i, restaurant)} logged={logged.has(p.item.id)} />
+      ))}
+      {hasMore && (
+        <button onClick={() => setShowAll(!showAll)} style={{
+          width: '100%', padding: '9px 0', background: 'rgba(15,27,45,0.02)',
+          border: 'none', borderTop: `1px solid ${BORDER}`,
+          fontSize: 11, fontWeight: 700, color: FG3, cursor: 'pointer',
+        }}>
+          {showAll ? '▲ Show less' : `▼ ${sortedItems.length - PREVIEW} more items`}
+        </button>
+      )}
     </div>
   );
 }
@@ -853,12 +841,8 @@ export default function EatPage() {
   const [filterCuisine,     setFilterCuisine    ] = useState('All');
   const [filterHighProtein, setFilterHighProtein] = useState(false);
   const [filterDietMatch,   setFilterDietMatch  ] = useState(false);
-  /* Show More — separate for GPS-nearby vs DB-only sections */
-  const [showMoreNearby, setShowMoreNearby] = useState(false);
-  const [showMoreDb,     setShowMoreDb    ] = useState(false);
-
   const switchTab = (t: EatTab) => {
-    setTab(t); setQuery(''); setExpandedId(null); setShowMoreNearby(false); setShowMoreDb(false);
+    setTab(t); setQuery(''); setExpandedId(null);
     setFilterMode('all'); setFilterOpenNow(false); setFilterMaxDist(1);
   };
 
@@ -1062,18 +1046,34 @@ export default function EatPage() {
     });
   }, [tier1Places, tier2Places, dbChains, filterHighProtein, filterDietMatch, userFlags, macroRem, sortBy]);
 
-  /* Split pooled items into two sections:
-     - nearbyItems: GPS-matched places with menu data (distKm defined)
-     - dbItems:     DB chains not found by GPS (distKm undefined) */
-  const nearbyItems = pooledItems.filter(p => p.distKm !== undefined);
-  const dbItems     = pooledItems.filter(p => p.distKm === undefined);
+  /* Group pooled items by restaurant for the browse view.
+     Each restaurant appears once, at its nearest outlet distance. */
+  const restaurantGroups = useMemo(() => {
+    type RGroup = { restaurant: SGRestaurant; distKm?: number; hours?: string; mapsUrl?: string; items: PooledItem[] };
+    const groups = new Map<string, RGroup>();
+    for (const p of pooledItems) {
+      const key = p.restaurant.id;
+      if (!groups.has(key)) {
+        const gpsPlace = enrichedPlaces.find(ep => ep.dbMatch?.id === p.restaurant.id);
+        groups.set(key, {
+          restaurant: p.restaurant,
+          distKm: p.distKm,
+          hours: gpsPlace?.hours,
+          mapsUrl: gpsPlace?.mapsUrl,
+          items: [],
+        });
+      }
+      const g = groups.get(key)!;
+      g.items.push(p);
+      if (p.distKm !== undefined && (g.distKm === undefined || p.distKm < g.distKm)) {
+        g.distKm = p.distKm;
+      }
+    }
+    return Array.from(groups.values());
+  }, [pooledItems, enrichedPlaces]);
 
-  const NEARBY_INITIAL = 6;
-  const DB_INITIAL     = 6;
-  const visibleNearby   = showMoreNearby ? nearbyItems : nearbyItems.slice(0, NEARBY_INITIAL);
-  const visibleDb       = showMoreDb     ? dbItems     : dbItems.slice(0, DB_INITIAL);
-  const hasMoreNearby   = !showMoreNearby && nearbyItems.length > NEARBY_INITIAL;
-  const hasMoreDb       = !showMoreDb     && dbItems.length     > DB_INITIAL;
+  const nearbyGroups = restaurantGroups.filter(g => g.distKm !== undefined);
+  const dbGroups     = restaurantGroups.filter(g => g.distKm === undefined);
 
   /* Log helpers — use meal context mealType */
   const logMenuItem = useCallback((item: SGMenuItem, restaurant: SGRestaurant) => {
@@ -1108,46 +1108,24 @@ export default function EatPage() {
   return (
     <div style={{ background: BG, minHeight: '100vh' }}>
 
-      {/* Header */}
-      <div style={{ padding: '52px 20px 8px' }}>
-        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: FG3, textTransform: 'uppercase', margin: '0 0 4px' }}>
-          DISCOVER FOOD
-        </p>
-        <h1 style={{ color: FG1, fontSize: 40, lineHeight: 1, margin: '0 0 10px', fontFamily: "'Anton', Impact, sans-serif" }}>
-          WHAT TO EAT 🍜
-        </h1>
-
-        {/* 3. Meal time context banner */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10,
-          background: 'rgba(30,127,92,0.05)', border: '1px solid rgba(30,127,92,0.14)',
-          borderRadius: 14, padding: '9px 14px',
-        }}>
-          <span style={{ fontSize: 18 }}>{mealCtx.emoji}</span>
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 800, color: FG1 }}>{mealCtx.label}</div>
-            <div style={{ fontSize: 11, color: FG3 }}>{mealCtx.suggestion} · {remaining} kcal left</div>
+      {/* Compact header */}
+      <div style={{ padding: '52px 20px 10px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+        <div>
+          <h1 style={{ color: FG1, fontSize: 22, fontWeight: 800, margin: '0 0 4px', lineHeight: 1 }}>What to Eat 🍜</h1>
+          <div style={{ fontSize: 11, color: FG3, lineHeight: 1.4 }}>
+            {mealCtx.emoji} {mealCtx.label} · <span style={{ color: FG2, fontWeight: 700 }}>{remaining} kcal left</span>
+            {remProtein > 0 ? <> · <span style={{ color: '#2E6FB8', fontWeight: 700 }}>P{remProtein}g needed</span></> : null}
           </div>
         </div>
-
-        {/* Macro gaps + diet flags */}
-        <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
-          {remProtein > 0 && (
-            <div style={{ background: 'rgba(46,111,184,0.08)', border: '1px solid rgba(46,111,184,0.20)', borderRadius: 10, padding: '4px 10px', fontSize: 11, fontWeight: 700, color: '#2E6FB8' }}>
-              Need {remProtein}g protein
-            </div>
-          )}
-          {remCarbs > 0 && (
-            <div style={{ background: 'rgba(201,138,46,0.08)', border: '1px solid rgba(201,138,46,0.20)', borderRadius: 10, padding: '4px 10px', fontSize: 11, fontWeight: 700, color: '#C98A2E' }}>
-              Need {remCarbs}g carbs
-            </div>
-          )}
-          {userFlags.map(f => (
-            <div key={f} style={{ background: 'rgba(30,127,92,0.07)', border: '1px solid rgba(30,127,92,0.18)', borderRadius: 10, padding: '4px 10px', fontSize: 11, fontWeight: 700, color: GREEN }}>
-              {DIET_LABEL[f]}
-            </div>
-          ))}
-        </div>
+        {userFlags.length > 0 && (
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'flex-end', flexShrink: 0, maxWidth: 130 }}>
+            {userFlags.slice(0, 2).map(f => (
+              <span key={f} style={{ fontSize: 9, fontWeight: 700, padding: '3px 7px', background: 'rgba(30,127,92,0.07)', border: `1px solid rgba(30,127,92,0.15)`, borderRadius: 999, color: GREEN, whiteSpace: 'nowrap' as const }}>
+                {DIET_LABEL[f]}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       <div style={{ padding: '0 16px 100px' }}>
@@ -1269,98 +1247,49 @@ export default function EatPage() {
                 )}
 
                 {/* GPS summary line */}
-                {locState === 'done' && (
-                  <div style={{ fontSize: 12, fontWeight: 700, color: FG3, marginBottom: 4 }}>
-                    {enrichedPlaces.length} places nearby
-                    {' · '}<span style={{ color: GREEN }}>{enrichedPlaces.filter(p => p.tier === 'full_menu').length} full menu</span>
-                    {' · '}<span style={{ color: '#C98A2E' }}>{enrichedPlaces.filter(p => p.tier === 'estimated_menu').length} estimated</span>
-                    {anyFilterActive ? ` · ${sortedFilteredPlaces.length} shown` : ''}
+                {locState === 'done' && enrichedPlaces.length > 0 && (
+                  <div style={{ fontSize: 11, color: FG3, marginBottom: 8 }}>
+                    {enrichedPlaces.length} places found within {filterMaxDist ?? 1}km{anyFilterActive ? ` · ${nearbyGroups.length} shown` : ''}
                   </div>
                 )}
 
                 {/* ── Empty state when nothing at all ── */}
-                {pooledItems.length === 0 && tier3Places.length === 0 && (locState === 'done' || locState === 'error' || locState === 'no_key') && (
+                {restaurantGroups.length === 0 && tier3Places.length === 0 && (locState === 'done' || locState === 'error' || locState === 'no_key') && (
                   <EmptyState emoji="🍽️" title="No items match your filters" subtitle="Try adjusting the filters above." />
                 )}
 
-                {/* ════ CARD 1: Nearby menu items (GPS-matched, has DB data) ════ */}
-                {nearbyItems.length > 0 && (
-                  <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, marginBottom: 14, overflow: 'hidden', boxShadow: SHADOW }}>
-                    {/* Section header */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderBottom: `1px solid ${BORDER}`, background: 'rgba(30,127,92,0.03)' }}>
-                      <span style={{ fontSize: 14 }}>📍</span>
-                      <div style={{ flex: 1 }}>
-                        <span style={{ fontSize: 12, fontWeight: 800, color: GREEN }}>Nearby Menu</span>
-                        <span style={{ fontSize: 10, color: FG3, marginLeft: 6 }}>Verified prices &amp; macros</span>
-                      </div>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: GREEN, background: 'rgba(30,127,92,0.10)', borderRadius: 999, padding: '2px 8px' }}>
-                        {nearbyItems.length}
-                      </span>
+                {/* ════ Nearby restaurants (GPS-matched) ════ */}
+                {nearbyGroups.length > 0 && (
+                  <>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: FG3, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <span>📍</span> Nearby · <span style={{ color: GREEN }}>{nearbyGroups.length} place{nearbyGroups.length !== 1 ? 's' : ''}</span>
                     </div>
-                    {/* Item rows */}
-                    <div style={{ padding: '4px 0' }}>
-                      {visibleNearby.map(p => (
-                        <MenuItemCard
-                          key={`${p.restaurant.id}-${p.item.id}`}
-                          item={p.item} restaurant={p.restaurant} distKm={p.distKm}
-                          userFlags={userFlags} onLog={logMenuItem} logged={logged.has(p.item.id)}
-                        />
-                      ))}
-                    </div>
-                    {hasMoreNearby && (
-                      <button
-                        onClick={() => setShowMoreNearby(true)}
-                        style={{
-                          width: '100%', padding: '11px 0',
-                          background: 'rgba(15,27,45,0.025)', border: 'none',
-                          borderTop: `1px solid ${BORDER}`,
-                          fontSize: 11, fontWeight: 700, color: FG3, cursor: 'pointer',
-                        }}
-                      >
-                        ▼ Show {nearbyItems.length - NEARBY_INITIAL} more nearby items
-                      </button>
-                    )}
-                  </div>
+                    {nearbyGroups.map(g => (
+                      <RestaurantGroup
+                        key={g.restaurant.id}
+                        restaurant={g.restaurant} items={g.items}
+                        distKm={g.distKm} hours={g.hours} mapsUrl={g.mapsUrl}
+                        macroRem={macroRem} onLog={logMenuItem} logged={logged}
+                      />
+                    ))}
+                  </>
                 )}
 
-                {/* ════ CARD 2: DB chains not found nearby ════ */}
-                {dbItems.length > 0 && (
-                  <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, marginBottom: 14, overflow: 'hidden', boxShadow: SHADOW }}>
-                    {/* Section header */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderBottom: `1px solid ${BORDER}`, background: 'rgba(91,101,118,0.025)' }}>
-                      <span style={{ fontSize: 14 }}>📋</span>
-                      <div style={{ flex: 1 }}>
-                        <span style={{ fontSize: 12, fontWeight: 800, color: FG2 }}>More in Our Database</span>
-                        <span style={{ fontSize: 10, color: FG3, marginLeft: 6 }}>Not found nearby</span>
-                      </div>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: FG3, background: BORDER, borderRadius: 999, padding: '2px 8px' }}>
-                        {dbItems.length}
-                      </span>
+                {/* ════ More from our database (no GPS match) ════ */}
+                {dbGroups.length > 0 && (
+                  <>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: FG3, marginBottom: 8, marginTop: nearbyGroups.length > 0 ? 18 : 0, display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <span>📋</span> More options
                     </div>
-                    {/* Item rows */}
-                    <div style={{ padding: '4px 0' }}>
-                      {visibleDb.map(p => (
-                        <MenuItemCard
-                          key={`${p.restaurant.id}-${p.item.id}`}
-                          item={p.item} restaurant={p.restaurant}
-                          userFlags={userFlags} onLog={logMenuItem} logged={logged.has(p.item.id)}
-                        />
-                      ))}
-                    </div>
-                    {hasMoreDb && (
-                      <button
-                        onClick={() => setShowMoreDb(true)}
-                        style={{
-                          width: '100%', padding: '11px 0',
-                          background: 'rgba(15,27,45,0.025)', border: 'none',
-                          borderTop: `1px solid ${BORDER}`,
-                          fontSize: 11, fontWeight: 700, color: FG3, cursor: 'pointer',
-                        }}
-                      >
-                        ▼ Show {dbItems.length - DB_INITIAL} more options
-                      </button>
-                    )}
-                  </div>
+                    {dbGroups.map(g => (
+                      <RestaurantGroup
+                        key={g.restaurant.id}
+                        restaurant={g.restaurant} items={g.items}
+                        distKm={undefined} hours={undefined} mapsUrl={undefined}
+                        macroRem={macroRem} onLog={logMenuItem} logged={logged}
+                      />
+                    ))}
+                  </>
                 )}
 
                 {/* ════ CARD 3: GPS-only places with no DB match ════ */}
