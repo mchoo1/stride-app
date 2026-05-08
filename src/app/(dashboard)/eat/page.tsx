@@ -1033,8 +1033,16 @@ export default function EatPage() {
         items.push({ item, restaurant: r, distKm: undefined, tier: r.tier });
       });
     });
+    // Deduplicate: same chain can have multiple GPS outlets nearby — keep only the nearest instance per item
+    const seen = new Map<string, PooledItem>();
+    for (const p of items) {
+      const existing = seen.get(p.item.id);
+      if (!existing || (p.distKm ?? 999) < (existing.distKm ?? 999)) {
+        seen.set(p.item.id, p);
+      }
+    }
     // Apply item-level filters
-    let filtered = items;
+    let filtered = Array.from(seen.values());
     if (filterHighProtein) filtered = filtered.filter(p => p.item.protein >= HIGH_PROTEIN_THRESHOLD);
     if (filterDietMatch && userFlags.length > 0)
       filtered = filtered.filter(p => userFlags.every(f => p.item.compatibleWith.includes(f)));
