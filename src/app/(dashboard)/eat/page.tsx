@@ -652,7 +652,7 @@ function MenuItemCard({
     ? (distKm < 1 ? `${Math.round(distKm * 1000)}m` : `${distKm.toFixed(1)}km`)
     : undefined;
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: `1px solid ${BORDER}` }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: `1px solid ${BORDER}` }}>
       <span style={{ fontSize: 22, flexShrink: 0, width: 28, textAlign: 'center' }}>{item.emoji}</span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: FG1, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
@@ -844,6 +844,7 @@ export default function EatPage() {
   const switchTab = (t: EatTab) => {
     setTab(t); setQuery(''); setExpandedId(null);
     setFilterMode('all'); setFilterOpenNow(false); setFilterMaxDist(1);
+    setShowMoreNearby(false); setShowMoreDb(false);
   };
 
   const [places,   setPlaces  ] = useState<NearbyPlace[]>([]);
@@ -1075,6 +1076,17 @@ export default function EatPage() {
   const nearbyGroups = restaurantGroups.filter(g => g.distKm !== undefined);
   const dbGroups     = restaurantGroups.filter(g => g.distKm === undefined);
 
+  /* Flat item lists for the browse feed */
+  const nearbyItems = pooledItems.filter(p => p.distKm !== undefined);
+  const dbItems     = pooledItems.filter(p => p.distKm === undefined);
+  const ITEM_INITIAL           = 8;
+  const [showMoreNearby, setShowMoreNearby] = useState(false);
+  const [showMoreDb,     setShowMoreDb    ] = useState(false);
+  const visibleNearby = showMoreNearby ? nearbyItems : nearbyItems.slice(0, ITEM_INITIAL);
+  const visibleDb     = showMoreDb     ? dbItems     : dbItems.slice(0, ITEM_INITIAL);
+  const hasMoreNearby = nearbyItems.length > ITEM_INITIAL && !showMoreNearby;
+  const hasMoreDb     = dbItems.length     > ITEM_INITIAL && !showMoreDb;
+
   /* Log helpers — use meal context mealType */
   const logMenuItem = useCallback((item: SGMenuItem, restaurant: SGRestaurant) => {
     store.addFoodEntry({
@@ -1158,69 +1170,50 @@ export default function EatPage() {
         {/* ══ EAT OUT TAB ══ */}
         {tab === 'food' && (
           <>
-            {/* ── SEARCH MODE ── */}
-            {query && searchResults?.type === 'food' && (
-              <>
-                {/* Restaurant-name search → show restaurant card with full menu */}
-                {isRestaurantSearch && searchResults.restaurants.length > 0 && (
-                  <>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: FG3, marginBottom: 10 }}>
-                      {searchResults.restaurants.length} restaurant{searchResults.restaurants.length !== 1 ? 's' : ''} found
-                    </div>
-                    {searchResults.restaurants.map(r => (
-                      <MenuFirstGroup key={r.id} restaurant={r}
-                        userFlags={userFlags} remaining={macroRem} onLog={logMenuItem} logged={logged}
-                        badge={<span style={{ fontSize: 9, fontWeight: 800, background: 'rgba(46,111,184,0.10)', color: '#2E6FB8', borderRadius: 5, padding: '1px 5px' }}>📋 IN DATABASE</span>}
+            {/* ── SEARCH MODE — always flat item list ── */}
+            {query && searchResults?.type === 'food' && (() => {
+              // Flatten: restaurant search → all menu items from matched restaurants
+              //          dish search → matched items directly
+              const flat: { restaurant: SGRestaurant; item: SGMenuItem }[] = isRestaurantSearch
+                ? searchResults.restaurants.flatMap(r => r.menu.map(item => ({ restaurant: r, item })))
+                : searchResults.items.map(({ restaurant, item }) => ({ restaurant, item }));
+
+              const sorted = [...flat].sort((a, b) => macroMatchScore(b.item, macroRem) - macroMatchScore(a.item, macroRem));
+
+              if (sorted.length === 0) {
+                return query.trim().length > 0 ? (
+                  <div style={{ background: CARD, borderRadius: 18, border: `1px solid ${BORDER}`, padding: '28px 20px', textAlign: 'center', boxShadow: SHADOW }}>
+                    <div style={{ fontSize: 36, marginBottom: 10 }}>🔍</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: FG2, marginBottom: 8 }}>Not in our database yet</div>
+                    <a
+                      href={`https://www.google.com/maps/search/${encodeURIComponent(query)}+Singapore`}
+                      target="_blank" rel="noopener noreferrer"
+                      style={{ display: 'inline-block', background: 'rgba(46,111,184,0.08)', color: '#2E6FB8', borderRadius: 12, padding: '10px 16px', fontSize: 13, fontWeight: 700, textDecoration: 'none', marginBottom: 8 }}
+                    >
+                      📍 Search on Google Maps →
+                    </a>
+                    <div style={{ fontSize: 11, color: FG3 }}>Opens Google Maps for nearby options</div>
+                  </div>
+                ) : null;
+              }
+
+              return (
+                <>
+                  <div style={{ fontSize: 11, color: FG3, marginBottom: 8 }}>
+                    {sorted.length} item{sorted.length !== 1 ? 's' : ''} found
+                  </div>
+                  <div style={{ background: CARD, borderRadius: 18, border: `1px solid ${BORDER}`, overflow: 'hidden', boxShadow: SHADOW }}>
+                    {sorted.map(({ restaurant, item }) => (
+                      <MenuItemCard
+                        key={`${restaurant.id}-${item.id}`}
+                        item={item} restaurant={restaurant}
+                        onLog={logMenuItem} logged={logged.has(item.id)}
                       />
                     ))}
-                  </>
-                )}
-
-                {/* Dish/macro search → flat item cards ranked by macro match */}
-                {!isRestaurantSearch && (
-                  <>
-                    {searchResults.items.length > 0 && (
-                      <>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: FG3, marginBottom: 10 }}>
-                          {searchResults.items.length} item{searchResults.items.length !== 1 ? 's' : ''} found
-                        </div>
-                        {[...searchResults.items]
-                          .sort((a, b) => macroMatchScore(b.item, macroRem) - macroMatchScore(a.item, macroRem))
-                          .map(({ restaurant, item }) => (
-                            <MenuItemCard
-                              key={`${restaurant.id}-${item.id}`}
-                              item={item} restaurant={restaurant}
-                              userFlags={userFlags}
-                              onLog={logMenuItem}
-                              logged={logged.has(item.id)}
-                            />
-                          ))}
-                      </>
-                    )}
-                  </>
-                )}
-
-                {/* No results */}
-                {searchResults.restaurants.length === 0 && searchResults.items.length === 0 && (
-                  query.trim().length > 0 ? (
-                    <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, padding: '28px 20px', textAlign: 'center', boxShadow: SHADOW }}>
-                      <div style={{ fontSize: 40, marginBottom: 10 }}>🔍</div>
-                      <div style={{ fontSize: 15, fontWeight: 700, color: FG2, marginBottom: 8 }}>Not in our database yet</div>
-                      <a
-                        href={`https://www.google.com/maps/search/${encodeURIComponent(query)}+Singapore`}
-                        target="_blank" rel="noopener noreferrer"
-                        style={{ display: 'inline-block', background: 'rgba(46,111,184,0.08)', color: '#2E6FB8', borderRadius: 12, padding: '10px 16px', fontSize: 13, fontWeight: 700, textDecoration: 'none', marginBottom: 8 }}
-                      >
-                        📍 Search on Google Maps →
-                      </a>
-                      <div style={{ fontSize: 11, color: '#8B95A7' }}>Opens Google Maps for nearby options</div>
-                    </div>
-                  ) : (
-                    <EmptyState emoji="🔍" title="No results" subtitle={`"${query}" not found yet. Try a dish name or restaurant.`} />
-                  )
-                )}
-              </>
-            )}
+                  </div>
+                </>
+              );
+            })()}
 
             {/* ── BROWSE MODE (no query) ── */}
             {!query && (
@@ -1254,41 +1247,61 @@ export default function EatPage() {
                 )}
 
                 {/* ── Empty state when nothing at all ── */}
-                {restaurantGroups.length === 0 && tier3Places.length === 0 && (locState === 'done' || locState === 'error' || locState === 'no_key') && (
+                {pooledItems.length === 0 && tier3Places.length === 0 && (locState === 'done' || locState === 'error' || locState === 'no_key') && (
                   <EmptyState emoji="🍽️" title="No items match your filters" subtitle="Try adjusting the filters above." />
                 )}
 
-                {/* ════ Nearby restaurants (GPS-matched) ════ */}
-                {nearbyGroups.length > 0 && (
+                {/* ════ Nearby menu items (flat, sorted) ════ */}
+                {nearbyItems.length > 0 && (
                   <>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: FG3, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
-                      <span>📍</span> Nearby · <span style={{ color: GREEN }}>{nearbyGroups.length} place{nearbyGroups.length !== 1 ? 's' : ''}</span>
+                    <div style={{ fontSize: 11, color: FG3, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <span>📍</span> Nearby · <span style={{ color: GREEN, fontWeight: 700 }}>{nearbyGroups.length} place{nearbyGroups.length !== 1 ? 's' : ''}</span>
                     </div>
-                    {nearbyGroups.map(g => (
-                      <RestaurantGroup
-                        key={g.restaurant.id}
-                        restaurant={g.restaurant} items={g.items}
-                        distKm={g.distKm} hours={g.hours} mapsUrl={g.mapsUrl}
-                        macroRem={macroRem} onLog={logMenuItem} logged={logged}
-                      />
-                    ))}
+                    <div style={{ background: CARD, borderRadius: 18, border: `1px solid ${BORDER}`, overflow: 'hidden', boxShadow: SHADOW, marginBottom: 14 }}>
+                      {visibleNearby.map(p => (
+                        <MenuItemCard
+                          key={`${p.restaurant.id}-${p.item.id}`}
+                          item={p.item} restaurant={p.restaurant} distKm={p.distKm}
+                          onLog={logMenuItem} logged={logged.has(p.item.id)}
+                        />
+                      ))}
+                      {hasMoreNearby && (
+                        <button onClick={() => setShowMoreNearby(true)} style={{
+                          width: '100%', padding: '11px 0', background: 'rgba(15,27,45,0.02)',
+                          border: 'none', borderTop: `1px solid ${BORDER}`,
+                          fontSize: 11, fontWeight: 700, color: FG3, cursor: 'pointer',
+                        }}>
+                          ▼ {nearbyItems.length - ITEM_INITIAL} more items
+                        </button>
+                      )}
+                    </div>
                   </>
                 )}
 
-                {/* ════ More from our database (no GPS match) ════ */}
-                {dbGroups.length > 0 && (
+                {/* ════ More from our database (flat, sorted) ════ */}
+                {dbItems.length > 0 && (
                   <>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: FG3, marginBottom: 8, marginTop: nearbyGroups.length > 0 ? 18 : 0, display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <div style={{ fontSize: 11, color: FG3, marginBottom: 8, marginTop: nearbyItems.length > 0 ? 4 : 0, display: 'flex', alignItems: 'center', gap: 5 }}>
                       <span>📋</span> More options
                     </div>
-                    {dbGroups.map(g => (
-                      <RestaurantGroup
-                        key={g.restaurant.id}
-                        restaurant={g.restaurant} items={g.items}
-                        distKm={undefined} hours={undefined} mapsUrl={undefined}
-                        macroRem={macroRem} onLog={logMenuItem} logged={logged}
-                      />
-                    ))}
+                    <div style={{ background: CARD, borderRadius: 18, border: `1px solid ${BORDER}`, overflow: 'hidden', boxShadow: SHADOW, marginBottom: 14 }}>
+                      {visibleDb.map(p => (
+                        <MenuItemCard
+                          key={`${p.restaurant.id}-${p.item.id}`}
+                          item={p.item} restaurant={p.restaurant}
+                          onLog={logMenuItem} logged={logged.has(p.item.id)}
+                        />
+                      ))}
+                      {hasMoreDb && (
+                        <button onClick={() => setShowMoreDb(true)} style={{
+                          width: '100%', padding: '11px 0', background: 'rgba(15,27,45,0.02)',
+                          border: 'none', borderTop: `1px solid ${BORDER}`,
+                          fontSize: 11, fontWeight: 700, color: FG3, cursor: 'pointer',
+                        }}>
+                          ▼ {dbItems.length - ITEM_INITIAL} more options
+                        </button>
+                      )}
+                    </div>
                   </>
                 )}
 
