@@ -620,48 +620,6 @@ export default function MePage() {
               {saved ? '✓ Saved!' : 'Save Settings'}
             </button>
 
-            {/* ── Stride Pro teaser ── */}
-            <div style={{
-              borderRadius: 18, padding: '18px 18px 16px',
-              marginBottom: 12,
-              background: 'linear-gradient(135deg, #0F1B2D 0%, #1E3A5F 100%)',
-              position: 'relative', overflow: 'hidden',
-            }}>
-              <div style={{ position: 'absolute', top: -20, right: -20, fontSize: 80, opacity: 0.07, pointerEvents: 'none' }}>⚡</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <span style={{ fontSize: 18 }}>⚡</span>
-                <span style={{ fontSize: 15, fontWeight: 800, color: '#fff' }}>Stride Pro</span>
-                <span style={{ fontSize: 10, fontWeight: 700, background: 'rgba(242,169,59,0.25)', color: '#F2A93B', border: '1px solid rgba(242,169,59,0.35)', borderRadius: 6, padding: '2px 7px' }}>COMING SOON</span>
-              </div>
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', margin: '0 0 12px', lineHeight: 1.5 }}>
-                Unlock advanced features designed for serious progress
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
-                {[
-                  { icon: '🤖', label: 'AI Nutrition Coach — personalised daily advice' },
-                  { icon: '📅', label: 'Weekly Meal Planner — auto-built to hit your macros' },
-                  { icon: '⌚', label: 'Apple Health & Google Fit sync' },
-                  { icon: '🛵', label: 'GrabFood & foodpanda macro-first ordering' },
-                  { icon: '📊', label: 'Advanced analytics — trend insights & predictions' },
-                ].map(({ icon, label }) => (
-                  <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 14, flexShrink: 0 }}>{icon}</span>
-                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.80)' }}>{label}</span>
-                  </div>
-                ))}
-              </div>
-              <a href={`mailto:hello@strideapp.sg?subject=Stride Pro Early Access&body=Hi! I'd like early access to Stride Pro. My account: ${store.profile?.email ?? ''}`}
-                style={{
-                  display: 'block', textAlign: 'center', textDecoration: 'none',
-                  background: '#F2A93B', color: '#0F1B2D',
-                  borderRadius: 12, padding: '11px 0',
-                  fontSize: 13, fontWeight: 800,
-                  boxShadow: '0 4px 14px rgba(242,169,59,0.35)',
-                }}>
-                Get Early Access →
-              </a>
-            </div>
-
             <div style={cardStyle}>
               <div style={{ fontSize: 14, fontWeight: 800, color: '#0F1B2D', marginBottom: 12 }}>Account</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
