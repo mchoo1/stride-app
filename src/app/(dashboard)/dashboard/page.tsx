@@ -1,7 +1,8 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useStrideStore } from '@/lib/store';
+import { track, Events } from '@/lib/analytics';
 import { proteinPerDollar, ppdColor } from '@/lib/sgFoodDb';
 
 // ── Design tokens ──────────────────────────────────────────────────────────
@@ -271,6 +272,83 @@ function NearbyEatsCard() {
 }
 
 // ── Main page ──────────────────────────────────────────────────────────────
+/* ── First-visit onboarding modal (#1 Persona UX) ── */
+function OnboardingModal({ name, goalType, targetCalories, onDismiss }: {
+  name: string; goalType: string; targetCalories: number; onDismiss: () => void;
+}) {
+  const [step, setStep] = useState(0);
+  const goalLabel = goalType === 'weight_loss' ? '🔥 Weight Loss' : goalType === 'muscle_gain' ? '💪 Muscle Gain' : '⚖️ Maintenance';
+  const steps = [
+    {
+      emoji: '👋',
+      title: `Welcome to Stride${name ? `, ${name.split(' ')[0]}` : ''}!`,
+      body: `Your goal: ${goalLabel} · ${targetCalories} kcal/day. Stride helps you hit your macro targets while eating food you actually enjoy in Singapore.`,
+      cta: 'Show me how →',
+    },
+    {
+      emoji: '🍜',
+      title: 'Find the best meal near you',
+      body: 'Tap Eat to browse nearby restaurants ranked by Protein/$. Filter by diet, distance, and macro targets. Tap any item to see full macros + order links.',
+      cta: 'Got it →',
+    },
+    {
+      emoji: '📸',
+      title: 'Log food in seconds',
+      body: 'Use the camera to scan any dish — our AI identifies it and fills in the macros automatically. Or search and log manually from 500+ SG food items.',
+      cta: "Let's start →",
+    },
+  ];
+  const s = steps[step];
+  const isLast = step === steps.length - 1;
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 9000,
+      background: 'rgba(15,27,45,0.55)', backdropFilter: 'blur(4px)',
+      display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+    }} onClick={e => e.target === e.currentTarget && onDismiss()}>
+      <div style={{
+        background: '#fff', borderRadius: '24px 24px 0 0',
+        padding: '28px 24px 40px', width: '100%', maxWidth: 480,
+        animation: 'slideUp .28s cubic-bezier(0.22,1,0.36,1)',
+      }}>
+        {/* Progress dots */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 22 }}>
+          {steps.map((_, i) => (
+            <div key={i} style={{
+              width: i === step ? 20 : 6, height: 6, borderRadius: 3,
+              background: i === step ? T.green : T.border, transition: 'all .2s',
+            }} />
+          ))}
+        </div>
+
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+          <div style={{ fontSize: 52, marginBottom: 14 }}>{s.emoji}</div>
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: T.textPrimary, margin: '0 0 10px', lineHeight: 1.25 }}>{s.title}</h2>
+          <p style={{ fontSize: 14, color: T.textSecondary, lineHeight: 1.6, margin: 0 }}>{s.body}</p>
+        </div>
+
+        <button onClick={() => isLast ? onDismiss() : setStep(step + 1)} style={{
+          width: '100%', padding: '15px 0', borderRadius: 16, border: 'none',
+          background: T.green, color: '#fff', fontSize: 15, fontWeight: 800,
+          cursor: 'pointer', boxShadow: '0 4px 16px rgba(30,127,92,0.30)',
+        }}>
+          {s.cta}
+        </button>
+        {!isLast && (
+          <button onClick={onDismiss} style={{
+            width: '100%', padding: '10px 0', background: 'none', border: 'none',
+            fontSize: 13, color: T.textMuted, cursor: 'pointer', marginTop: 4,
+          }}>
+            Skip intro
+          </button>
+        )}
+      </div>
+      <style>{`@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }`}</style>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const store   = useStrideStore();
   const profile = store.profile;
@@ -278,8 +356,22 @@ export default function DashboardPage() {
   const burned  = store.getTodayCaloriesBurned();
   const streak  = store.streak;
 
-  // ── On mount: pull live data from Firestore ────────────────────────────
+  // ── First-visit onboarding ─────────────────────────────────────────────
+  const [showOnboarding, setShowOnboarding] = useState(false);
   useEffect(() => {
+    try {
+      if (!localStorage.getItem('stride_welcomed')) setShowOnboarding(true);
+    } catch { /* localStorage unavailable */ }
+  }, []);
+  const dismissOnboarding = () => {
+    try { localStorage.setItem('stride_welcomed', '1'); } catch { /* ignore */ }
+    track(Events.ONBOARDING_COMPLETED);
+    setShowOnboarding(false);
+  };
+
+  // ── On mount: pull live data from Firestore + track page view ─────────
+  useEffect(() => {
+    track(Events.DASHBOARD_VIEWED);
     store.loadTodayFromServer().catch(() => {/* offline — local state serves fine */});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -292,6 +384,16 @@ export default function DashboardPage() {
 
   return (
     <div style={{ background: T.canvas, minHeight: '100vh' }}>
+
+      {/* ── First-visit onboarding modal ── */}
+      {showOnboarding && profile && (
+        <OnboardingModal
+          name={profile.name ?? ''}
+          goalType={profile.goalType ?? 'maintenance'}
+          targetCalories={profile.targetCalories ?? 2000}
+          onDismiss={dismissOnboarding}
+        />
+      )}
 
       {/* ── Header ── */}
       <div style={{

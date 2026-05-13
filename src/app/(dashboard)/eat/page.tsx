@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useStrideStore } from '@/lib/store';
+import { track, Events } from '@/lib/analytics';
 import {
   matchRestaurant, searchAll, searchRecipes, getMenuCategories,
   macroMatchScore, proteinPerDollar, ppdColor, filterItemsByDiet,
@@ -193,16 +194,21 @@ function SortDropdown({ active, onChange, showDistance }: {
   );
 }
 
-/* ── 2. FilterBar — single scrollable row ── */
+/* ── 2. FilterBar — chips row + macro sliders ── */
 function FilterBar({
   filterMode, setFilterMode,
   filterOpenNow, setFilterOpenNow,
   filter500m, setFilter500m,
+  filterMinProtein, setFilterMinProtein,
+  filterMaxCalories, setFilterMaxCalories,
 }: {
   filterMode: FilterMode; setFilterMode: (v: FilterMode) => void;
   filterOpenNow: boolean; setFilterOpenNow: (v: boolean) => void;
   filter500m: boolean;    setFilter500m: (v: boolean) => void;
+  filterMinProtein: number;   setFilterMinProtein: (v: number) => void;
+  filterMaxCalories: number;  setFilterMaxCalories: (v: number) => void;
 }) {
+  const [showSliders, setShowSliders] = useState(false);
   const chip = (active: boolean, accent?: string): React.CSSProperties => ({
     flexShrink: 0, borderRadius: 999, padding: '5px 12px',
     fontSize: 11, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' as const,
@@ -217,21 +223,67 @@ function FilterBar({
     { val: 'grab_go',      label: '🥡 Takeaway'  },
     { val: 'ready_to_eat', label: '🏪 Ready-to-Eat' },
   ];
+  const macroActive = filterMinProtein > 0 || filterMaxCalories > 0;
   return (
-    <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2, marginBottom: 12 }}>
-      {modeOpts.map(s => (
-        <button key={s.val} onClick={() => setFilterMode(s.val)} style={chip(filterMode === s.val)}>
-          {s.label}
+    <div style={{ marginBottom: 12 }}>
+      {/* Chip row */}
+      <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2 }}>
+        {modeOpts.map(s => (
+          <button key={s.val} onClick={() => setFilterMode(s.val)} style={chip(filterMode === s.val)}>
+            {s.label}
+          </button>
+        ))}
+        <div style={{ width: 1, background: BORDER, flexShrink: 0, margin: '4px 2px' }} />
+        <button onClick={() => setFilterOpenNow(!filterOpenNow)} style={chip(filterOpenNow)}>🟢 Open Now</button>
+        <button onClick={() => setFilter500m(!filter500m)} style={chip(filter500m)}>📍 &lt; 500m</button>
+        <button onClick={() => setShowSliders(!showSliders)} style={chip(showSliders || macroActive, macroActive ? '#2E6FB8' : undefined)}>
+          {macroActive ? '🎛 Filtered' : '🎛 Macros'}
         </button>
-      ))}
-      {/* Divider */}
-      <div style={{ width: 1, background: BORDER, flexShrink: 0, margin: '4px 2px' }} />
-      <button onClick={() => setFilterOpenNow(!filterOpenNow)} style={chip(filterOpenNow)}>
-        🟢 Open Now
-      </button>
-      <button onClick={() => setFilter500m(!filter500m)} style={chip(filter500m)}>
-        📍 &lt; 500m
-      </button>
+      </div>
+
+      {/* Macro sliders (expandable) */}
+      {showSliders && (
+        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: '12px 14px', marginTop: 8, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {/* Min protein */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: FG2 }}>Min Protein</span>
+              <span style={{ fontSize: 11, fontWeight: 800, color: filterMinProtein > 0 ? GREEN : FG3 }}>
+                {filterMinProtein > 0 ? `≥ ${filterMinProtein}g` : 'Any'}
+              </span>
+            </div>
+            <input type="range" min={0} max={50} step={5} value={filterMinProtein}
+              onChange={e => setFilterMinProtein(Number(e.target.value))}
+              style={{ width: '100%', accentColor: GREEN, cursor: 'pointer' }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: FG3, marginTop: 2 }}>
+              <span>0g</span><span>10g</span><span>20g</span><span>30g</span><span>40g</span><span>50g</span>
+            </div>
+          </div>
+          {/* Max calories */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: FG2 }}>Max Calories</span>
+              <span style={{ fontSize: 11, fontWeight: 800, color: filterMaxCalories > 0 ? '#D04E36' : FG3 }}>
+                {filterMaxCalories > 0 ? `≤ ${filterMaxCalories} kcal` : 'Any'}
+              </span>
+            </div>
+            <input type="range" min={0} max={1200} step={50} value={filterMaxCalories}
+              onChange={e => setFilterMaxCalories(Number(e.target.value))}
+              style={{ width: '100%', accentColor: '#D04E36', cursor: 'pointer' }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: FG3, marginTop: 2 }}>
+              <span>Any</span><span>300</span><span>600</span><span>900</span><span>1200</span>
+            </div>
+          </div>
+          {macroActive && (
+            <button onClick={() => { setFilterMinProtein(0); setFilterMaxCalories(0); }} style={{
+              background: 'rgba(208,78,54,0.07)', border: '1px solid rgba(208,78,54,0.18)',
+              borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, color: '#D04E36', cursor: 'pointer',
+            }}>Clear macro filters</button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -644,52 +696,110 @@ function RecipeCard({ recipe, userFlags, onLog, logged }: {
   );
 }
 
-/* ── MenuItemCard — flat item card for pooled browse view ── */
-const OUTLET_LABEL: Record<OutletType, { label: string; emoji: string }> = {
-  restaurant:   { label: 'Restaurant',   emoji: '🍽️' },
-  hawker:       { label: 'Hawker',       emoji: '🍜' },
-  grab_go:      { label: 'Takeaway',     emoji: '🥡' },
-  ready_to_eat: { label: 'Ready-to-Eat', emoji: '🏪' },
-};
-
+/* ── MenuItemCard — flat item card for pooled browse view, tappable for detail ── */
 function MenuItemCard({
-  item, restaurant, distKm, userFlags, onLog, logged,
+  item, restaurant, distKm, userFlags, onLog, logged, isExpanded, onToggle,
 }: {
   item: SGMenuItem; restaurant: SGRestaurant; distKm?: number;
-  userFlags?: DietaryFlag[]; onLog: (item: SGMenuItem, r: SGRestaurant) => void; logged: boolean;
+  userFlags?: DietaryFlag[]; onLog: (item: SGMenuItem, r: SGRestaurant) => void;
+  logged: boolean; isExpanded: boolean; onToggle: () => void;
 }) {
-  const ppd  = proteinPerDollar(item.protein, item.price);
-  const ppdC = ppdColor(ppd);
+  const ppd      = proteinPerDollar(item.protein, item.price);
+  const ppdC     = ppdColor(ppd);
+  const dietFit  = (userFlags?.length && item.compatibleWith)
+    ? getDietFit(item.compatibleWith, userFlags)
+    : 'neutral' as DietFit;
   const distLabel = distKm !== undefined
     ? (distKm < 1 ? `${Math.round(distKm * 1000)}m` : `${distKm.toFixed(1)}km`)
     : undefined;
+
+  const grabUrl  = `https://food.grab.com/sg/en/search?query=${encodeURIComponent(restaurant.name)}`;
+  const pandaUrl = `https://www.foodpanda.sg/search?q=${encodeURIComponent(restaurant.name)}`;
+  const mapsUrl  = `https://www.google.com/maps/search/${encodeURIComponent(restaurant.name + ' Singapore')}`;
+
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: `1px solid ${BORDER}` }}>
-      <span style={{ fontSize: 22, flexShrink: 0, width: 28, textAlign: 'center' }}>{item.emoji}</span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: FG1, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
-          {item.name}{item.isPopular ? ' ⭐' : ''}
+    <div style={{ borderBottom: `1px solid ${BORDER}` }}>
+      {/* Compact row — tap to expand */}
+      <div role="button" onClick={onToggle} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', cursor: 'pointer', WebkitTapHighlightColor: 'transparent' }}>
+        <span style={{ fontSize: 22, flexShrink: 0, width: 28, textAlign: 'center' }}>{item.emoji}</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: FG1, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+            {item.name}{item.isPopular ? ' ⭐' : ''}
+          </div>
+          <div style={{ fontSize: 11, color: FG3, marginBottom: 1 }}>
+            {restaurant.emoji} {restaurant.name}{distLabel ? ` · 📍 ${distLabel}` : ''}
+          </div>
+          <div style={{ fontSize: 11, color: FG3 }}>
+            <span style={{ color: GREEN, fontWeight: 700 }}>${item.price.toFixed(2)}</span>
+            {' · '}{item.calories} kcal · P{item.protein}g
+            {' · '}<span style={{ color: ppdC, fontWeight: 700 }}>{ppd}g/$</span>
+          </div>
         </div>
-        <div style={{ fontSize: 11, color: FG3, marginBottom: 1 }}>
-          {restaurant.emoji} {restaurant.name}{distLabel ? ` · ${distLabel}` : ''}
-        </div>
-        <div style={{ fontSize: 11, color: FG3 }}>
-          <span style={{ color: GREEN, fontWeight: 700 }}>${item.price.toFixed(2)}</span>
-          {' · '}{item.calories} kcal · P{item.protein}g
-          {' · '}<span style={{ color: ppdC, fontWeight: 700 }}>{ppd}g/$</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          <span style={{ fontSize: 10, color: isExpanded ? GREEN : FG3, transition: 'color .15s' }}>
+            {isExpanded ? '▲' : '▼'}
+          </span>
+          <button
+            onClick={e => { e.stopPropagation(); onLog(item, restaurant); }}
+            style={{
+              width: 32, height: 32, borderRadius: '50%', border: 'none',
+              background: logged ? GREEN : 'rgba(30,127,92,0.10)',
+              color: logged ? '#fff' : GREEN, fontSize: logged ? 15 : 20, fontWeight: 700, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'all .18s', padding: 0, transform: logged ? 'scale(0.92)' : 'scale(1)',
+            }}
+          >
+            {logged ? '✓' : '+'}
+          </button>
         </div>
       </div>
-      <button onClick={() => onLog(item, restaurant)} style={{
-        flexShrink: 0, width: 32, height: 32, borderRadius: '50%',
-        border: 'none',
-        background: logged ? GREEN : 'rgba(30,127,92,0.10)',
-        color: logged ? '#fff' : GREEN, fontSize: logged ? 15 : 20, fontWeight: 700, cursor: 'pointer',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        transition: 'all .18s', padding: 0,
-        transform: logged ? 'scale(0.92)' : 'scale(1)',
-      }}>
-        {logged ? '✓' : '+'}
-      </button>
+
+      {/* ── Expanded detail ── */}
+      {isExpanded && (
+        <div style={{ padding: '0 14px 14px', background: 'rgba(30,127,92,0.025)' }}>
+          {/* Macro grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 10 }}>
+            {([
+              { label: 'Calories', value: item.calories,        unit: 'kcal' },
+              { label: 'Protein',  value: item.protein,         unit: 'g'    },
+              { label: 'Carbs',    value: item.carbs,           unit: 'g'    },
+              { label: 'Fat',      value: item.fat,             unit: 'g'    },
+            ] as { label: string; value: number; unit: string }[]).map(({ label, value, unit }) => (
+              <div key={label} style={{ background: CARD, borderRadius: 10, padding: '8px 4px', textAlign: 'center', border: `1px solid ${BORDER}` }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: FG1 }}>
+                  {value}<span style={{ fontSize: 9, fontWeight: 600, color: FG3 }}>{unit}</span>
+                </div>
+                <div style={{ fontSize: 9, color: FG3, marginTop: 2 }}>{label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Diet fit */}
+          {dietFit !== 'neutral' && <div style={{ marginBottom: 10 }}><DietBadge fit={dietFit} /></div>}
+
+          {/* Order + map CTAs */}
+          <div style={{ display: 'flex', gap: 6 }}>
+            <a href={mapsUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+                background: 'rgba(46,111,184,0.08)', color: '#2E6FB8', border: '1px solid rgba(46,111,184,0.20)',
+                borderRadius: 10, padding: '9px 6px', fontSize: 11, fontWeight: 700, textDecoration: 'none' }}>
+              📍 Maps
+            </a>
+            <a href={grabUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+                background: 'rgba(0,173,89,0.08)', color: '#00AD59', border: '1px solid rgba(0,173,89,0.20)',
+                borderRadius: 10, padding: '9px 6px', fontSize: 11, fontWeight: 700, textDecoration: 'none' }}>
+              🛵 GrabFood
+            </a>
+            <a href={pandaUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+                background: 'rgba(217,0,77,0.06)', color: '#D9004D', border: '1px solid rgba(217,0,77,0.18)',
+                borderRadius: 10, padding: '9px 6px', fontSize: 11, fontWeight: 700, textDecoration: 'none' }}>
+              🐼 foodpanda
+            </a>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -859,11 +969,19 @@ export default function EatPage() {
     [profile.goalType, remProtein, remCal, profile.targetProtein, profile.targetCalories],
   );
   useEffect(() => {
+    track(Events.EAT_PAGE_VIEWED, { meal_context: mealCtx.mealType });
     if (!sortInitialised.current) {
       setSortBy(recommendedSort.key);
       sortInitialised.current = true;
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Track search queries (debounced — only fire when query settles)
+  useEffect(() => {
+    if (!query.trim()) return;
+    const t = setTimeout(() => track(Events.EAT_SEARCHED, { query: query.trim(), tab }), 800);
+    return () => clearTimeout(t);
+  }, [query, tab]);
 
   /* Filter state */
   const [filterMode,        setFilterMode       ] = useState<FilterMode>('all');
@@ -872,9 +990,12 @@ export default function EatPage() {
   const [filterCuisine,     setFilterCuisine    ] = useState('All');
   const [filterHighProtein, setFilterHighProtein] = useState(false);
   const [filterDietMatch,   setFilterDietMatch  ] = useState(false);
+  const [filterMinProtein,  setFilterMinProtein ] = useState(0);
+  const [filterMaxCalories, setFilterMaxCalories] = useState(0);  // 0 = no limit
   const switchTab = (t: EatTab) => {
     setTab(t); setQuery(''); setExpandedId(null);
     setFilterMode('all'); setFilterOpenNow(false); setFilterMaxDist(1);
+    setFilterMinProtein(0); setFilterMaxCalories(0);
     setShowMoreNearby(false); setShowMoreDb(false);
   };
 
@@ -1065,6 +1186,8 @@ export default function EatPage() {
     if (filterHighProtein) filtered = filtered.filter(p => p.item.protein >= HIGH_PROTEIN_THRESHOLD);
     if (filterDietMatch && userFlags.length > 0)
       filtered = filtered.filter(p => userFlags.every(f => p.item.compatibleWith.includes(f)));
+    if (filterMinProtein  > 0) filtered = filtered.filter(p => p.item.protein  >= filterMinProtein);
+    if (filterMaxCalories > 0) filtered = filtered.filter(p => p.item.calories <= filterMaxCalories);
     // Sort pooled items by selected sort key
     return filtered.sort((a, b) => {
       if (sortBy === 'price')
@@ -1079,7 +1202,7 @@ export default function EatPage() {
       }
       return macroMatchScore(b.item, macroRem) - macroMatchScore(a.item, macroRem);
     });
-  }, [tier1Places, tier2Places, dbChains, filterHighProtein, filterDietMatch, userFlags, macroRem, sortBy]);
+  }, [tier1Places, tier2Places, dbChains, filterHighProtein, filterDietMatch, userFlags, macroRem, sortBy, filterMinProtein, filterMaxCalories]);
 
   /* Group pooled items by restaurant for the browse view.
      Each restaurant appears once, at its nearest outlet distance. */
@@ -1137,6 +1260,7 @@ export default function EatPage() {
     });
     setLogged(s => new Set([...s, item.id]));
     showToast(`${item.name} — ${item.calories} kcal`);
+    track(Events.MEAL_LOGGED, { source: 'eat_menu', item_id: item.id, restaurant_id: restaurant.id, calories: item.calories, protein: item.protein, meal_type: mealCtx.mealType });
     setTimeout(() => setLogged(s => { const n = new Set(s); n.delete(item.id); return n; }), 2000);
   }, [store, mealCtx.mealType, showToast]);
 
@@ -1149,6 +1273,7 @@ export default function EatPage() {
     });
     setRecipeLogged(s => new Set([...s, recipe.id]));
     showToast(`${recipe.name} — ${m.calories} kcal`);
+    track(Events.MEAL_LOGGED, { source: 'eat_recipe', item_id: recipe.id, calories: m.calories, protein: m.protein, meal_type: mealCtx.mealType });
     setTimeout(() => setRecipeLogged(s => { const n = new Set(s); n.delete(recipe.id); return n; }), 2000);
   }, [store, mealCtx.mealType, showToast]);
 
@@ -1205,6 +1330,8 @@ export default function EatPage() {
               filterOpenNow={filterOpenNow} setFilterOpenNow={setFilterOpenNow}
               filter500m={filterMaxDist === 0.5}
               setFilter500m={v => setFilterMaxDist(v ? 0.5 : 1)}
+              filterMinProtein={filterMinProtein}   setFilterMinProtein={setFilterMinProtein}
+              filterMaxCalories={filterMaxCalories} setFilterMaxCalories={setFilterMaxCalories}
             />
           </>
         )}
@@ -1258,7 +1385,10 @@ export default function EatPage() {
                       <MenuItemCard
                         key={`${restaurant.id}-${item.id}`}
                         item={item} restaurant={restaurant} distKm={distKm}
+                        userFlags={userFlags}
                         onLog={logMenuItem} logged={logged.has(item.id)}
+                        isExpanded={expandedId === item.id}
+                        onToggle={() => setExpandedId(expandedId === item.id ? null : item.id)}
                       />
                     ))}
                   </div>
@@ -1316,7 +1446,10 @@ export default function EatPage() {
                         <MenuItemCard
                           key={`${p.restaurant.id}-${p.item.id}`}
                           item={p.item} restaurant={p.restaurant} distKm={p.distKm}
+                          userFlags={userFlags}
                           onLog={logMenuItem} logged={logged.has(p.item.id)}
+                          isExpanded={expandedId === p.item.id}
+                          onToggle={() => setExpandedId(expandedId === p.item.id ? null : p.item.id)}
                         />
                       ))}
                       {hasMoreNearby && (
@@ -1341,7 +1474,10 @@ export default function EatPage() {
                         <MenuItemCard
                           key={`${p.restaurant.id}-${p.item.id}`}
                           item={p.item} restaurant={p.restaurant}
+                          userFlags={userFlags}
                           onLog={logMenuItem} logged={logged.has(p.item.id)}
+                          isExpanded={expandedId === p.item.id}
+                          onToggle={() => setExpandedId(expandedId === p.item.id ? null : p.item.id)}
                         />
                       ))}
                       {hasMoreDb && (
