@@ -180,8 +180,11 @@ function SortDropdown({ active, onChange, showDistance }: {
         style={{
           fontSize: 12, fontWeight: 600, color: FG2,
           border: `1px solid ${BORDER}`, borderRadius: 10,
-          padding: '6px 10px', background: CARD, cursor: 'pointer',
+          padding: '6px 28px 6px 10px', background: CARD, cursor: 'pointer',
           outline: 'none', flex: 1,
+          WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none',
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E")`,
+          backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center',
         }}
       >
         {opts.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
@@ -203,9 +206,10 @@ function FilterBar({
   const chip = (active: boolean, accent?: string): React.CSSProperties => ({
     flexShrink: 0, borderRadius: 999, padding: '5px 12px',
     fontSize: 11, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' as const,
-    border: `1px solid ${active ? (accent ?? 'rgba(30,127,92,0.30)') : BORDER}`,
-    background: active ? (accent ? `${accent}18` : 'rgba(30,127,92,0.10)') : CARD,
+    border: `1.5px solid ${active ? (accent ?? GREEN) : BORDER}`,
+    background: active ? (accent ? `${accent}22` : 'rgba(30,127,92,0.14)') : CARD,
     color: active ? (accent ?? GREEN) : FG3, transition: 'all .15s',
+    outline: 'none', WebkitTapHighlightColor: 'transparent',
   });
   const modeOpts: { val: FilterMode; label: string }[] = [
     { val: 'all',          label: 'All'          },
@@ -558,8 +562,9 @@ function RecipeCard({ recipe, userFlags, onLog, logged }: {
 }) {
   const [expanded, setExpanded] = useState(false);
   const fit        = getDietFit(recipe.compatibleWith, userFlags);
-  const resolved   = resolveIngredients(recipe);
-  const actualCost = calcCostPerServing(recipe) ?? recipe.costPerServing;
+  const resolved   = resolveIngredients(recipe).filter(r => r.ingredient !== null);
+  const rawCost    = calcCostPerServing(recipe) ?? recipe.costPerServing;
+  const actualCost = (rawCost != null && !isNaN(rawCost as number)) ? rawCost as number : null;
   const m          = recipe.macrosPerServing;
   return (
     <div style={{ marginBottom: 10 }}>
@@ -583,9 +588,12 @@ function RecipeCard({ recipe, userFlags, onLog, logged }: {
             {recipe.cuisine} · {recipe.prepMins + recipe.cookMins} min · {recipe.servings} serving{recipe.servings !== 1 ? 's' : ''}
           </div>
           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ fontSize: 13, fontWeight: 800, color: GREEN }}>${actualCost.toFixed(2)}/serving</span>
+            {actualCost != null
+              ? <span style={{ fontSize: 13, fontWeight: 800, color: GREEN }}>${actualCost.toFixed(2)}/serving</span>
+              : <span style={{ fontSize: 11, color: FG3 }}>Price TBC</span>
+            }
             <span style={{ fontSize: 10, color: FG3 }}>P{m.protein}g · C{m.carbs}g · F{m.fat}g · {m.calories}kcal</span>
-            <PpdBadge protein={m.protein} price={actualCost} />
+            {actualCost != null && <PpdBadge protein={m.protein} price={actualCost} />}
             <DietBadge fit={fit} />
           </div>
         </div>
@@ -595,21 +603,25 @@ function RecipeCard({ recipe, userFlags, onLog, logged }: {
         <div style={{ background: CARD, border: `1px solid rgba(30,127,92,0.20)`, borderTop: 'none', borderRadius: '0 0 18px 18px', padding: 14 }}>
           <p style={{ fontSize: 12, color: FG2, margin: '0 0 12px', lineHeight: 1.6 }}>{recipe.description}</p>
           <div style={{ fontSize: 12, fontWeight: 800, color: FG1, marginBottom: 8 }}>🛒 Ingredients</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
-            {resolved.map((r, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 16 }}>{r.ingredient?.emoji ?? '🥘'}</span>
-                <div style={{ flex: 1 }}>
-                  <span style={{ fontSize: 12, color: FG1 }}>{r.ingredient?.name ?? `Ingredient #${i + 1} (not in DB)`}</span>
-                  {r.note && <span style={{ fontSize: 11, color: FG3 }}> — {r.note}</span>}
+          {resolved.length === 0 ? (
+            <div style={{ fontSize: 12, color: FG3, fontStyle: 'italic', marginBottom: 14 }}>Ingredient details coming soon</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
+              {resolved.map((r, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 16 }}>{r.ingredient!.emoji}</span>
+                  <div style={{ flex: 1 }}>
+                    <span style={{ fontSize: 12, color: FG1 }}>{r.ingredient!.name}</span>
+                    {r.note && <span style={{ fontSize: 11, color: FG3 }}> — {r.note}</span>}
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div style={{ fontSize: 11, color: FG2 }}>×{r.quantity} {r.ingredient!.unit}</div>
+                    <div style={{ fontSize: 10, color: FG3 }}>{r.ingredient!.store} · ${(r.ingredient!.price * r.quantity).toFixed(2)}</div>
+                  </div>
                 </div>
-                <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div style={{ fontSize: 11, color: FG2 }}>×{r.quantity} {r.ingredient?.unit ?? 'unit'}</div>
-                  {r.ingredient && <div style={{ fontSize: 10, color: FG3 }}>{r.ingredient.store} · ${(r.ingredient.price * r.quantity).toFixed(2)}</div>}
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
           {recipe.steps.length > 0 && (
             <>
               <div style={{ fontSize: 12, fontWeight: 800, color: FG1, marginBottom: 8 }}>👨‍🍳 Steps</div>
@@ -668,12 +680,13 @@ function MenuItemCard({
         </div>
       </div>
       <button onClick={() => onLog(item, restaurant)} style={{
-        flexShrink: 0, width: 30, height: 30, borderRadius: '50%',
-        border: `1px solid ${logged ? 'rgba(30,127,92,0.30)' : BORDER}`,
-        background: logged ? 'rgba(30,127,92,0.10)' : CARD,
-        color: logged ? GREEN : FG2, fontSize: 18, fontWeight: 700, cursor: 'pointer',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .2s',
-        padding: 0,
+        flexShrink: 0, width: 32, height: 32, borderRadius: '50%',
+        border: 'none',
+        background: logged ? GREEN : 'rgba(30,127,92,0.10)',
+        color: logged ? '#fff' : GREEN, fontSize: logged ? 15 : 20, fontWeight: 700, cursor: 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        transition: 'all .18s', padding: 0,
+        transform: logged ? 'scale(0.92)' : 'scale(1)',
       }}>
         {logged ? '✓' : '+'}
       </button>
@@ -766,6 +779,22 @@ function RestaurantGroup({
   );
 }
 
+/* ── Log toast ── */
+function LogToast({ message }: { message: string | null }) {
+  if (!message) return null;
+  return (
+    <div style={{
+      position: 'fixed', bottom: 80, left: '50%', transform: 'translateX(-50%)',
+      background: '#0F1B2D', color: '#fff', borderRadius: 20,
+      padding: '9px 18px', fontSize: 13, fontWeight: 700,
+      whiteSpace: 'nowrap', pointerEvents: 'none', zIndex: 9999,
+      boxShadow: '0 4px 16px rgba(0,0,0,0.25)', animation: 'fadeInUp .15s ease',
+    }}>
+      ✓ {message}
+    </div>
+  );
+}
+
 function EmptyState({ emoji, title, subtitle }: { emoji: string; title: string; subtitle: string }) {
   return (
     <div style={{ textAlign: 'center', padding: '40px 20px' }}>
@@ -816,6 +845,8 @@ export default function EatPage() {
   const [expandedId,    setExpandedId  ] = useState<string | null>(null);
   const [logged,        setLogged      ] = useState<Set<string>>(new Set());
   const [recipeLogged,  setRecipeLogged] = useState<Set<string>>(new Set());
+  const [toastMsg,      setToastMsg    ] = useState<string | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /* Smart sort — auto-apply once on mount based on user's goal */
   const sortInitialised = useRef(false);
@@ -862,14 +893,17 @@ export default function EatPage() {
     } catch (e) { setLocError(e instanceof Error ? e.message : 'Failed to load'); setLocState('error'); }
   }, []);
 
-  useEffect(() => {
+  const requestLocation = useCallback(() => {
     if (!navigator.geolocation) { setLocError('Geolocation not supported'); setLocState('error'); return; }
+    setLocState('locating');
     navigator.geolocation.getCurrentPosition(
       pos => fetchPlaces(pos.coords.latitude, pos.coords.longitude),
       err => { setLocError(`Location denied: ${err.message}`); setLocState('error'); },
       { enableHighAccuracy: false, timeout: 10000 },
     );
   }, [fetchPlaces]);
+
+  useEffect(() => { requestLocation(); }, [requestLocation]);
 
   const enrichedPlaces = useMemo((): EnrichedPlace[] =>
     places.map(p => {
@@ -1087,6 +1121,13 @@ export default function EatPage() {
   const hasMoreNearby = nearbyItems.length > ITEM_INITIAL && !showMoreNearby;
   const hasMoreDb     = dbItems.length     > ITEM_INITIAL && !showMoreDb;
 
+  /* Toast helper */
+  const showToast = useCallback((msg: string) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToastMsg(msg);
+    toastTimer.current = setTimeout(() => setToastMsg(null), 2200);
+  }, []);
+
   /* Log helpers — use meal context mealType */
   const logMenuItem = useCallback((item: SGMenuItem, restaurant: SGRestaurant) => {
     store.addFoodEntry({
@@ -1095,8 +1136,9 @@ export default function EatPage() {
       quantity: 100, calories: item.calories, protein: item.protein, carbs: item.carbs, fat: item.fat,
     });
     setLogged(s => new Set([...s, item.id]));
+    showToast(`${item.name} — ${item.calories} kcal`);
     setTimeout(() => setLogged(s => { const n = new Set(s); n.delete(item.id); return n; }), 2000);
-  }, [store, mealCtx.mealType]);
+  }, [store, mealCtx.mealType, showToast]);
 
   const logRecipe = useCallback((recipe: SGRecipe) => {
     const m = recipe.macrosPerServing;
@@ -1106,8 +1148,9 @@ export default function EatPage() {
       quantity: 100, calories: m.calories, protein: m.protein, carbs: m.carbs, fat: m.fat,
     });
     setRecipeLogged(s => new Set([...s, recipe.id]));
+    showToast(`${recipe.name} — ${m.calories} kcal`);
     setTimeout(() => setRecipeLogged(s => { const n = new Set(s); n.delete(recipe.id); return n; }), 2000);
-  }, [store, mealCtx.mealType]);
+  }, [store, mealCtx.mealType, showToast]);
 
   const tabBtn = (active: boolean): React.CSSProperties => ({
     flex: 1, padding: '10px 0', borderRadius: 12, border: 'none',
@@ -1172,11 +1215,19 @@ export default function EatPage() {
           <>
             {/* ── SEARCH MODE — always flat item list ── */}
             {query && searchResults?.type === 'food' && (() => {
+              // Build distKm lookup: restaurantId → nearest distKm from GPS results
+              const distLookup = new Map<string, number>();
+              for (const ep of enrichedPlaces) {
+                if (ep.dbMatch && ep.distKm != null) {
+                  const existing = distLookup.get(ep.dbMatch.id);
+                  if (existing === undefined || ep.distKm < existing) distLookup.set(ep.dbMatch.id, ep.distKm);
+                }
+              }
               // Flatten: restaurant search → all menu items from matched restaurants
               //          dish search → matched items directly
-              const flat: { restaurant: SGRestaurant; item: SGMenuItem }[] = isRestaurantSearch
-                ? searchResults.restaurants.flatMap(r => r.menu.map(item => ({ restaurant: r, item })))
-                : searchResults.items.map(({ restaurant, item }) => ({ restaurant, item }));
+              const flat: { restaurant: SGRestaurant; item: SGMenuItem; distKm?: number }[] = isRestaurantSearch
+                ? searchResults.restaurants.flatMap(r => r.menu.map(item => ({ restaurant: r, item, distKm: distLookup.get(r.id) })))
+                : searchResults.items.map(({ restaurant, item }) => ({ restaurant, item, distKm: distLookup.get(restaurant.id) }));
 
               const sorted = [...flat].sort((a, b) => macroMatchScore(b.item, macroRem) - macroMatchScore(a.item, macroRem));
 
@@ -1203,10 +1254,10 @@ export default function EatPage() {
                     {sorted.length} item{sorted.length !== 1 ? 's' : ''} found
                   </div>
                   <div style={{ background: CARD, borderRadius: 18, border: `1px solid ${BORDER}`, overflow: 'hidden', boxShadow: SHADOW }}>
-                    {sorted.map(({ restaurant, item }) => (
+                    {sorted.map(({ restaurant, item, distKm }) => (
                       <MenuItemCard
                         key={`${restaurant.id}-${item.id}`}
-                        item={item} restaurant={restaurant}
+                        item={item} restaurant={restaurant} distKm={distKm}
                         onLog={logMenuItem} logged={logged.has(item.id)}
                       />
                     ))}
@@ -1226,8 +1277,11 @@ export default function EatPage() {
                   </div>
                 )}
                 {locState === 'error' && (
-                  <div style={{ background: 'rgba(208,78,54,0.06)', border: '1px solid rgba(208,78,54,0.18)', borderRadius: 14, padding: '12px 14px', marginBottom: 12, display: 'flex', gap: 8 }}>
-                    <span>⚠️</span><span style={{ fontSize: 12, color: '#D04E36' }}>{locError}</span>
+                  <div style={{ background: 'rgba(208,78,54,0.06)', border: '1px solid rgba(208,78,54,0.18)', borderRadius: 14, padding: '10px 14px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ flexShrink: 0 }}>⚠️</span>
+                    <span style={{ fontSize: 12, color: '#D04E36', flex: 1 }}>{locError}</span>
+                    <button onClick={requestLocation} style={{ flexShrink: 0, background: 'rgba(208,78,54,0.12)', border: 'none', borderRadius: 8, padding: '4px 10px', fontSize: 11, fontWeight: 700, color: '#D04E36', cursor: 'pointer' }}>Retry</button>
+                    <button onClick={() => setLocState('no_key')} style={{ flexShrink: 0, background: 'transparent', border: 'none', fontSize: 16, color: '#D04E36', cursor: 'pointer', lineHeight: 1, padding: '0 2px' }}>×</button>
                   </div>
                 )}
                 {locState === 'no_key' && (
@@ -1281,9 +1335,7 @@ export default function EatPage() {
                 {/* ════ More from our database (flat, sorted) ════ */}
                 {dbItems.length > 0 && (
                   <>
-                    <div style={{ fontSize: 11, color: FG3, marginBottom: 8, marginTop: nearbyItems.length > 0 ? 4 : 0, display: 'flex', alignItems: 'center', gap: 5 }}>
-                      <span>📋</span> More options
-                    </div>
+                    {nearbyItems.length > 0 && <div style={{ height: 4 }} />}
                     <div style={{ background: CARD, borderRadius: 18, border: `1px solid ${BORDER}`, overflow: 'hidden', boxShadow: SHADOW, marginBottom: 14 }}>
                       {visibleDb.map(p => (
                         <MenuItemCard
@@ -1382,6 +1434,15 @@ export default function EatPage() {
         )}
 
       </div>
+
+      <LogToast message={toastMsg} />
+
+      <style>{`
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+          to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }
