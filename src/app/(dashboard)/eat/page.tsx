@@ -1,16 +1,28 @@
 'use client';
+// Opt out of static pre-rendering — this page depends on user location and
+// real-time data; attempting a static build causes a Turbopack TDZ crash.
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { useStrideStore } from '@/lib/store';
 import { track, Events } from '@/lib/analytics';
 import type { MapPin } from '@/components/MapView';
 
-// Load MapView client-side only (Leaflet requires window)
-const MapView = dynamic(() => import('@/components/MapView'), { ssr: false, loading: () => (
-  <div style={{ height: 'calc(100vh - 220px)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F0F2F5', color: '#8B95A7', fontSize: 14 }}>
-    Loading map…
-  </div>
-) });
+// Separate component avoids inline-JSX closure issues in the SSR bundle
+function MapLoadingPlaceholder() {
+  return (
+    <div style={{ height: 'calc(100vh - 220px)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F0F2F5', color: '#8B95A7', fontSize: 14 }}>
+      Loading map…
+    </div>
+  );
+}
+
+// Load MapView client-side only — Leaflet requires window
+const MapView = dynamic(() => import('@/components/MapView'), {
+  ssr: false,
+  loading: MapLoadingPlaceholder,
+});
 import {
   matchRestaurant, searchAll, searchRecipes, getMenuCategories,
   macroMatchScore, proteinPerDollar, ppdColor, filterItemsByDiet,

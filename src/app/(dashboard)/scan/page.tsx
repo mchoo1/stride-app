@@ -1,4 +1,5 @@
 'use client';
+export const dynamic = 'force-dynamic';
 import { useState, useRef, ChangeEvent } from 'react';
 import { useStrideStore } from '@/lib/store';
 import { auth } from '@/lib/firebase';
@@ -119,39 +120,41 @@ export default function ScanPage() {
       {/* ── Content ── */}
       <div style={{ flex: 1, padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 100 }}>
 
-        {/* Drop zone (idle) */}
+        {/* Coming Soon state */}
         {phase === 'idle' && (
           <>
-            <button
-              onClick={() => fileRef.current?.click()}
-              style={{
-                width: '100%', padding: '40px 20px',
-                background: CARD, border: `2px dashed ${BORDER}`,
-                borderRadius: 20, cursor: 'pointer',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-                transition: 'border-color .15s',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = GREEN)}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = BORDER)}
-            >
-              <span style={{ fontSize: 52 }}>📷</span>
-              <span style={{ fontSize: 17, fontWeight: 700, color: FG1 }}>Upload a food photo</span>
-              <span style={{ fontSize: 13, color: FG3, textAlign: 'center', lineHeight: 1.5 }}>
-                Click here to select a photo<br />from your device
-              </span>
-            </button>
-            <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFile} />
-
-            {/* Tip */}
             <div style={{
-              background: 'rgba(242,169,59,0.08)', borderRadius: 14, padding: '12px 14px',
-              border: '1px solid rgba(242,169,59,0.20)',
+              width: '100%', padding: '48px 24px',
+              background: CARD, border: `2px dashed ${BORDER}`,
+              borderRadius: 20,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+              opacity: 0.75,
+            }}>
+              <span style={{ fontSize: 52 }}>📷</span>
+              <div style={{
+                background: 'rgba(124,58,237,0.10)', borderRadius: 20,
+                padding: '4px 14px',
+                fontSize: 11, fontWeight: 700, letterSpacing: '0.08em',
+                color: '#7C3AED', textTransform: 'uppercase',
+              }}>
+                Coming Soon
+              </div>
+              <span style={{ fontSize: 17, fontWeight: 700, color: FG1 }}>AI Food Scan</span>
+              <span style={{ fontSize: 13, color: FG3, textAlign: 'center', lineHeight: 1.6, maxWidth: 260 }}>
+                We&apos;re improving accuracy for Singapore dishes before launching this feature.
+              </span>
+            </div>
+
+            {/* What to do instead */}
+            <div style={{
+              background: 'rgba(30,127,92,0.06)', borderRadius: 14, padding: '14px 16px',
+              border: '1px solid rgba(30,127,92,0.15)',
               display: 'flex', gap: 10, alignItems: 'flex-start',
             }}>
               <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>💡</span>
-              <span style={{ fontSize: 13, color: '#8B6914', lineHeight: 1.6 }}>
-                For best results, use a clear top-down photo with the food filling most of the frame.
-              </span>
+              <div style={{ fontSize: 13, color: '#1E5C40', lineHeight: 1.6 }}>
+                <strong>In the meantime:</strong> use the <strong>Log tab</strong> to search for your food by name, or the <strong>Eat tab</strong> to find macros from nearby restaurants.
+              </div>
             </div>
           </>
         )}

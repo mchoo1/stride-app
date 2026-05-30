@@ -1,4 +1,5 @@
 'use client';
+export const dynamic = 'force-dynamic';
 
 import { useState } from 'react';
 import { createUserWithEmailAndPassword, updateProfile, fetchSignInMethodsForEmail } from 'firebase/auth';
@@ -160,7 +161,7 @@ export default function RegisterPage() {
         }),
       ]).catch(() => {});
 
-      router.push('/dashboard');
+      router.push('/eat'); // Send new users straight to Eat tab — first impression of value
     } catch (err: unknown) {
       const code = (err as { code?: string })?.code ?? '';
       if (code === 'auth/email-already-in-use')       setError('This email is already registered — sign in instead.');

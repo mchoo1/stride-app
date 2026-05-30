@@ -1,8 +1,10 @@
 'use client';
+export const dynamic = 'force-dynamic';
 import { useState, useRef, useEffect } from 'react';
 import { useStrideStore } from '@/lib/store';
 import { MOCK_FOODS, MOCK_SCAN_RESULTS } from '@/lib/mockFoods';
 import { api } from '@/lib/apiClient';
+import { searchAll, SG_MACRO_FOODS } from '@/lib/sgFoodDb';
 
 // Unified food shape for search results (mock + API)
 interface FoodSearchResult {
@@ -51,24 +53,66 @@ export default function FoodLogPage() {
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 2200); };
 
-  // Debounced API food search
+  // Debounced food search — searches sgFoodDb (restaurant menus + macro foods) first,
+  // then falls back to the Firestore community DB for user-submitted items.
   useEffect(() => {
     if (!search.trim()) { setSearchResults([]); return; }
     const t = setTimeout(async () => {
       setSearchLoading(true);
       try {
-        const items = await api.foods.search(search.trim());
-        setSearchResults(items.map(f => ({
-          id:       f.id,
-          name:     f.name,
-          emoji:    f.emoji ?? '🍽️',
-          calories: f.caloriesPer100g,
-          protein:  f.proteinPer100g,
-          carbs:    f.carbsPer100g,
-          fat:      f.fatPer100g,
-        })));
-      } catch {
-        setSearchResults([]); // fall back to mock
+        const q = search.trim().toLowerCase();
+
+        // 1. Search sgFoodDb — restaurant menu items
+        const menuResults = searchAll(q).map(({ item, restaurant }) => ({
+          id:       item.id,
+          name:     `${item.name} (${restaurant.name})`,
+          emoji:    item.emoji,
+          calories: item.calories,
+          protein:  item.protein,
+          carbs:    item.carbs,
+          fat:      item.fat,
+        }));
+
+        // 2. Search SG_MACRO_FOODS (hawker / HPB dishes)
+        const macroResults = SG_MACRO_FOODS
+          .filter(f =>
+            f.name.toLowerCase().includes(q) ||
+            f.aliases.some(a => a.includes(q))
+          )
+          .map(f => ({
+            id:       f.id,
+            name:     f.name,
+            emoji:    f.emoji,
+            calories: f.calories,
+            protein:  f.protein,
+            carbs:    f.carbs,
+            fat:      f.fat,
+          }));
+
+        // 3. Community Firestore DB (user-submitted items) — secondary
+        let communityResults: FoodSearchResult[] = [];
+        try {
+          const items = await api.foods.search(search.trim());
+          communityResults = items.map(f => ({
+            id:       f.id,
+            name:     f.name,
+            emoji:    f.emoji ?? '🍽️',
+            calories: f.caloriesPer100g,
+            protein:  f.proteinPer100g,
+            carbs:    f.carbsPer100g,
+            fat:      f.fatPer100g,
+          }));
+        } catch {
+          // community DB unavailable — silently skip
+        }
+
+        // Merge: sgFoodDb results first, then macro foods, then community
+        const seen = new Set<string>();
+        const merged: FoodSearchResult[] = [];
+        for (const r of [...menuResults, ...macroResults, ...communityResults]) {
+          if (!seen.has(r.id)) { seen.add(r.id); merged.push(r); }
+        }
+        setSearchResults(merged.slice(0, 30));
       } finally {
         setSearchLoading(false);
       }

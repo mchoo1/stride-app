@@ -1,5 +1,6 @@
 'use client';
-import { useState } from 'react';
+export const dynamic = 'force-dynamic';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useStrideStore } from '@/lib/store';
 import { calculateBMR, calculateTargetCalories, calculateMacros } from '@/lib/utils';
@@ -87,6 +88,12 @@ export default function MePage() {
   const [form,        setForm       ] = useState({ ...profile });
   const [dietFlags,   setDietFlags  ] = useState<DietaryFlag[]>(profile.dietaryFlags ?? []);
   const [dietSaved,   setDietSaved  ] = useState(false);
+
+  // Sync profile from Firestore on mount so Me page always shows live data
+  useEffect(() => {
+    store.syncProfileFromServer().catch(() => {/* offline — local state serves fine */});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const toggleDietFlag = (flag: DietaryFlag) => {
     setDietFlags(prev => prev.includes(flag) ? prev.filter(f => f !== flag) : [...prev, flag]);
