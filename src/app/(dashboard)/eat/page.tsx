@@ -22,6 +22,7 @@ const GREEN  = '#1E7F5C';
 const BLUE   = '#2E6FB8';
 const AMBER  = '#C98A2E';
 const RED    = '#D04E36';
+const PURPLE = '#7C3AED';
 const SHADOW = '0 1px 2px rgba(15,27,45,0.04), 0 2px 6px rgba(15,27,45,0.05)';
 
 /* ── Types ── */
@@ -48,22 +49,36 @@ interface PooledItem {
   distKm?: number; tier: RestaurantTier;
 }
 
+// Pending log — holds item/recipe while confirm sheet is open
+interface PendingLog {
+  type: 'item' | 'recipe';
+  item?: SGMenuItem;
+  recipe?: SGRecipe;
+  restaurant?: SGRestaurant;
+}
+
 const DIET_LABEL: Record<DietaryFlag, string> = {
-  vegetarian: '🥦 Vegetarian', vegan: '🌱 Vegan',
-  gluten_free: '🌾 Gluten-Free', lactose_free: '🥛 Lactose-Free',
-  keto: '🥑 Keto', halal: '☪️ Halal', kosher: '✡️ Kosher',
-  dairy_free: '🧀 Dairy-Free', nut_free: '🥜 Nut-Free',
-  low_carb: '🍞 Low-Carb', high_protein: '💪 High-Protein',
-  pescatarian: '🐟 Pescatarian', no_pork: '🐷 No Pork',
+  halal:       '☪️ Halal',       vegetarian:  '🥦 Vegetarian',
+  vegan:       '🌱 Vegan',       gluten_free: '🌾 Gluten-Free',
+  lactose_free:'🥛 Lactose-Free',keto:        '🥑 Keto',
+  kosher:      '✡️ Kosher',      dairy_free:  '🧀 Dairy-Free',
+  nut_free:    '🥜 Nut-Free',    low_carb:    '🍞 Low-Carb',
+  high_protein:'💪 High-Protein',pescatarian: '🐟 Pescatarian',
+  no_pork:     '🐷 No Pork',
 };
 
-/* ── Meal time context ── */
 function getMealContext(): { label: string; mealType: MealType } {
   const h = new Date().getHours();
-  if (h >= 6  && h < 11) return { label: 'Breakfast',  mealType: 'breakfast' };
-  if (h >= 11 && h < 15) return { label: 'Lunch',      mealType: 'lunch'     };
-  if (h >= 15 && h < 18) return { label: 'Snack',      mealType: 'snack'     };
-  return                         { label: 'Dinner',     mealType: 'dinner'    };
+  if (h >= 6  && h < 11) return { label: 'Breakfast', mealType: 'breakfast' };
+  if (h >= 11 && h < 15) return { label: 'Lunch',     mealType: 'lunch'     };
+  if (h >= 15 && h < 18) return { label: 'Snack',     mealType: 'snack'     };
+  return                         { label: 'Dinner',    mealType: 'dinner'    };
+}
+
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+function nowTimeStr() {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 }
 
 /* ═══════════════════════════ Sub-components ══════════════════════════════ */
@@ -89,6 +104,53 @@ function DietBadge({ fit }: { fit: DietFit }) {
   );
 }
 
+// ── #2 Confidence badge ────────────────────────────────────────────────────
+function ConfidenceBadge({ source, verified, confidence }: {
+  source?: string; verified?: boolean; confidence?: string;
+}) {
+  if (source === 'official_sg' && verified) {
+    return (
+      <span title="Stride Approved — sourced from brand's official SG nutrition data" style={{
+        fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 6,
+        background: 'rgba(30,127,92,0.08)', border: '1px solid rgba(30,127,92,0.2)', color: GREEN,
+      }}>
+        ✅ Stride Approved
+      </span>
+    );
+  }
+  if (source === 'hpb' && verified) {
+    return (
+      <span title="Verified — sourced from HPB (Health Promotion Board Singapore)" style={{
+        fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 6,
+        background: 'rgba(46,111,184,0.08)', border: '1px solid rgba(46,111,184,0.2)', color: BLUE,
+      }}>
+        ✅ HPB Verified
+      </span>
+    );
+  }
+  if (source === 'community' || confidence === 'community') {
+    return (
+      <span title="Community data — submitted by users, not independently verified" style={{
+        fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 6,
+        background: 'rgba(124,58,237,0.07)', border: '1px solid rgba(124,58,237,0.18)', color: PURPLE,
+      }}>
+        👥 Community
+      </span>
+    );
+  }
+  if (confidence === 'estimated' || source === 'hpb') {
+    return (
+      <span title="Estimated — macros derived from HPB reference data, may vary" style={{
+        fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 6,
+        background: 'rgba(139,149,167,0.10)', border: `1px solid ${BORDER}`, color: FG3,
+      }}>
+        〜 Estimated
+      </span>
+    );
+  }
+  return null;
+}
+
 function PpdBadge({ protein, price }: { protein: number; price?: number | null }) {
   if (!price) return null;
   const v = proteinPerDollar(protein, price);
@@ -101,6 +163,18 @@ function PpdBadge({ protein, price }: { protein: number; price?: number | null }
   );
 }
 
+// ── #7 Set meal chip ───────────────────────────────────────────────────────
+function SetMealChip({ includes }: { includes?: string[] }) {
+  return (
+    <span style={{
+      fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 6,
+      background: 'rgba(242,169,59,0.10)', border: '1px solid rgba(242,169,59,0.28)', color: AMBER,
+    }}>
+      🍱 Set available{includes?.length ? `: ${includes.slice(0,2).join(', ')}${includes.length > 2 ? '…' : ''}` : ''}
+    </span>
+  );
+}
+
 /* ── Toast ── */
 function LogToast({ message }: { message: string }) {
   if (!message) return null;
@@ -109,44 +183,137 @@ function LogToast({ message }: { message: string }) {
       position: 'fixed', bottom: 90, left: '50%', transform: 'translateX(-50%)',
       background: FG1, color: '#fff', borderRadius: 24, padding: '10px 20px',
       fontSize: 14, fontWeight: 600, zIndex: 200, whiteSpace: 'nowrap',
-      boxShadow: '0 4px 20px rgba(0,0,0,0.22)',
-      animation: 'fadeInUp .25s ease',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.22)', animation: 'fadeInUp .25s ease',
     }}>
       {message}
     </div>
   );
 }
 
+// ── #9 Log confirm sheet ───────────────────────────────────────────────────
+function LogConfirmSheet({
+  pending, onConfirm, onCancel,
+}: {
+  pending: PendingLog;
+  onConfirm: (mealType: MealType, date: string, time: string) => void;
+  onCancel: () => void;
+}) {
+  const ctx = getMealContext();
+  const [mealType, setMealType] = useState<MealType>(ctx.mealType);
+  const [date, setDate]         = useState(todayStr());
+  const [time, setTime]         = useState(nowTimeStr());
+
+  const name    = pending.item?.name ?? pending.recipe?.name ?? '';
+  const emoji   = pending.item?.emoji ?? pending.recipe?.emoji ?? '🍽️';
+  const cal     = pending.item?.calories ?? pending.recipe?.calories ?? 0;
+  const protein = pending.item?.protein  ?? pending.recipe?.protein  ?? 0;
+  const price   = pending.item?.price;
+
+  const mealTypes: MealType[] = ['breakfast', 'lunch', 'snack', 'dinner'];
+  const mealEmoji: Record<MealType, string> = { breakfast: '🌅', lunch: '☀️', snack: '🍵', dinner: '🌙' };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 400, background: 'rgba(0,0,0,0.4)' }} onClick={onCancel}>
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0,
+          background: CARD, borderRadius: '22px 22px 0 0',
+          padding: '8px 0 max(36px, env(safe-area-inset-bottom)) 0',
+        }}
+      >
+        <div style={{ width: 36, height: 4, background: '#DDE0E8', borderRadius: 2, margin: '0 auto 20px' }} />
+        <div style={{ padding: '0 20px' }}>
+          {/* Item summary */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '0 0 16px', borderBottom: `1px solid ${BORDER}`, marginBottom: 18 }}>
+            <span style={{ fontSize: 36 }}>{emoji}</span>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: FG1 }}>{name}</div>
+              <div style={{ fontSize: 12, color: FG3, marginTop: 2 }}>
+                {cal} cal · {protein}g protein{price ? ` · $${price.toFixed(2)}` : ''}
+              </div>
+            </div>
+          </div>
+
+          {/* Meal type */}
+          <div style={{ marginBottom: 18 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: FG2, marginBottom: 10 }}>Meal type</div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {mealTypes.map(m => (
+                <button key={m} onClick={() => setMealType(m)} style={{
+                  flex: 1, padding: '8px 4px', borderRadius: 12, cursor: 'pointer',
+                  border: `1.5px solid ${mealType === m ? GREEN : BORDER}`,
+                  background: mealType === m ? 'rgba(30,127,92,0.08)' : CARD,
+                  color: mealType === m ? GREEN : FG2,
+                  fontSize: 11, fontWeight: 700, textAlign: 'center',
+                }}>
+                  <div style={{ fontSize: 16, marginBottom: 2 }}>{mealEmoji[m]}</div>
+                  {m.charAt(0).toUpperCase() + m.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Date + time */}
+          <div style={{ display: 'flex', gap: 10, marginBottom: 22 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: FG2, marginBottom: 8 }}>Date</div>
+              <input
+                type="date" value={date} onChange={e => setDate(e.target.value)}
+                style={{
+                  width: '100%', padding: '11px 12px', borderRadius: 12, border: `1px solid ${BORDER}`,
+                  fontSize: 13, color: FG1, background: BG, outline: 'none', boxSizing: 'border-box',
+                }}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: FG2, marginBottom: 8 }}>Time</div>
+              <input
+                type="time" value={time} onChange={e => setTime(e.target.value)}
+                style={{
+                  width: '100%', padding: '11px 12px', borderRadius: 12, border: `1px solid ${BORDER}`,
+                  fontSize: 13, color: FG1, background: BG, outline: 'none', boxSizing: 'border-box',
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Buttons */}
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={onCancel} style={{
+              flex: 1, padding: '14px', borderRadius: 14, border: `1.5px solid ${BORDER}`,
+              background: CARD, color: FG2, fontSize: 15, fontWeight: 700, cursor: 'pointer',
+            }}>Cancel</button>
+            <button onClick={() => onConfirm(mealType, date, time)} style={{
+              flex: 2, padding: '14px', borderRadius: 14, border: 'none',
+              background: GREEN, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer',
+            }}>Log meal ✓</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ── MenuItemCard — expandable ── */
 function MenuItemCard({
-  item, restaurant, distKm, userFlags, onLog, logged, isExpanded, onToggle,
+  item, restaurant, distKm, userFlags, onLog, onUnlog, logged,
+  isExpanded, onToggle,
 }: {
   item: SGMenuItem; restaurant: SGRestaurant; distKm?: number;
-  userFlags: DietaryFlag[]; onLog: () => void; logged: boolean;
+  userFlags: DietaryFlag[]; onLog: () => void; onUnlog: () => void; logged: boolean;
   isExpanded: boolean; onToggle: () => void;
 }) {
   const ppd     = item.price ? proteinPerDollar(item.protein, item.price) : 0;
-  const ppdC    = ppdColor(ppd);
   const dietFit = getDietFit(item.compatibleWith ?? [], userFlags);
-
   const grabUrl  = `https://food.grab.com/sg/en/search?query=${encodeURIComponent(restaurant.name)}`;
   const pandaUrl = `https://www.foodpanda.sg/search?q=${encodeURIComponent(restaurant.name)}`;
   const mapsUrl  = `https://www.google.com/maps/search/${encodeURIComponent(restaurant.name + ' Singapore')}`;
 
   return (
-    <div style={{
-      background: CARD, borderRadius: 16, border: `1px solid ${BORDER}`,
-      marginBottom: 10, boxShadow: SHADOW, overflow: 'hidden',
-    }}>
-      {/* Main row */}
-      <div
-        onClick={onToggle}
-        style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', cursor: 'pointer' }}
-      >
-        <div style={{
-          width: 46, height: 46, borderRadius: 12, background: '#F0F4F8',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0,
-        }}>
+    <div style={{ background: CARD, borderRadius: 16, border: `1px solid ${BORDER}`, marginBottom: 10, boxShadow: SHADOW, overflow: 'hidden' }}>
+      <div onClick={onToggle} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', cursor: 'pointer' }}>
+        <div style={{ width: 46, height: 46, borderRadius: 12, background: '#F0F4F8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>
           {item.emoji}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -155,20 +322,18 @@ function MenuItemCard({
             {item.isPopular && <span style={{ fontSize: 10, flexShrink: 0 }}>⭐</span>}
           </div>
           <div style={{ fontSize: 12, color: FG2, marginBottom: 4 }}>{restaurant.name}</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            {item.price != null && (
-              <span style={{ fontSize: 13, fontWeight: 700, color: FG1 }}>${item.price.toFixed(2)}</span>
-            )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            {item.price != null && <span style={{ fontSize: 13, fontWeight: 700, color: FG1 }}>${item.price.toFixed(2)}</span>}
             <span style={{ fontSize: 11, color: FG3 }}>{item.calories} cal</span>
-            {distKm !== undefined && (
-              <span style={{ fontSize: 11, color: FG3 }}>📍 {distKm < 1 ? `${(distKm * 1000).toFixed(0)}m` : `${distKm.toFixed(1)}km`}</span>
-            )}
+            {distKm !== undefined && <span style={{ fontSize: 11, color: FG3 }}>📍 {distKm < 1 ? `${(distKm*1000).toFixed(0)}m` : `${distKm.toFixed(1)}km`}</span>}
             {item.price && ppd > 0 && <PpdBadge protein={item.protein} price={item.price} />}
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          {/* #9 — + logs (open confirm), ✓ un-logs */}
           <button
-            onClick={e => { e.stopPropagation(); onLog(); }}
+            onClick={e => { e.stopPropagation(); logged ? onUnlog() : onLog(); }}
+            title={logged ? 'Tap to remove from log' : 'Log this meal'}
             style={{
               width: 34, height: 34, borderRadius: '50%',
               border: `1.5px solid ${logged ? 'rgba(30,127,92,0.35)' : BORDER}`,
@@ -183,16 +348,15 @@ function MenuItemCard({
         </div>
       </div>
 
-      {/* Expanded detail */}
       {isExpanded && (
-        <div style={{ borderTop: `1px solid ${BORDER}`, padding: '14px 14px 0' }}>
+        <div style={{ borderTop: `1px solid ${BORDER}`, padding: '12px 14px 0' }}>
           {/* Macro grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginBottom: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginBottom: 10 }}>
             {[
-              { label: 'Protein', val: `${item.protein}g`, color: BLUE },
+              { label: 'Protein', val: `${item.protein}g`, color: BLUE  },
               { label: 'Carbs',   val: `${item.carbs}g`,   color: AMBER },
               { label: 'Fat',     val: `${item.fat}g`,     color: GREEN },
-              { label: 'Calories',val: `${item.calories}`, color: FG2  },
+              { label: 'Calories',val: `${item.calories}`, color: FG2   },
             ].map(m => (
               <div key={m.label} style={{ textAlign: 'center', background: BG, borderRadius: 10, padding: '8px 4px' }}>
                 <div style={{ fontSize: 13, fontWeight: 800, color: m.color }}>{m.val}</div>
@@ -200,33 +364,28 @@ function MenuItemCard({
               </div>
             ))}
           </div>
-          {/* Diet badge */}
-          <div style={{ marginBottom: 12 }}>
-            <DietBadge fit={dietFit} />
+          {/* Badges row: confidence + diet + set meal */}
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+            {/* #2 confidence */}
+            <ConfidenceBadge source={item.source} verified={item.verified} confidence={item.confidence} />
+            {/* #7 set meal */}
+            {item.isSetMeal && <SetMealChip includes={item.setIncludes} />}
+            {/* diet fit */}
+            <DietBadge fit={getDietFit(item.compatibleWith ?? [], userFlags)} />
           </div>
-          {/* Action links */}
+          {/* CTAs */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 14 }}>
-            <a href={grabUrl} target="_blank" rel="noreferrer" onClick={() => track(Events.EAT_ORDER_LINK_TAPPED, { platform: 'grab', item: item.id })} style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-              padding: '9px 6px', borderRadius: 10, border: `1px solid ${BORDER}`,
-              background: BG, textDecoration: 'none', fontSize: 11, fontWeight: 700, color: GREEN,
-            }}>
-              🛵 Grab
-            </a>
-            <a href={pandaUrl} target="_blank" rel="noreferrer" onClick={() => track(Events.EAT_ORDER_LINK_TAPPED, { platform: 'foodpanda', item: item.id })} style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-              padding: '9px 6px', borderRadius: 10, border: `1px solid ${BORDER}`,
-              background: BG, textDecoration: 'none', fontSize: 11, fontWeight: 700, color: RED,
-            }}>
-              🐼 Panda
-            </a>
-            <a href={mapsUrl} target="_blank" rel="noreferrer" onClick={() => track(Events.EAT_MAP_LINK_TAPPED, { item: item.id })} style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-              padding: '9px 6px', borderRadius: 10, border: `1px solid ${BORDER}`,
-              background: BG, textDecoration: 'none', fontSize: 11, fontWeight: 700, color: BLUE,
-            }}>
-              🗺️ Maps
-            </a>
+            {[
+              { href: grabUrl,  label: '🛵 Grab',  color: GREEN },
+              { href: pandaUrl, label: '🐼 Panda', color: RED   },
+              { href: mapsUrl,  label: '🗺️ Maps',  color: BLUE  },
+            ].map(l => (
+              <a key={l.label} href={l.href} target="_blank" rel="noreferrer"
+                onClick={() => track(Events.EAT_ORDER_LINK_TAPPED, { item: item.id })}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '9px 6px', borderRadius: 10, border: `1px solid ${BORDER}`, background: BG, textDecoration: 'none', fontSize: 11, fontWeight: 700, color: l.color }}>
+                {l.label}
+              </a>
+            ))}
           </div>
         </div>
       )}
@@ -234,77 +393,74 @@ function MenuItemCard({
   );
 }
 
-/* ── Restaurant browse card ── */
-function RestaurantBrowseCard({
-  restaurant, distKm, onSelect,
-}: {
+/* ── Restaurant browse card — DB matched ── */
+function RestaurantBrowseCard({ restaurant, distKm, onSelect }: {
   restaurant: SGRestaurant; distKm?: number; onSelect: () => void;
 }) {
-  const popularItem  = restaurant.menu.find(m => m.isPopular) ?? restaurant.menu[0];
-  const itemCount    = restaurant.menu.length;
   const serviceIcons: Record<ServiceType, string> = { dine_in: '🍽️', grab_go: '🥡', delivery: '🛵' };
-
   return (
-    <div
-      onClick={onSelect}
-      style={{
-        display: 'flex', alignItems: 'center', gap: 14, padding: '14px 0',
-        borderBottom: `1px solid ${BORDER}`, cursor: 'pointer',
-      }}
-    >
-      <div style={{
-        width: 52, height: 52, borderRadius: 14, background: '#F0F4F8',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, flexShrink: 0,
-      }}>
-        {restaurant.emoji}
-      </div>
+    <div onClick={onSelect} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 0', borderBottom: `1px solid ${BORDER}`, cursor: 'pointer' }}>
+      <div style={{ width: 52, height: 52, borderRadius: 14, background: '#F0F4F8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, flexShrink: 0 }}>{restaurant.emoji}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: FG1, marginBottom: 2 }}>{restaurant.name}</div>
         <div style={{ fontSize: 12, color: FG2, marginBottom: 5 }}>
-          {restaurant.cuisine}
-          {restaurant.priceRange ? ` · ${restaurant.priceRange}` : ''}
-          {distKm !== undefined ? ` · ${distKm < 1 ? `${(distKm * 1000).toFixed(0)}m` : `${distKm.toFixed(1)}km`}` : ''}
+          {restaurant.cuisine}{restaurant.priceRange ? ` · ${restaurant.priceRange}` : ''}
+          {distKm !== undefined ? ` · ${distKm < 1 ? `${(distKm*1000).toFixed(0)}m` : `${distKm.toFixed(1)}km`}` : ''}
         </div>
         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-          {restaurant.dietTags?.slice(0, 3).map(t => (
-            <span key={t} style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: 'rgba(30,127,92,0.07)', color: GREEN }}>
-              {t}
-            </span>
+          {/* #1 diet icons */}
+          {restaurant.dietTags?.slice(0,3).map(t => (
+            <span key={t} style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: 'rgba(30,127,92,0.07)', color: GREEN }}>{DIET_LABEL[t as DietaryFlag] ?? t}</span>
           ))}
           {(restaurant.serviceTypes ?? []).map(s => (
-            <span key={s} style={{ fontSize: 10, padding: '2px 7px', borderRadius: 20, background: 'rgba(139,149,167,0.08)', color: FG3, border: `1px solid ${BORDER}` }}>
-              {serviceIcons[s]}
-            </span>
+            <span key={s} style={{ fontSize: 10, padding: '2px 7px', borderRadius: 20, background: 'rgba(139,149,167,0.08)', color: FG3, border: `1px solid ${BORDER}` }}>{serviceIcons[s]}</span>
           ))}
         </div>
       </div>
       <div style={{ flexShrink: 0, textAlign: 'right' }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: GREEN }}>{itemCount}</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: GREEN }}>{restaurant.menu.length}</div>
         <div style={{ fontSize: 10, color: FG3 }}>items</div>
       </div>
     </div>
   );
 }
 
+/* ── #5 GPS-only restaurant (no DB menu data) ── */
+function GPSRestaurantCard({ place }: { place: NearbyPlace }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 0', borderBottom: `1px solid ${BORDER}` }}>
+      <div style={{ width: 52, height: 52, borderRadius: 14, background: '#F0F4F8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, flexShrink: 0 }}>{place.emoji}</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 15, fontWeight: 600, color: FG1, marginBottom: 2 }}>{place.name}</div>
+        <div style={{ fontSize: 12, color: FG3, marginBottom: 4 }}>
+          {place.distKm !== undefined ? `${place.distKm < 1 ? `${(place.distKm*1000).toFixed(0)}m` : `${place.distKm.toFixed(1)}km`} away` : place.distance}
+          {place.rating ? ` · ⭐ ${place.rating}` : ''}
+        </div>
+        <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: 'rgba(139,149,167,0.08)', color: FG3, border: `1px solid ${BORDER}` }}>
+          Menu info not available
+        </span>
+      </div>
+      <a href={place.mapsUrl} target="_blank" rel="noreferrer" style={{ padding: '8px 12px', borderRadius: 10, border: `1px solid ${BORDER}`, background: BG, textDecoration: 'none', fontSize: 11, fontWeight: 700, color: BLUE, flexShrink: 0 }}>
+        🗺️ Maps
+      </a>
+    </div>
+  );
+}
+
 /* ── Recipe card ── */
-function RecipeCard({
-  recipe, onLog, logged, isExpanded, onToggle,
-}: {
-  recipe: SGRecipe; onLog: () => void; logged: boolean; isExpanded: boolean; onToggle: () => void;
+function RecipeCard({ recipe, onLog, onUnlog, logged, isExpanded, onToggle }: {
+  recipe: SGRecipe; onLog: () => void; onUnlog: () => void; logged: boolean;
+  isExpanded: boolean; onToggle: () => void;
 }) {
-  const resolved  = resolveIngredients(recipe);
-  const rawCost   = calcCostPerServing(recipe);
-  const cost      = rawCost ?? 0;
-  const hasCost   = cost > 0;
-  const ppd       = hasCost ? proteinPerDollar(recipe.protein, cost) : 0;
-  const ppdC      = ppdColor(ppd);
+  const rawCost = calcCostPerServing(recipe);
+  const cost    = rawCost ?? 0;
+  const hasCost = cost > 0;
+  const ppd     = hasCost ? proteinPerDollar(recipe.protein, cost) : 0;
 
   return (
     <div style={{ background: CARD, borderRadius: 16, border: `1px solid ${BORDER}`, marginBottom: 10, boxShadow: SHADOW, overflow: 'hidden' }}>
       <div onClick={onToggle} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', cursor: 'pointer' }}>
-        <div style={{ width: 46, height: 46, borderRadius: 12, background: '#F0F4F8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>
-          {recipe.emoji}
-        </div>
+        <div style={{ width: 46, height: 46, borderRadius: 12, background: '#F0F4F8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>{recipe.emoji}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: FG1, marginBottom: 2 }}>{recipe.name}</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -316,7 +472,7 @@ function RecipeCard({
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           <button
-            onClick={e => { e.stopPropagation(); onLog(); }}
+            onClick={e => { e.stopPropagation(); logged ? onUnlog() : onLog(); }}
             style={{
               width: 34, height: 34, borderRadius: '50%',
               border: `1.5px solid ${logged ? 'rgba(30,127,92,0.35)' : BORDER}`,
@@ -324,9 +480,7 @@ function RecipeCard({
               color: logged ? GREEN : FG2, fontSize: 18, fontWeight: 700, cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
             }}
-          >
-            {logged ? '✓' : '+'}
-          </button>
+          >{logged ? '✓' : '+'}</button>
           <span style={{ fontSize: 9, color: FG3, transform: `rotate(${isExpanded ? 180 : 0}deg)`, transition: 'transform .2s', display: 'inline-block' }}>▼</span>
         </div>
       </div>
@@ -345,13 +499,13 @@ function RecipeCard({
               </div>
             ))}
           </div>
-          {resolved.length > 0 && (
-            <div style={{ marginTop: 4 }}>
+          {resolveIngredients(recipe).length > 0 && (
+            <div>
               <div style={{ fontSize: 11, fontWeight: 700, color: FG2, marginBottom: 6 }}>Ingredients</div>
-              {resolved.map(ri => (
-                <div key={ri.ingredient.name} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: `1px solid ${BORDER}`, fontSize: 12 }}>
-                  <span style={{ color: FG1 }}>{ri.ingredient.name}</span>
-                  <span style={{ color: FG3 }}>{ri.qtyG}g{ri.ingredient.price ? ` · $${(ri.ingredient.price * ri.qtyG / 100).toFixed(2)}` : ''}</span>
+              {resolveIngredients(recipe).map(ri => (
+                <div key={ri.ingredientId} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: `1px solid ${BORDER}`, fontSize: 12 }}>
+                  <span style={{ color: FG1 }}>{ri.ingredientId}</span>
+                  <span style={{ color: FG3 }}>{ri.quantityG}g</span>
                 </div>
               ))}
             </div>
@@ -362,7 +516,7 @@ function RecipeCard({
   );
 }
 
-/* ── Filter bottom sheet ── */
+/* ── #8 Filter bottom sheet with swipe-dismiss + manual inputs ── */
 function FilterSheet({
   open, onClose,
   diningOption, setDiningOption,
@@ -372,6 +526,7 @@ function FilterSheet({
   filterMaxCalories, setFilterMaxCalories,
   distFilter, setDistFilter,
   sortKey, setSortKey,
+  filterStrideApproved, setFilterStrideApproved,
   showDistance,
   onClear,
 }: {
@@ -383,63 +538,97 @@ function FilterSheet({
   filterMaxCalories: number; setFilterMaxCalories: (v: number) => void;
   distFilter: DistFilter; setDistFilter: (v: DistFilter) => void;
   sortKey: SortKey; setSortKey: (v: SortKey) => void;
+  filterStrideApproved: boolean; setFilterStrideApproved: (v: boolean) => void;
   showDistance: boolean;
   onClear: () => void;
 }) {
+  // #8 swipe-to-dismiss
+  const sheetRef   = useRef<HTMLDivElement>(null);
+  const touchStartY = useRef(0);
+  const [dragY, setDragY] = useState(0);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY;
+    setDragY(0);
+  };
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const dy = Math.max(0, e.touches[0].clientY - touchStartY.current);
+    setDragY(dy);
+  };
+  const handleTouchEnd = () => {
+    if (dragY > 80) { setDragY(0); onClose(); }
+    else setDragY(0);
+  };
+
   if (!open) return null;
+
   const toggleDiet = (flag: DietaryFlag) =>
     setDietFlags(dietFlags.includes(flag) ? dietFlags.filter(f => f !== flag) : [...dietFlags, flag]);
 
   const chip = (active: boolean, accent = GREEN) => ({
-    padding: '8px 14px', borderRadius: 20, cursor: 'pointer', fontSize: 13, fontWeight: 600,
+    padding: '8px 12px', borderRadius: 20, cursor: 'pointer', fontSize: 12, fontWeight: 600,
     border: `1.5px solid ${active ? accent : BORDER}`,
-    background: active ? `${accent}14` : CARD,
-    color: active ? accent : FG2,
-    outline: 'none', WebkitTapHighlightColor: 'transparent',
+    background: active ? `${accent}14` : CARD, color: active ? accent : FG2,
+    outline: 'none', WebkitTapHighlightColor: 'transparent', transition: 'all .15s',
   } as React.CSSProperties);
 
-  const SectionLabel = ({ children }: { children: React.ReactNode }) => (
+  const SL = ({ children }: { children: React.ReactNode }) => (
     <div style={{ fontSize: 13, fontWeight: 700, color: FG2, marginBottom: 10, marginTop: 4 }}>{children}</div>
   );
 
   return (
-    <div
-      style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.35)' }}
-      onClick={onClose}
-    >
+    <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.35)' }} onClick={onClose}>
       <div
+        ref={sheetRef}
         onClick={e => e.stopPropagation()}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
         style={{
           position: 'absolute', bottom: 0, left: 0, right: 0,
           background: CARD, borderRadius: '22px 22px 0 0',
           padding: '8px 0 max(32px, env(safe-area-inset-bottom)) 0',
           maxHeight: '88vh', overflowY: 'auto',
+          transform: `translateY(${dragY}px)`,
+          transition: dragY === 0 ? 'transform .2s ease' : 'none',
         }}
       >
-        {/* Handle */}
         <div style={{ width: 36, height: 4, background: '#DDE0E8', borderRadius: 2, margin: '0 auto 20px' }} />
-
         <div style={{ padding: '0 20px' }}>
+
           {/* Sort */}
-          <SectionLabel>Sort by</SectionLabel>
+          <SL>Sort by</SL>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
-            {[
-              { key: 'best_match'     as SortKey, label: '🎯 Best Match'      },
-              { key: 'protein_dollar' as SortKey, label: '💪 Protein per $'   },
-              { key: 'price'          as SortKey, label: '💰 Price: Low→High' },
-              { key: 'calories'       as SortKey, label: '🔥 Lowest Calories' },
+            {([
+              { key: 'best_match'     as SortKey, label: '🎯 Best Match'       },
+              { key: 'protein_dollar' as SortKey, label: '💪 Protein/$'        },
+              { key: 'price'          as SortKey, label: '💰 Price: Low→High'  },
+              { key: 'calories'       as SortKey, label: '🔥 Lowest Calories'  },
               ...(showDistance ? [{ key: 'distance' as SortKey, label: '📍 Nearest' }] : []),
-            ].map(o => (
-              <button key={o.key} onClick={() => setSortKey(o.key)} style={chip(sortKey === o.key)}>
-                {o.label}
-              </button>
+            ]).map(o => (
+              <button key={o.key} onClick={() => setSortKey(o.key)} style={chip(sortKey === o.key)}>{o.label}</button>
             ))}
           </div>
+          <div style={{ height: 1, background: BORDER, marginBottom: 20 }} />
 
+          {/* #10 Stride Approved */}
+          <div style={{ marginBottom: 20 }}>
+            <button onClick={() => setFilterStrideApproved(!filterStrideApproved)} style={{
+              ...chip(filterStrideApproved, GREEN),
+              display: 'flex', alignItems: 'center', gap: 6,
+            }}>
+              ✅ Stride Approved data only
+            </button>
+            {filterStrideApproved && (
+              <div style={{ fontSize: 11, color: FG3, marginTop: 6, lineHeight: 1.5 }}>
+                Shows only items with macros from the brand's official SG nutrition data or HPB-verified sources.
+              </div>
+            )}
+          </div>
           <div style={{ height: 1, background: BORDER, marginBottom: 20 }} />
 
           {/* Price */}
-          <SectionLabel>Price range</SectionLabel>
+          <SL>Price range</SL>
           <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
             {(['all', '$', '$$', '$$$'] as PriceFilter[]).map(p => (
               <button key={p} onClick={() => setPriceFilter(p)} style={chip(priceFilter === p, AMBER)}>
@@ -447,58 +636,66 @@ function FilterSheet({
               </button>
             ))}
           </div>
-
           <div style={{ height: 1, background: BORDER, marginBottom: 20 }} />
 
           {/* Dining option */}
-          <SectionLabel>Dining option</SectionLabel>
+          <SL>Dining option</SL>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
             {([
-              { val: 'all'     as DiningOption, label: 'All'       },
-              { val: 'dine_in' as DiningOption, label: '🍽️ Dine-in'  },
-              { val: 'grab_go' as DiningOption, label: '🥡 Takeaway' },
-              { val: 'delivery'as DiningOption, label: '🛵 Delivery' },
+              { val: 'all'      as DiningOption, label: 'All'         },
+              { val: 'dine_in'  as DiningOption, label: '🍽️ Dine-in'  },
+              { val: 'grab_go'  as DiningOption, label: '🥡 Takeaway' },
+              { val: 'delivery' as DiningOption, label: '🛵 Delivery' },
             ]).map(o => (
-              <button key={o.val} onClick={() => setDiningOption(o.val)} style={chip(diningOption === o.val)}>
-                {o.label}
-              </button>
+              <button key={o.val} onClick={() => setDiningOption(o.val)} style={chip(diningOption === o.val)}>{o.label}</button>
             ))}
           </div>
-
           <div style={{ height: 1, background: BORDER, marginBottom: 20 }} />
 
-          {/* Diet type */}
-          <SectionLabel>Diet type</SectionLabel>
+          {/* #1 Diet type with icons */}
+          <SL>Diet type</SL>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
-            {(['halal', 'vegetarian', 'vegan', 'gluten_free', 'no_pork', 'high_protein', 'keto', 'low_carb'] as DietaryFlag[]).map(f => (
+            {(['halal','vegetarian','vegan','gluten_free','no_pork','high_protein','keto','low_carb','pescatarian'] as DietaryFlag[]).map(f => (
               <button key={f} onClick={() => toggleDiet(f)} style={chip(dietFlags.includes(f))}>
                 {DIET_LABEL[f]}
               </button>
             ))}
           </div>
-
           <div style={{ height: 1, background: BORDER, marginBottom: 20 }} />
 
-          {/* Macros */}
-          <SectionLabel>Macros</SectionLabel>
+          {/* Macros with #8 manual inputs */}
+          <SL>Macros</SL>
           <div style={{ marginBottom: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
               <span style={{ fontSize: 12, color: FG2 }}>Min Protein</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: filterMinProtein > 0 ? BLUE : FG3 }}>
-                {filterMinProtein > 0 ? `≥ ${filterMinProtein}g` : 'Any'}
-              </span>
+              {/* #8 manual input */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <input
+                  type="number" min={0} max={100} value={filterMinProtein || ''}
+                  onChange={e => setFilterMinProtein(Math.min(100, Math.max(0, Number(e.target.value) || 0)))}
+                  placeholder="0"
+                  style={{ width: 52, padding: '4px 8px', borderRadius: 8, border: `1px solid ${BORDER}`, fontSize: 12, fontWeight: 700, color: filterMinProtein > 0 ? BLUE : FG2, textAlign: 'center', outline: 'none' }}
+                />
+                <span style={{ fontSize: 11, color: FG3 }}>g</span>
+              </div>
             </div>
-            <input type="range" min={0} max={50} step={5} value={filterMinProtein}
+            <input type="range" min={0} max={100} step={5} value={filterMinProtein}
               onChange={e => setFilterMinProtein(Number(e.target.value))}
               style={{ width: '100%', accentColor: BLUE, cursor: 'pointer' }}
             />
           </div>
           <div style={{ marginBottom: 20 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
               <span style={{ fontSize: 12, color: FG2 }}>Max Calories</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: filterMaxCalories > 0 ? RED : FG3 }}>
-                {filterMaxCalories > 0 ? `≤ ${filterMaxCalories} kcal` : 'Any'}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <input
+                  type="number" min={0} max={2000} value={filterMaxCalories || ''}
+                  onChange={e => setFilterMaxCalories(Math.min(2000, Math.max(0, Number(e.target.value) || 0)))}
+                  placeholder="Any"
+                  style={{ width: 64, padding: '4px 8px', borderRadius: 8, border: `1px solid ${BORDER}`, fontSize: 12, fontWeight: 700, color: filterMaxCalories > 0 ? RED : FG2, textAlign: 'center', outline: 'none' }}
+                />
+                <span style={{ fontSize: 11, color: FG3 }}>kcal</span>
+              </div>
             </div>
             <input type="range" min={0} max={1200} step={50} value={filterMaxCalories}
               onChange={e => setFilterMaxCalories(Number(e.target.value))}
@@ -509,31 +706,27 @@ function FilterSheet({
           {showDistance && (
             <>
               <div style={{ height: 1, background: BORDER, marginBottom: 20 }} />
-              <SectionLabel>Max distance</SectionLabel>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+              <SL>Max distance</SL>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 20, alignItems: 'center' }}>
                 {([0, 0.5, 1, 2, 5] as DistFilter[]).map(d => (
                   <button key={d} onClick={() => setDistFilter(d)} style={chip(distFilter === d)}>
-                    {d === 0 ? 'Any' : d < 1 ? `${d * 1000}m` : `${d}km`}
+                    {d === 0 ? 'Any' : d < 1 ? `${d*1000}m` : `${d}km`}
                   </button>
                 ))}
               </div>
             </>
           )}
 
-          {/* Actions */}
+          {/* Action buttons */}
           <div style={{ display: 'flex', gap: 10, paddingBottom: 8 }}>
             <button onClick={onClear} style={{
               flex: 1, padding: '13px', borderRadius: 14, border: `1.5px solid ${BORDER}`,
               background: CARD, color: FG2, fontSize: 14, fontWeight: 700, cursor: 'pointer',
-            }}>
-              Clear all
-            </button>
+            }}>Clear all</button>
             <button onClick={onClose} style={{
-              flex: 2, padding: '13px', borderRadius: 14,
-              background: GREEN, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', border: 'none',
-            }}>
-              Show results
-            </button>
+              flex: 2, padding: '13px', borderRadius: 14, border: 'none',
+              background: GREEN, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer',
+            }}>Show results</button>
           </div>
         </div>
       </div>
@@ -543,74 +736,75 @@ function FilterSheet({
 
 /* ══════════════════════════════ Main page ════════════════════════════════ */
 export default function EatPage() {
-  const store    = useStrideStore();
-  const mealCtx  = getMealContext();
+  const store   = useStrideStore();
+  const mealCtx = getMealContext();
 
-  // ── URL params on mount ──────────────────────────────────────────────────
+  // ── URL params ─────────────────────────────────────────────────────────
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const p = new URLSearchParams(window.location.search);
     const v = p.get('view');
     if (v === 'restaurants' || v === 'recipes' || v === 'meals') setViewType(v as ViewType);
-    const q = p.get('q');
-    if (q) setQuery(q);
-    const r = p.get('r');
-    if (r) { setFilterRestaurantId(r); setViewType('meals'); }
+    const q = p.get('q');   if (q)   setQuery(q);
+    const r = p.get('r');   if (r)   { setFilterRestaurantId(r); setViewType('meals'); }
     const sort = p.get('sort');
-    if (sort === 'ppd') setSortKey('protein_dollar');
-    if (sort === 'protein') { setSortKey('protein_dollar'); }
+    if (sort === 'ppd' || sort === 'protein') setSortKey('protein_dollar');
     const diet = p.get('diet');
     if (diet) setFilterDietFlags([diet as DietaryFlag]);
   }, []);
 
-  // ── Core state ────────────────────────────────────────────────────────────
-  const [viewType,           setViewType]           = useState<ViewType>('meals');
-  const [query,              setQuery]              = useState('');
-  const [expandedId,         setExpandedId]         = useState<string | null>(null);
-  const [loggedIds,          setLoggedIds]          = useState<Set<string>>(new Set());
-  const [toastMsg,           setToastMsg]           = useState('');
-  const [showFilters,        setShowFilters]        = useState(false);
-  const [filterRestaurantId, setFilterRestaurantId] = useState<string | null>(null);
+  // ── Core state ──────────────────────────────────────────────────────────
+  const [viewType,            setViewType]            = useState<ViewType>('meals');
+  const [query,               setQuery]               = useState('');
+  const [expandedId,          setExpandedId]          = useState<string | null>(null);
+  const [showFilters,         setShowFilters]         = useState(false);
+  const [filterRestaurantId,  setFilterRestaurantId]  = useState<string | null>(null);
 
-  // ── Filter state ──────────────────────────────────────────────────────────
-  const [sortKey,            setSortKey]            = useState<SortKey>('best_match');
-  const [diningOption,       setDiningOption]       = useState<DiningOption>('all');
-  const [priceFilter,        setPriceFilter]        = useState<PriceFilter>('all');
-  const [filterDietFlags,    setFilterDietFlags]    = useState<DietaryFlag[]>([]);
-  const [filterMinProtein,   setFilterMinProtein]   = useState(0);
-  const [filterMaxCalories,  setFilterMaxCalories]  = useState(0);
-  const [distFilter,         setDistFilter]         = useState<DistFilter>(0);
+  // #9 log confirm
+  const [pendingLog,          setPendingLog]          = useState<PendingLog | null>(null);
+  // loggedEntryIds maps menuItemId → store entry id (for un-log)
+  const [loggedEntryIds,      setLoggedEntryIds]      = useState<Map<string, string>>(new Map());
+  const loggedIds = useMemo(() => new Set(loggedEntryIds.keys()), [loggedEntryIds]);
 
-  // ── Location state ────────────────────────────────────────────────────────
-  const [locState,           setLocState]           = useState<'idle' | 'loading' | 'granted' | 'denied' | 'no_key'>('idle');
-  const [userLat,            setUserLat]            = useState<number | null>(null);
-  const [userLng,            setUserLng]            = useState<number | null>(null);
-  const [nearbyPlaces,       setNearbyPlaces]       = useState<NearbyPlace[]>([]);
-  const [enrichedPlaces,     setEnrichedPlaces]     = useState<EnrichedPlace[]>([]);
-  const [customLocation,     setCustomLocation]     = useState<string>('');
-  const [showLocationInput,  setShowLocationInput]  = useState(false);
+  // ── Filter state ────────────────────────────────────────────────────────
+  const [sortKey,             setSortKey]             = useState<SortKey>('best_match');
+  const [diningOption,        setDiningOption]        = useState<DiningOption>('all');
+  const [priceFilter,         setPriceFilter]         = useState<PriceFilter>('all');
+  const [filterDietFlags,     setFilterDietFlags]     = useState<DietaryFlag[]>([]);
+  const [filterMinProtein,    setFilterMinProtein]    = useState(0);
+  const [filterMaxCalories,   setFilterMaxCalories]   = useState(0);
+  const [distFilter,          setDistFilter]          = useState<DistFilter>(0);
+  const [filterStrideApproved,setFilterStrideApproved]= useState(false); // #10
 
-  // ── Analytics refs ────────────────────────────────────────────────────────
+  // ── Location state ──────────────────────────────────────────────────────
+  const [locState,            setLocState]            = useState<'idle'|'loading'|'granted'|'denied'|'no_key'>('idle');
+  const [nearbyPlaces,        setNearbyPlaces]        = useState<NearbyPlace[]>([]);
+  const [enrichedPlaces,      setEnrichedPlaces]      = useState<EnrichedPlace[]>([]);
+  const [customLocation,      setCustomLocation]      = useState('');
+  const [showLocationInput,   setShowLocationInput]   = useState(false);
+  const [toastMsg,            setToastMsg]            = useState('');
+
   const searchTimer = useRef<ReturnType<typeof setTimeout>>();
-
   const userFlags: DietaryFlag[] = store.profile?.dietaryFlags ?? [];
   const remaining = {
-    protein:  (store.profile?.targetProtein ?? 120) - store.todayProtein,
+    protein:  (store.profile?.targetProtein  ?? 120) - store.todayProtein,
     calories: (store.profile?.targetCalories ?? 2000) - store.todayCalories,
-    carbs:    (store.profile?.targetCarbs ?? 200) - store.todayCarbs,
+    carbs:    (store.profile?.targetCarbs    ?? 200)  - store.todayCarbs,
   };
+  const hasLocation = locState === 'granted';
 
-  // ── Location + nearby places ──────────────────────────────────────────────
+  // ── Location ────────────────────────────────────────────────────────────
   const requestLocation = useCallback(() => {
     const key = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
     if (!key) { setLocState('no_key'); return; }
     setLocState('loading');
     navigator.geolocation.getCurrentPosition(
       async pos => {
-        const { latitude: lat, longitude: lng } = pos.coords;
-        setUserLat(lat); setUserLng(lng); setLocState('granted');
+        setLocState('granted');
+        // #1 auto-switch to distance sort when GPS granted
+        setSortKey('distance');
         try {
-          const res = await fetch(`/api/nearby-places?lat=${lat}&lng=${lng}&mode=restaurant`);
+          const res = await fetch(`/api/nearby-places?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}&mode=restaurant`);
           if (!res.ok) return;
           const data = await res.json();
           setNearbyPlaces(data.results ?? []);
@@ -626,116 +820,74 @@ export default function EatPage() {
     track(Events.EAT_PAGE_VIEWED);
   }, []);
 
-  // ── Enrich GPS places with DB matches ─────────────────────────────────────
+  // ── Enrich GPS results ──────────────────────────────────────────────────
   useEffect(() => {
-    const enriched: EnrichedPlace[] = nearbyPlaces.map(p => {
+    setEnrichedPlaces(nearbyPlaces.map(p => {
       const dbMatch = matchRestaurant(p.name);
-      const tier: RestaurantTier = dbMatch ? 1 : 2;
-      return { ...p, dbMatch, tier };
-    });
-    setEnrichedPlaces(enriched);
+      return { ...p, dbMatch, tier: dbMatch ? 1 : 2 } as EnrichedPlace;
+    }));
   }, [nearbyPlaces]);
 
-  // ── Distance lookup map ───────────────────────────────────────────────────
   const distLookup = useMemo(() => {
     const m = new Map<string, number>();
     for (const ep of enrichedPlaces) {
-      if (ep.dbMatch && ep.distKm !== undefined) {
-        m.set(ep.dbMatch.id, ep.distKm);
-      }
+      if (ep.dbMatch && ep.distKm !== undefined) m.set(ep.dbMatch.id, ep.distKm);
     }
     return m;
   }, [enrichedPlaces]);
 
-  const hasLocation = locState === 'granted';
-
-  // ── pooledItems — flat list across all restaurants ────────────────────────
+  // ── Pooled items ────────────────────────────────────────────────────────
   const pooledItems = useMemo((): PooledItem[] => {
-    const seenItemIds = new Set<string>();
+    const seen = new Set<string>();
     const out: PooledItem[] = [];
-
-    // 1. GPS matches first
     for (const ep of enrichedPlaces) {
       if (!ep.dbMatch) continue;
-      const r = ep.dbMatch;
-      for (const item of r.menu) {
-        if (seenItemIds.has(item.id)) continue;
-        seenItemIds.add(item.id);
-        out.push({ item, restaurant: r, distKm: ep.distKm, tier: 1 });
+      for (const item of ep.dbMatch.menu) {
+        if (seen.has(item.id)) continue;
+        seen.add(item.id);
+        out.push({ item, restaurant: ep.dbMatch, distKm: ep.distKm, tier: 1 });
       }
     }
-
-    // 2. All remaining DB chains
     for (const r of SG_RESTAURANTS) {
       if (r.tab === 'store') continue;
-      const alreadyIn = out.some(p => p.restaurant.id === r.id);
-      const distKm    = distLookup.get(r.id);
+      const distKm = distLookup.get(r.id);
       for (const item of r.menu) {
-        if (seenItemIds.has(item.id)) continue;
-        seenItemIds.add(item.id);
-        out.push({ item, restaurant: r, distKm, tier: alreadyIn ? 1 : 2 });
+        if (seen.has(item.id)) continue;
+        seen.add(item.id);
+        out.push({ item, restaurant: r, distKm, tier: 2 });
       }
     }
-
     return out;
   }, [enrichedPlaces, distLookup]);
 
-  // ── Apply filters + sort ──────────────────────────────────────────────────
+  // ── Filtered + sorted items ─────────────────────────────────────────────
   const filteredItems = useMemo((): PooledItem[] => {
-    let filtered = pooledItems;
-
-    // Restaurant filter (from URL param or Restaurants view tap)
-    if (filterRestaurantId) filtered = filtered.filter(p => p.restaurant.id === filterRestaurantId);
-
-    // Dining option
+    let f = pooledItems;
+    if (filterRestaurantId) f = f.filter(p => p.restaurant.id === filterRestaurantId);
     if (diningOption !== 'all') {
-      const svcMap: Record<DiningOption, ServiceType> = {
-        dine_in: 'dine_in', grab_go: 'grab_go', delivery: 'delivery', all: 'dine_in',
-      };
-      filtered = filtered.filter(p => (p.restaurant.serviceTypes ?? []).includes(svcMap[diningOption]));
+      const svcMap: Record<DiningOption, ServiceType> = { dine_in:'dine_in', grab_go:'grab_go', delivery:'delivery', all:'dine_in' };
+      f = f.filter(p => (p.restaurant.serviceTypes ?? []).includes(svcMap[diningOption]));
     }
+    if (priceFilter !== 'all') f = f.filter(p => p.restaurant.priceRange === priceFilter);
+    if (filterDietFlags.length) f = f.filter(p => filterDietFlags.every(flag => (p.item.compatibleWith ?? []).includes(flag)));
+    if (filterMinProtein > 0)   f = f.filter(p => p.item.protein >= filterMinProtein);
+    if (filterMaxCalories > 0)  f = f.filter(p => p.item.calories <= filterMaxCalories);
+    if (distFilter > 0)         f = f.filter(p => p.distKm === undefined || p.distKm <= distFilter);
+    // #10 Stride Approved
+    if (filterStrideApproved)   f = f.filter(p =>
+      (p.item.source === 'official_sg' || (p.item.source === 'hpb' && p.item.verified)) && p.item.verified
+    );
+    if (sortKey === 'protein_dollar') f = [...f].sort((a,b) => proteinPerDollar(b.item.protein,b.item.price??0) - proteinPerDollar(a.item.protein,a.item.price??0));
+    else if (sortKey === 'price')    f = [...f].sort((a,b) => (a.item.price??999) - (b.item.price??999));
+    else if (sortKey === 'calories') f = [...f].sort((a,b) => a.item.calories - b.item.calories);
+    else if (sortKey === 'distance') f = [...f].sort((a,b) => (a.distKm??99) - (b.distKm??99));
+    return f;
+  }, [pooledItems, filterRestaurantId, diningOption, priceFilter, filterDietFlags, filterMinProtein, filterMaxCalories, distFilter, sortKey, filterStrideApproved]);
 
-    // Price range
-    if (priceFilter !== 'all') {
-      filtered = filtered.filter(p => p.restaurant.priceRange === priceFilter);
-    }
-
-    // Diet flags (user-selected in filter sheet)
-    if (filterDietFlags.length) {
-      filtered = filtered.filter(p => filterDietFlags.every(f => (p.item.compatibleWith ?? []).includes(f)));
-    }
-
-    // Macro thresholds
-    if (filterMinProtein > 0)  filtered = filtered.filter(p => p.item.protein >= filterMinProtein);
-    if (filterMaxCalories > 0) filtered = filtered.filter(p => p.item.calories <= filterMaxCalories);
-
-    // Distance filter
-    if (distFilter > 0) {
-      filtered = filtered.filter(p => p.distKm === undefined || p.distKm <= distFilter);
-    }
-
-    // Sort
-    if (sortKey === 'protein_dollar') {
-      filtered = [...filtered].sort((a, b) =>
-        proteinPerDollar(b.item.protein, b.item.price ?? 0) - proteinPerDollar(a.item.protein, a.item.price ?? 0)
-      );
-    } else if (sortKey === 'price') {
-      filtered = [...filtered].sort((a, b) => (a.item.price ?? 999) - (b.item.price ?? 999));
-    } else if (sortKey === 'calories') {
-      filtered = [...filtered].sort((a, b) => a.item.calories - b.item.calories);
-    } else if (sortKey === 'distance') {
-      filtered = [...filtered].sort((a, b) => (a.distKm ?? 99) - (b.distKm ?? 99));
-    }
-
-    return filtered;
-  }, [pooledItems, filterRestaurantId, diningOption, priceFilter, filterDietFlags, filterMinProtein, filterMaxCalories, distFilter, sortKey]);
-
-  // ── Search results ─────────────────────────────────────────────────────────
+  // ── Search results ──────────────────────────────────────────────────────
   const searchResults = useMemo(() => {
     if (!query.trim()) return null;
-    const hits = searchAll(query);
-    // Attach distKm from lookup
-    return hits.map(h => ({ ...h, distKm: distLookup.get(h.restaurant.id) }));
+    return searchAll(query).map(h => ({ ...h, distKm: distLookup.get(h.restaurant.id) }));
   }, [query, distLookup]);
 
   const recipeSearchResults = useMemo(() => {
@@ -743,117 +895,108 @@ export default function EatPage() {
     return searchRecipes(query);
   }, [query, viewType]);
 
-  // ── Restaurants for browse ─────────────────────────────────────────────────
+  // ── Restaurant list (#5: includes GPS-only places) ──────────────────────
   const restaurantList = useMemo(() => {
     let list = SG_RESTAURANTS.filter(r => r.tab !== 'store');
-
     if (query.trim()) {
       const q = query.toLowerCase();
-      list = list.filter(r =>
-        r.name.toLowerCase().includes(q) ||
-        r.cuisine.toLowerCase().includes(q) ||
-        (r.aliases ?? []).some(a => a.includes(q))
-      );
+      list = list.filter(r => r.name.toLowerCase().includes(q) || r.cuisine.toLowerCase().includes(q) || (r.aliases ?? []).some(a => a.includes(q)));
     }
-
     if (diningOption !== 'all') {
-      const svcMap: Record<DiningOption, ServiceType> = {
-        dine_in: 'dine_in', grab_go: 'grab_go', delivery: 'delivery', all: 'dine_in',
-      };
+      const svcMap: Record<DiningOption, ServiceType> = { dine_in:'dine_in', grab_go:'grab_go', delivery:'delivery', all:'dine_in' };
       list = list.filter(r => (r.serviceTypes ?? []).includes(svcMap[diningOption]));
     }
-
     if (priceFilter !== 'all') list = list.filter(r => r.priceRange === priceFilter);
-    if (filterDietFlags.length) list = list.filter(r =>
-      filterDietFlags.some(f => (r.dietTags ?? []).includes(f))
-    );
-
+    if (filterDietFlags.length) list = list.filter(r => filterDietFlags.some(f => (r.dietTags ?? []).includes(f)));
     return list;
   }, [query, diningOption, priceFilter, filterDietFlags]);
 
-  // ── Toast helper ──────────────────────────────────────────────────────────
+  // #5 GPS-only places (no DB match)
+  const gpsOnlyPlaces = useMemo(() =>
+    enrichedPlaces.filter(ep => !ep.dbMatch),
+  [enrichedPlaces]);
+
+  // ── Toast ───────────────────────────────────────────────────────────────
   const showToast = useCallback((msg: string) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 2200);
   }, []);
 
-  // ── Log actions ───────────────────────────────────────────────────────────
-  const logMenuItem = useCallback((item: SGMenuItem, restaurant: SGRestaurant) => {
-    if (loggedIds.has(item.id)) return;
-    const entry = {
-      name: item.name, emoji: item.emoji,
-      mealType: mealCtx.mealType,
-      calories: item.calories, protein: item.protein,
-      carbs: item.carbs, fat: item.fat,
-      quantity: 1, restaurantId: restaurant.id,
-    };
-    store.addFoodEntry(entry);
-    setLoggedIds(prev => new Set([...prev, item.id]));
-    showToast(`${item.emoji} ${item.name} logged!`);
-    track(Events.MEAL_LOGGED, { source: 'eat_page', itemId: item.id, restaurantId: restaurant.id, calories: item.calories });
-  }, [loggedIds, mealCtx.mealType, store, showToast]);
+  // ── #9 Log confirm handler ──────────────────────────────────────────────
+  const commitLog = useCallback((mealType: MealType, _date: string, _time: string) => {
+    if (!pendingLog) return;
+    const { type, item, recipe, restaurant } = pendingLog;
 
-  const logRecipe = useCallback((recipe: SGRecipe) => {
-    if (loggedIds.has(recipe.id)) return;
-    const entry = {
-      name: recipe.name, emoji: recipe.emoji,
-      mealType: mealCtx.mealType,
-      calories: recipe.calories, protein: recipe.protein,
-      carbs: recipe.carbs, fat: recipe.fat, fibre: recipe.fibre,
-      quantity: 1,
-    };
-    store.addFoodEntry(entry);
-    setLoggedIds(prev => new Set([...prev, recipe.id]));
-    showToast(`${recipe.emoji} ${recipe.name} logged!`);
-    track(Events.MEAL_LOGGED, { source: 'eat_page_recipe', recipeId: recipe.id, calories: recipe.calories });
-  }, [loggedIds, mealCtx.mealType, store, showToast]);
+    if (type === 'item' && item && restaurant) {
+      const entry = {
+        name: item.name, emoji: item.emoji, mealType,
+        calories: item.calories, protein: item.protein, carbs: item.carbs, fat: item.fat,
+        quantity: 1, restaurantId: restaurant.id,
+      };
+      store.addFoodEntry(entry);
+      // Capture the newest entry id right after (Zustand set is synchronous)
+      const newId = store.foodLog[store.foodLog.length - 1]?.id ?? item.id;
+      setLoggedEntryIds(prev => new Map([...prev, [item.id, newId]]));
+      showToast(`${item.emoji} ${item.name} logged!`);
+      track(Events.MEAL_LOGGED, { source: 'eat_page', itemId: item.id, calories: item.calories });
+    } else if (type === 'recipe' && recipe) {
+      const entry = {
+        name: recipe.name, emoji: recipe.emoji, mealType,
+        calories: recipe.calories, protein: recipe.protein, carbs: recipe.carbs, fat: recipe.fat,
+        fibre: recipe.fibre, quantity: 1,
+      };
+      store.addFoodEntry(entry);
+      const newId = store.foodLog[store.foodLog.length - 1]?.id ?? recipe.id;
+      setLoggedEntryIds(prev => new Map([...prev, [recipe.id, newId]]));
+      showToast(`${recipe.emoji} ${recipe.name} logged!`);
+      track(Events.MEAL_LOGGED, { source: 'eat_page_recipe', recipeId: recipe.id, calories: recipe.calories });
+    }
+    setPendingLog(null);
+  }, [pendingLog, store, showToast]);
 
-  // ── Count active filters ──────────────────────────────────────────────────
+  const unlog = useCallback((menuId: string, displayName: string, emoji: string) => {
+    const entryId = loggedEntryIds.get(menuId);
+    if (!entryId) return;
+    store.removeFoodEntry(entryId);
+    setLoggedEntryIds(prev => { const m = new Map(prev); m.delete(menuId); return m; });
+    showToast(`${emoji} ${displayName} removed`);
+  }, [loggedEntryIds, store, showToast]);
+
+  // ── Active filter count ─────────────────────────────────────────────────
   const activeFilterCount = [
-    diningOption !== 'all',
-    priceFilter !== 'all',
-    filterDietFlags.length > 0,
-    filterMinProtein > 0,
-    filterMaxCalories > 0,
-    distFilter > 0,
+    diningOption !== 'all', priceFilter !== 'all', filterDietFlags.length > 0,
+    filterMinProtein > 0, filterMaxCalories > 0, distFilter > 0, filterStrideApproved,
   ].filter(Boolean).length;
 
-  const clearAllFilters = () => {
-    setDiningOption('all');
-    setPriceFilter('all');
-    setFilterDietFlags([]);
-    setFilterMinProtein(0);
-    setFilterMaxCalories(0);
-    setDistFilter(0);
-    setSortKey('best_match');
-    setFilterRestaurantId(null);
-  };
+  const clearAllFilters = useCallback(() => {
+    setDiningOption('all'); setPriceFilter('all'); setFilterDietFlags([]);
+    setFilterMinProtein(0); setFilterMaxCalories(0); setDistFilter(0);
+    setSortKey('best_match'); setFilterRestaurantId(null); setFilterStrideApproved(false);
+  }, []);
 
-  // ── Debounced search analytics ─────────────────────────────────────────────
   const handleQueryChange = (v: string) => {
     setQuery(v);
     clearTimeout(searchTimer.current);
-    if (v.trim()) {
-      searchTimer.current = setTimeout(() => track(Events.EAT_SEARCHED, { query: v }), 800);
-    }
+    if (v.trim()) searchTimer.current = setTimeout(() => track(Events.EAT_SEARCHED, { query: v }), 800);
   };
 
-  // ── Recipes list ──────────────────────────────────────────────────────────
   const recipeList = recipeSearchResults ?? SG_RECIPES;
 
   /* ══════════════════════════ Render ═════════════════════════════════════ */
   return (
     <div style={{ minHeight: '100vh', background: BG, paddingBottom: 100 }}>
-      <style>{`@keyframes fadeInUp { from { opacity: 0; transform: translate(-50%,12px); } to { opacity: 1; transform: translate(-50%,0); } }`}</style>
+      <style>{`
+        @keyframes fadeInUp { from { opacity:0; transform:translate(-50%,12px); } to { opacity:1; transform:translate(-50%,0); } }
+        input[type=number]::-webkit-outer-spin-button,
+        input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+      `}</style>
 
-      {/* ── Sticky header: search + tabs ── */}
+      {/* ── Sticky header ── */}
       <div style={{
         position: 'sticky', top: 0, zIndex: 100,
-        background: 'rgba(247,248,251,0.96)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        borderBottom: `1px solid ${BORDER}`,
-        padding: '48px 16px 0',
+        background: 'rgba(247,248,251,0.96)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
+        borderBottom: `1px solid ${BORDER}`, padding: '48px 16px 0',
       }}>
         {/* Search bar */}
         <div style={{ position: 'relative', marginBottom: 12 }}>
@@ -867,79 +1010,56 @@ export default function EatPage() {
             onChange={e => handleQueryChange(e.target.value)}
             placeholder={viewType === 'restaurants' ? 'Search restaurants…' : viewType === 'recipes' ? 'Search recipes…' : 'Search meals, restaurants, recipes…'}
             style={{
-              width: '100%', background: CARD, border: `1px solid ${BORDER}`,
-              borderRadius: 16, padding: '13px 40px 13px 44px',
-              fontSize: 15, color: FG1, outline: 'none',
+              width: '100%', background: CARD, border: `1px solid ${BORDER}`, borderRadius: 16,
+              padding: '13px 40px 13px 44px', fontSize: 15, color: FG1, outline: 'none',
               boxSizing: 'border-box', boxShadow: SHADOW,
             }}
           />
           {query && (
-            <button onClick={() => setQuery('')} style={{
-              position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-              background: 'none', border: 'none', cursor: 'pointer', color: FG3, fontSize: 18, lineHeight: 1, padding: 4,
-            }}>✕</button>
+            <button onClick={() => setQuery('')} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: FG3, fontSize: 18, lineHeight: 1, padding: 4 }}>✕</button>
           )}
         </div>
 
         {/* View tabs */}
-        <div style={{ display: 'flex', gap: 0, borderBottom: `1px solid transparent` }}>
+        <div style={{ display: 'flex' }}>
           {([
-            { key: 'meals'       as ViewType, label: '🍽️ Meals'       },
-            { key: 'restaurants' as ViewType, label: '🏪 Restaurants'  },
-            { key: 'recipes'     as ViewType, label: '👨‍🍳 Recipes'     },
+            { key: 'meals'       as ViewType, label: '🍽️ Meals'      },
+            { key: 'restaurants' as ViewType, label: '🏪 Restaurants' },
+            { key: 'recipes'     as ViewType, label: '👨‍🍳 Recipes'    },
           ]).map(tab => (
-            <button
-              key={tab.key}
+            <button key={tab.key}
               onClick={() => { setViewType(tab.key); if (tab.key !== 'meals') setFilterRestaurantId(null); }}
               style={{
                 flex: 1, padding: '10px 4px', border: 'none', background: 'none',
                 fontSize: 13, fontWeight: 700, cursor: 'pointer',
                 color: viewType === tab.key ? GREEN : FG3,
                 borderBottom: `2.5px solid ${viewType === tab.key ? GREEN : 'transparent'}`,
-                transition: 'all .15s',
-                WebkitTapHighlightColor: 'transparent',
+                transition: 'all .15s', WebkitTapHighlightColor: 'transparent',
               }}
-            >
-              {tab.label}
-            </button>
+            >{tab.label}</button>
           ))}
         </div>
       </div>
 
       {/* ── Location + filter bar ── */}
       <div style={{ padding: '12px 16px 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
-        {/* Location indicator */}
-        <button
-          onClick={() => setShowLocationInput(!showLocationInput)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 5,
-            padding: '7px 12px', borderRadius: 20,
-            border: `1px solid ${BORDER}`, background: CARD,
-            fontSize: 12, fontWeight: 600,
-            color: hasLocation ? GREEN : FG3, cursor: 'pointer',
-            flexShrink: 0,
-          }}
-        >
+        <button onClick={() => setShowLocationInput(!showLocationInput)} style={{
+          display: 'flex', alignItems: 'center', gap: 5, padding: '7px 12px', borderRadius: 20,
+          border: `1px solid ${BORDER}`, background: CARD, fontSize: 12, fontWeight: 600,
+          color: hasLocation ? GREEN : FG3, cursor: 'pointer', flexShrink: 0,
+        }}>
           <span>📍</span>
           <span>{hasLocation ? 'Near you' : customLocation || 'Singapore'}</span>
           <span style={{ fontSize: 10, color: FG3 }}>▾</span>
         </button>
-
         <div style={{ flex: 1 }} />
-
-        {/* Filters button */}
-        <button
-          onClick={() => setShowFilters(true)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            padding: '7px 14px', borderRadius: 20,
-            border: `1.5px solid ${activeFilterCount > 0 ? GREEN : BORDER}`,
-            background: activeFilterCount > 0 ? 'rgba(30,127,92,0.08)' : CARD,
-            fontSize: 12, fontWeight: 700,
-            color: activeFilterCount > 0 ? GREEN : FG2,
-            cursor: 'pointer', flexShrink: 0,
-          }}
-        >
+        <button onClick={() => setShowFilters(true)} style={{
+          display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 20,
+          border: `1.5px solid ${activeFilterCount > 0 ? GREEN : BORDER}`,
+          background: activeFilterCount > 0 ? 'rgba(30,127,92,0.08)' : CARD,
+          fontSize: 12, fontWeight: 700, color: activeFilterCount > 0 ? GREEN : FG2,
+          cursor: 'pointer', flexShrink: 0,
+        }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
           </svg>
@@ -950,23 +1070,14 @@ export default function EatPage() {
       {/* Location input */}
       {showLocationInput && (
         <div style={{ padding: '4px 16px 8px' }}>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <input
-              value={customLocation}
-              onChange={e => setCustomLocation(e.target.value)}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input value={customLocation} onChange={e => setCustomLocation(e.target.value)}
               placeholder="Enter area (e.g. Orchard, Tampines…)"
-              style={{
-                flex: 1, padding: '9px 14px', borderRadius: 12,
-                border: `1px solid ${BORDER}`, fontSize: 13, color: FG1, outline: 'none',
-                background: CARD,
-              }}
+              style={{ flex: 1, padding: '9px 14px', borderRadius: 12, border: `1px solid ${BORDER}`, fontSize: 13, color: FG1, outline: 'none', background: CARD }}
             />
             <button onClick={() => { setShowLocationInput(false); requestLocation(); }} style={{
-              padding: '9px 14px', borderRadius: 12, border: 'none',
-              background: GREEN, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-            }}>
-              Use GPS
-            </button>
+              padding: '9px 14px', borderRadius: 12, border: 'none', background: GREEN, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+            }}>Use GPS</button>
           </div>
         </div>
       )}
@@ -977,15 +1088,21 @@ export default function EatPage() {
           {filterRestaurantId && (() => {
             const r = SG_RESTAURANTS.find(r => r.id === filterRestaurantId);
             return r ? (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 20, background: 'rgba(30,127,92,0.08)', border: `1px solid rgba(30,127,92,0.2)`, fontSize: 11, fontWeight: 600, color: GREEN, flexShrink: 0 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 20, background: 'rgba(30,127,92,0.08)', border: '1px solid rgba(30,127,92,0.2)', fontSize: 11, fontWeight: 600, color: GREEN, flexShrink: 0 }}>
                 {r.emoji} {r.name}
-                <button onClick={() => setFilterRestaurantId(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: GREEN, fontSize: 12, padding: 0 }}>✕</button>
+                <button onClick={() => setFilterRestaurantId(null)} style={{ background:'none', border:'none', cursor:'pointer', color: GREEN, fontSize:12, padding:0 }}>✕</button>
               </span>
             ) : null;
           })()}
-          {activeFilterCount > 0 && (
-            <button onClick={clearAllFilters} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 20, background: 'rgba(208,78,54,0.06)', border: `1px solid rgba(208,78,54,0.18)`, fontSize: 11, fontWeight: 700, color: RED, cursor: 'pointer', flexShrink: 0 }}>
-              Clear filters ✕
+          {filterStrideApproved && (
+            <span style={{ display:'inline-flex', alignItems:'center', gap:4, padding:'4px 10px', borderRadius:20, background:'rgba(30,127,92,0.08)', border:'1px solid rgba(30,127,92,0.2)', fontSize:11, fontWeight:700, color:GREEN, flexShrink:0 }}>
+              ✅ Stride Approved
+              <button onClick={() => setFilterStrideApproved(false)} style={{ background:'none', border:'none', cursor:'pointer', color:GREEN, fontSize:12, padding:0 }}>✕</button>
+            </span>
+          )}
+          {activeFilterCount > (filterStrideApproved ? 1 : 0) && (
+            <button onClick={clearAllFilters} style={{ display:'inline-flex', alignItems:'center', gap:4, padding:'4px 10px', borderRadius:20, background:'rgba(208,78,54,0.06)', border:'1px solid rgba(208,78,54,0.18)', fontSize:11, fontWeight:700, color:RED, cursor:'pointer', flexShrink:0 }}>
+              Clear all ✕
             </button>
           )}
         </div>
@@ -994,10 +1111,10 @@ export default function EatPage() {
       {/* ── Results ── */}
       <div style={{ padding: '8px 16px 0' }}>
 
-        {/* ── MEALS view ── */}
+        {/* MEALS */}
         {viewType === 'meals' && (() => {
           const items = searchResults
-            ? searchResults.map(h => ({ item: h.item as SGMenuItem, restaurant: h.restaurant as SGRestaurant, distKm: (h as any).distKm as number | undefined, tier: 1 as RestaurantTier }))
+            ? searchResults.map(h => ({ item: h.item as SGMenuItem, restaurant: h.restaurant as SGRestaurant, distKm: (h as any).distKm as number|undefined, tier: 1 as RestaurantTier }))
             : filteredItems;
 
           if (items.length === 0) return (
@@ -1006,9 +1123,22 @@ export default function EatPage() {
               <div style={{ fontSize: 16, fontWeight: 600, color: FG2, marginBottom: 8 }}>No meals found</div>
               <div style={{ fontSize: 13 }}>Try adjusting your filters or search terms</div>
               {activeFilterCount > 0 && (
-                <button onClick={clearAllFilters} style={{ marginTop: 16, padding: '10px 20px', borderRadius: 20, background: GREEN, color: '#fff', fontWeight: 700, fontSize: 13, border: 'none', cursor: 'pointer' }}>
-                  Clear filters
-                </button>
+                <button onClick={clearAllFilters} style={{ marginTop: 16, padding: '10px 20px', borderRadius: 20, background: GREEN, color: '#fff', fontWeight: 700, fontSize: 13, border: 'none', cursor: 'pointer' }}>Clear filters</button>
+              )}
+              {/* #6 fallback suggestions when empty */}
+              {pooledItems.length > 0 && (
+                <div style={{ marginTop: 24, textAlign: 'left', background: CARD, borderRadius: 18, border: `1px solid ${BORDER}`, padding: 16, boxShadow: SHADOW }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: FG1, marginBottom: 12 }}>🌟 Other options nearby</div>
+                  {pooledItems.slice(0,5).map(({ item, restaurant, distKm }) => (
+                    <MenuItemCard key={`${restaurant.id}__${item.id}`} item={item} restaurant={restaurant} distKm={distKm}
+                      userFlags={userFlags} onLog={() => setPendingLog({ type:'item', item, restaurant })}
+                      onUnlog={() => unlog(item.id, item.name, item.emoji)}
+                      logged={loggedIds.has(item.id)}
+                      isExpanded={expandedId === item.id}
+                      onToggle={() => setExpandedId(expandedId === item.id ? null : item.id)}
+                    />
+                  ))}
+                </div>
               )}
             </div>
           );
@@ -1016,71 +1146,78 @@ export default function EatPage() {
           return (
             <>
               <div style={{ fontSize: 12, color: FG3, marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>
-                  {searchResults ? `${items.length} results for "${query}"` : `${items.length} meals${hasLocation ? ' near you' : ''}`}
-                </span>
-                {filterRestaurantId && (
-                  <span style={{ color: GREEN, fontSize: 11, fontWeight: 600 }}>
-                    from {SG_RESTAURANTS.find(r => r.id === filterRestaurantId)?.name}
-                  </span>
-                )}
+                <span>{searchResults ? `${items.length} results for "${query}"` : `${items.length} meals`}</span>
+                {filterRestaurantId && <span style={{ color: GREEN, fontSize: 11, fontWeight: 600 }}>from {SG_RESTAURANTS.find(r => r.id === filterRestaurantId)?.name}</span>}
               </div>
               {items.map(({ item, restaurant, distKm }) => (
-                <MenuItemCard
-                  key={`${restaurant.id}__${item.id}`}
-                  item={item} restaurant={restaurant} distKm={distKm}
-                  userFlags={userFlags}
-                  onLog={() => logMenuItem(item, restaurant)}
+                <MenuItemCard key={`${restaurant.id}__${item.id}`} item={item} restaurant={restaurant} distKm={distKm}
+                  userFlags={userFlags} onLog={() => setPendingLog({ type:'item', item, restaurant })}
+                  onUnlog={() => unlog(item.id, item.name, item.emoji)}
                   logged={loggedIds.has(item.id)}
                   isExpanded={expandedId === item.id}
-                  onToggle={() => {
-                    setExpandedId(expandedId === item.id ? null : item.id);
-                    if (expandedId !== item.id) track(Events.EAT_ITEM_EXPANDED, { itemId: item.id });
-                  }}
+                  onToggle={() => { setExpandedId(expandedId === item.id ? null : item.id); if (expandedId !== item.id) track(Events.EAT_ITEM_EXPANDED, { itemId: item.id }); }}
                 />
               ))}
+
+              {/* #6 "More options" fallback when few results */}
+              {items.length > 0 && items.length < 5 && activeFilterCount > 0 && (
+                <div style={{ marginTop: 12, background: CARD, borderRadius: 16, border: `1px dashed ${BORDER}`, padding: '14px 16px' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: FG2, marginBottom: 4 }}>🌟 More options outside your filters</div>
+                  <div style={{ fontSize: 11, color: FG3, marginBottom: 10 }}>These don't match all your criteria but may be worth a look</div>
+                  {pooledItems.filter(p => !items.find(i => i.item.id === p.item.id)).slice(0, 4).map(({ item, restaurant, distKm }) => (
+                    <MenuItemCard key={`fallback__${restaurant.id}__${item.id}`} item={item} restaurant={restaurant} distKm={distKm}
+                      userFlags={userFlags} onLog={() => setPendingLog({ type:'item', item, restaurant })}
+                      onUnlog={() => unlog(item.id, item.name, item.emoji)}
+                      logged={loggedIds.has(item.id)}
+                      isExpanded={expandedId === item.id}
+                      onToggle={() => setExpandedId(expandedId === item.id ? null : item.id)}
+                    />
+                  ))}
+                </div>
+              )}
             </>
           );
         })()}
 
-        {/* ── RESTAURANTS view ── */}
+        {/* RESTAURANTS */}
         {viewType === 'restaurants' && (() => {
-          if (restaurantList.length === 0) return (
+          const showGps = gpsOnlyPlaces.length > 0 && !query.trim();
+          if (restaurantList.length === 0 && !showGps) return (
             <div style={{ textAlign: 'center', padding: '60px 20px', color: FG3 }}>
               <div style={{ fontSize: 48, marginBottom: 12 }}>🏪</div>
               <div style={{ fontSize: 16, fontWeight: 600, color: FG2, marginBottom: 8 }}>No restaurants found</div>
-              <div style={{ fontSize: 13 }}>Try a different search or filter</div>
             </div>
           );
           return (
             <div style={{ background: CARD, borderRadius: 18, border: `1px solid ${BORDER}`, padding: '0 14px', boxShadow: SHADOW }}>
               <div style={{ fontSize: 12, color: FG3, padding: '12px 0 4px' }}>
-                {restaurantList.length} restaurant{restaurantList.length !== 1 ? 's' : ''}
-                {query ? ` matching "${query}"` : ' in Singapore'}
+                {restaurantList.length} restaurant{restaurantList.length !== 1 ? 's' : ''} with menu data
+                {showGps ? ` · ${gpsOnlyPlaces.length} more nearby` : ''}
               </div>
-              {restaurantList.map((restaurant, idx) => (
-                <RestaurantBrowseCard
-                  key={restaurant.id}
-                  restaurant={restaurant}
-                  distKm={distLookup.get(restaurant.id)}
-                  onSelect={() => {
-                    setFilterRestaurantId(restaurant.id);
-                    setViewType('meals');
-                    setQuery('');
-                  }}
+              {restaurantList.map(r => (
+                <RestaurantBrowseCard key={r.id} restaurant={r} distKm={distLookup.get(r.id)}
+                  onSelect={() => { setFilterRestaurantId(r.id); setViewType('meals'); setQuery(''); }}
                 />
               ))}
+              {/* #5 GPS-only restaurants below */}
+              {showGps && (
+                <>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: FG3, padding: '14px 0 4px', borderTop: `1px dashed ${BORDER}`, marginTop: 6 }}>
+                    📍 Other places near you (no menu data yet)
+                  </div>
+                  {gpsOnlyPlaces.map(p => <GPSRestaurantCard key={p.id} place={p} />)}
+                </>
+              )}
             </div>
           );
         })()}
 
-        {/* ── RECIPES view ── */}
+        {/* RECIPES */}
         {viewType === 'recipes' && (() => {
           if (recipeList.length === 0) return (
             <div style={{ textAlign: 'center', padding: '60px 20px', color: FG3 }}>
               <div style={{ fontSize: 48, marginBottom: 12 }}>👨‍🍳</div>
               <div style={{ fontSize: 16, fontWeight: 600, color: FG2, marginBottom: 8 }}>No recipes found</div>
-              <div style={{ fontSize: 13 }}>Try a different search term</div>
             </div>
           );
           return (
@@ -1089,10 +1226,9 @@ export default function EatPage() {
                 {recipeList.length} recipe{recipeList.length !== 1 ? 's' : ''}{query ? ` matching "${query}"` : ''}
               </div>
               {recipeList.map(recipe => (
-                <RecipeCard
-                  key={recipe.id}
-                  recipe={recipe}
-                  onLog={() => logRecipe(recipe)}
+                <RecipeCard key={recipe.id} recipe={recipe}
+                  onLog={() => setPendingLog({ type:'recipe', recipe })}
+                  onUnlog={() => unlog(recipe.id, recipe.name, recipe.emoji)}
                   logged={loggedIds.has(recipe.id)}
                   isExpanded={expandedId === recipe.id}
                   onToggle={() => setExpandedId(expandedId === recipe.id ? null : recipe.id)}
@@ -1101,10 +1237,9 @@ export default function EatPage() {
             </>
           );
         })()}
-
       </div>
 
-      {/* ── Filter bottom sheet ── */}
+      {/* Filter sheet */}
       <FilterSheet
         open={showFilters} onClose={() => setShowFilters(false)}
         diningOption={diningOption} setDiningOption={setDiningOption}
@@ -1114,11 +1249,20 @@ export default function EatPage() {
         filterMaxCalories={filterMaxCalories} setFilterMaxCalories={setFilterMaxCalories}
         distFilter={distFilter} setDistFilter={setDistFilter}
         sortKey={sortKey} setSortKey={setSortKey}
+        filterStrideApproved={filterStrideApproved} setFilterStrideApproved={setFilterStrideApproved}
         showDistance={hasLocation}
         onClear={clearAllFilters}
       />
 
-      {/* Toast */}
+      {/* #9 Log confirm sheet */}
+      {pendingLog && (
+        <LogConfirmSheet
+          pending={pendingLog}
+          onConfirm={commitLog}
+          onCancel={() => setPendingLog(null)}
+        />
+      )}
+
       <LogToast message={toastMsg} />
     </div>
   );
