@@ -104,27 +104,20 @@ function DietBadge({ fit }: { fit: DietFit }) {
   );
 }
 
-// ── #2 Confidence badge ────────────────────────────────────────────────────
+// ── #2 Confidence badge — 3 tiers ─────────────────────────────────────────
 function ConfidenceBadge({ source, verified, confidence }: {
   source?: string; verified?: boolean; confidence?: string;
 }) {
+  // No badge if no macro provenance info at all
+  if (!source && !confidence) return null;
+
   if (source === 'official_sg' && verified) {
     return (
-      <span title="Stride Approved — sourced from brand's official SG nutrition data" style={{
+      <span title="Stride Approved — sourced from the brand's official SG nutrition data" style={{
         fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 6,
         background: 'rgba(30,127,92,0.08)', border: '1px solid rgba(30,127,92,0.2)', color: GREEN,
       }}>
         ✅ Stride Approved
-      </span>
-    );
-  }
-  if (source === 'hpb' && verified) {
-    return (
-      <span title="Verified — sourced from HPB (Health Promotion Board Singapore)" style={{
-        fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 6,
-        background: 'rgba(46,111,184,0.08)', border: '1px solid rgba(46,111,184,0.2)', color: BLUE,
-      }}>
-        ✅ HPB Verified
       </span>
     );
   }
@@ -138,17 +131,15 @@ function ConfidenceBadge({ source, verified, confidence }: {
       </span>
     );
   }
-  if (confidence === 'estimated' || source === 'hpb') {
-    return (
-      <span title="Estimated — macros derived from HPB reference data, may vary" style={{
-        fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 6,
-        background: 'rgba(139,149,167,0.10)', border: `1px solid ${BORDER}`, color: FG3,
-      }}>
-        〜 Estimated
-      </span>
-    );
-  }
-  return null;
+  // Everything else with a source (hpb, usda, estimated) → Estimated
+  return (
+    <span title="Estimated — macros derived from reference data, may vary slightly" style={{
+      fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 6,
+      background: 'rgba(139,149,167,0.10)', border: `1px solid ${BORDER}`, color: FG3,
+    }}>
+      〜 Estimated
+    </span>
+  );
 }
 
 function PpdBadge({ protein, price }: { protein: number; price?: number | null }) {
@@ -780,8 +771,10 @@ export default function EatPage() {
   const [locState,            setLocState]            = useState<'idle'|'loading'|'granted'|'denied'|'no_key'>('idle');
   const [nearbyPlaces,        setNearbyPlaces]        = useState<NearbyPlace[]>([]);
   const [enrichedPlaces,      setEnrichedPlaces]      = useState<EnrichedPlace[]>([]);
-  const [customLocation,      setCustomLocation]      = useState('');
-  const [showLocationInput,   setShowLocationInput]   = useState(false);
+  const [locationLabel,       setLocationLabel]       = useState('Current location');
+  const [showLocationPicker,  setShowLocationPicker]  = useState(false);
+  const [locationInput,       setLocationInput]       = useState('');
+  const [geocoding,           setGeocoding]           = useState(false);
   const [toastMsg,            setToastMsg]            = useState('');
 
   const searchTimer = useRef<ReturnType<typeof setTimeout>>();
@@ -793,7 +786,16 @@ export default function EatPage() {
   };
   const hasLocation = locState === 'granted';
 
-  // ── Location ────────────────────────────────────────────────────────────
+  // ── Location helpers ─────────────────────────────────────────────────────
+  const fetchNearbyForCoords = useCallback(async (lat: number, lng: number) => {
+    try {
+      const res = await fetch(`/api/nearby-places?lat=${lat}&lng=${lng}&mode=restaurant`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setNearbyPlaces(data.results ?? []);
+    } catch { /* silent */ }
+  }, []);
+
   const requestLocation = useCallback(() => {
     const key = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
     if (!key) { setLocState('no_key'); return; }
@@ -801,19 +803,45 @@ export default function EatPage() {
     navigator.geolocation.getCurrentPosition(
       async pos => {
         setLocState('granted');
-        // #1 auto-switch to distance sort when GPS granted
-        setSortKey('distance');
-        try {
-          const res = await fetch(`/api/nearby-places?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}&mode=restaurant`);
-          if (!res.ok) return;
-          const data = await res.json();
-          setNearbyPlaces(data.results ?? []);
-        } catch { /* silent */ }
+        setLocationLabel('Current location');
+        setSortKey('distance'); // #1 auto-switch sort
+        await fetchNearbyForCoords(pos.coords.latitude, pos.coords.longitude);
       },
       () => setLocState('denied'),
       { timeout: 8000, maximumAge: 120_000 },
     );
-  }, []);
+  }, [fetchNearbyForCoords]);
+
+  // Geocode a typed location name → lat/lng → nearby places
+  const searchByLocation = useCallback(async (place: string) => {
+    if (!place.trim()) return;
+    const key = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
+    if (!key) { showToast('Location search needs Google Maps key'); return; }
+    setGeocoding(true);
+    try {
+      const q = encodeURIComponent(`${place}, Singapore`);
+      const res = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?address=${q}&key=${key}&region=sg`
+      );
+      const data = await res.json();
+      if (data.status !== 'OK' || !data.results?.[0]) {
+        showToast('Location not found — try another area name');
+        return;
+      }
+      const { lat, lng } = data.results[0].geometry.location;
+      const shortName = data.results[0].address_components?.[0]?.short_name ?? place;
+      setLocationLabel(shortName);
+      setLocState('granted');
+      setSortKey('distance');
+      await fetchNearbyForCoords(lat, lng);
+      setShowLocationPicker(false);
+      setLocationInput('');
+    } catch {
+      showToast('Could not search that location');
+    } finally {
+      setGeocoding(false);
+    }
+  }, [fetchNearbyForCoords, showToast]);
 
   useEffect(() => {
     if (locState === 'idle') requestLocation();
@@ -1043,14 +1071,21 @@ export default function EatPage() {
 
       {/* ── Location + filter bar ── */}
       <div style={{ padding: '12px 16px 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
-        <button onClick={() => setShowLocationInput(!showLocationInput)} style={{
+        {/* Location pill */}
+        <button onClick={() => setShowLocationPicker(!showLocationPicker)} style={{
           display: 'flex', alignItems: 'center', gap: 5, padding: '7px 12px', borderRadius: 20,
-          border: `1px solid ${BORDER}`, background: CARD, fontSize: 12, fontWeight: 600,
-          color: hasLocation ? GREEN : FG3, cursor: 'pointer', flexShrink: 0,
+          border: `1px solid ${hasLocation ? 'rgba(30,127,92,0.25)' : BORDER}`,
+          background: hasLocation ? 'rgba(30,127,92,0.06)' : CARD,
+          fontSize: 12, fontWeight: 600, color: hasLocation ? GREEN : FG3,
+          cursor: 'pointer', flexShrink: 0, maxWidth: 180,
         }}>
-          <span>📍</span>
-          <span>{hasLocation ? 'Near you' : customLocation || 'Singapore'}</span>
-          <span style={{ fontSize: 10, color: FG3 }}>▾</span>
+          <span style={{ flexShrink: 0 }}>
+            {locState === 'loading' ? '⏳' : '📍'}
+          </span>
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {locState === 'loading' ? 'Locating…' : locationLabel}
+          </span>
+          <span style={{ fontSize: 10, color: FG3, flexShrink: 0 }}>▾</span>
         </button>
         <div style={{ flex: 1 }} />
         <button onClick={() => setShowFilters(true)} style={{
@@ -1067,17 +1102,76 @@ export default function EatPage() {
         </button>
       </div>
 
-      {/* Location input */}
-      {showLocationInput && (
-        <div style={{ padding: '4px 16px 8px' }}>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input value={customLocation} onChange={e => setCustomLocation(e.target.value)}
-              placeholder="Enter area (e.g. Orchard, Tampines…)"
-              style={{ flex: 1, padding: '9px 14px', borderRadius: 12, border: `1px solid ${BORDER}`, fontSize: 13, color: FG1, outline: 'none', background: CARD }}
-            />
-            <button onClick={() => { setShowLocationInput(false); requestLocation(); }} style={{
-              padding: '9px 14px', borderRadius: 12, border: 'none', background: GREEN, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
-            }}>Use GPS</button>
+      {/* Location picker dropdown */}
+      {showLocationPicker && (
+        <div style={{ padding: '4px 16px 10px' }}>
+          <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 14, boxShadow: SHADOW }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: FG2, marginBottom: 10 }}>Search location</div>
+            {/* Current GPS option */}
+            <button
+              onClick={() => { requestLocation(); setShowLocationPicker(false); }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                padding: '10px 12px', borderRadius: 12, marginBottom: 8,
+                border: `1.5px solid ${locationLabel === 'Current location' && hasLocation ? GREEN : BORDER}`,
+                background: locationLabel === 'Current location' && hasLocation ? 'rgba(30,127,92,0.06)' : BG,
+                cursor: 'pointer', textAlign: 'left',
+              }}
+            >
+              <span style={{ fontSize: 18 }}>📍</span>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: locationLabel === 'Current location' && hasLocation ? GREEN : FG1 }}>
+                  Current location
+                </div>
+                <div style={{ fontSize: 11, color: FG3 }}>
+                  {locState === 'denied' ? 'Location access denied' : 'Use your GPS location'}
+                </div>
+              </div>
+              {locationLabel === 'Current location' && hasLocation && (
+                <span style={{ marginLeft: 'auto', color: GREEN, fontSize: 14 }}>✓</span>
+              )}
+            </button>
+            {/* Custom location search */}
+            <div style={{ fontSize: 11, fontWeight: 600, color: FG3, marginBottom: 6, marginTop: 4 }}>
+              OR search a specific area
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                value={locationInput}
+                onChange={e => setLocationInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && searchByLocation(locationInput)}
+                placeholder="e.g. Orchard, Tampines, Jurong…"
+                style={{
+                  flex: 1, padding: '10px 12px', borderRadius: 12,
+                  border: `1px solid ${BORDER}`, fontSize: 13, color: FG1,
+                  outline: 'none', background: BG,
+                }}
+              />
+              <button
+                onClick={() => searchByLocation(locationInput)}
+                disabled={geocoding || !locationInput.trim()}
+                style={{
+                  padding: '10px 14px', borderRadius: 12, border: 'none',
+                  background: locationInput.trim() ? GREEN : BORDER,
+                  color: locationInput.trim() ? '#fff' : FG3,
+                  fontSize: 12, fontWeight: 700, cursor: locationInput.trim() ? 'pointer' : 'default',
+                  flexShrink: 0, minWidth: 64,
+                }}
+              >
+                {geocoding ? '…' : 'Search'}
+              </button>
+            </div>
+            {/* Quick area shortcuts */}
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
+              {['Orchard', 'CBD', 'Tampines', 'Jurong', 'Bugis', 'Toa Payoh'].map(area => (
+                <button key={area} onClick={() => searchByLocation(area)} style={{
+                  padding: '5px 10px', borderRadius: 20, border: `1px solid ${BORDER}`,
+                  background: CARD, fontSize: 11, fontWeight: 600, color: FG2, cursor: 'pointer',
+                }}>
+                  {area}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}
