@@ -58,14 +58,31 @@ interface PendingLog {
 }
 
 const DIET_LABEL: Record<DietaryFlag, string> = {
-  halal:       '☪️ Halal',       vegetarian:  '🥦 Vegetarian',
-  vegan:       '🌱 Vegan',       gluten_free: '🌾 Gluten-Free',
-  lactose_free:'🥛 Lactose-Free',keto:        '🥑 Keto',
-  kosher:      '✡️ Kosher',      dairy_free:  '🧀 Dairy-Free',
-  nut_free:    '🥜 Nut-Free',    low_carb:    '🍞 Low-Carb',
-  high_protein:'💪 High-Protein',pescatarian: '🐟 Pescatarian',
-  no_pork:     '🐷 No Pork',
+  halal:       'Halal',        vegetarian:  'Vegetarian',
+  vegan:       'Vegan',        gluten_free: 'Gluten-Free',
+  lactose_free:'Lactose-Free', keto:        'Keto',
+  kosher:      'Kosher',       dairy_free:  'Dairy-Free',
+  nut_free:    'Nut-Free',     low_carb:    'Low-Carb',
+  high_protein:'High Protein', pescatarian: 'Pescatarian',
+  no_pork:     'No Pork',
 };
+
+// ── Initial avatar — consistent across all cards ───────────────────────────
+const AVATAR_HUES = [215, 160, 280, 30, 190, 340, 120, 260, 80, 320];
+function Initial({ name, size = 46, radius = 12 }: { name: string; size?: number; radius?: number }) {
+  const hue = AVATAR_HUES[name.charCodeAt(0) % AVATAR_HUES.length];
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: radius, flexShrink: 0,
+      background: `hsl(${hue},28%,92%)`,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: Math.round(size * 0.4), fontWeight: 700,
+      color: `hsl(${hue},35%,42%)`,
+    }}>
+      {name.charAt(0).toUpperCase()}
+    </div>
+  );
+}
 
 function getMealContext(): { label: string; mealType: MealType } {
   const h = new Date().getHours();
@@ -93,9 +110,9 @@ function getDietFit(compatibleWith: DietaryFlag[], userFlags: DietaryFlag[]): Di
 function DietBadge({ fit }: { fit: DietFit }) {
   if (fit === 'neutral') return null;
   const cfg = {
-    great: { bg: 'rgba(30,127,92,0.08)',  border: 'rgba(30,127,92,0.22)',  color: GREEN, label: '✓ Fits your diet'         },
-    check: { bg: 'rgba(242,169,59,0.08)', border: 'rgba(242,169,59,0.22)', color: AMBER, label: '⚠ Check before ordering'  },
-    warn:  { bg: 'rgba(208,78,54,0.07)',  border: 'rgba(208,78,54,0.18)',  color: RED,   label: '✕ May not suit your diet' },
+    great: { bg: 'rgba(30,127,92,0.08)',  border: 'rgba(30,127,92,0.22)',  color: GREEN, label: 'Fits your diet'         },
+    check: { bg: 'rgba(242,169,59,0.08)', border: 'rgba(242,169,59,0.22)', color: AMBER, label: 'Check ingredients'      },
+    warn:  { bg: 'rgba(208,78,54,0.07)',  border: 'rgba(208,78,54,0.18)',  color: RED,   label: 'May not suit your diet' },
   }[fit];
   return (
     <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 6, background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.color }}>
@@ -104,40 +121,44 @@ function DietBadge({ fit }: { fit: DietFit }) {
   );
 }
 
-// ── #2 Confidence badge — 3 tiers ─────────────────────────────────────────
+// ── #2 Confidence badge — 3 tiers, dot + text ─────────────────────────────
 function ConfidenceBadge({ source, verified, confidence }: {
   source?: string; verified?: boolean; confidence?: string;
 }) {
-  // No badge if no macro provenance info at all
   if (!source && !confidence) return null;
 
   if (source === 'official_sg' && verified) {
     return (
-      <span title="Stride Approved — sourced from the brand's official SG nutrition data" style={{
-        fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 6,
-        background: 'rgba(30,127,92,0.08)', border: '1px solid rgba(30,127,92,0.2)', color: GREEN,
+      <span title="Sourced from the brand's official SG nutrition data" style={{
+        display: 'inline-flex', alignItems: 'center', gap: 4,
+        fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 6,
+        background: 'rgba(30,127,92,0.07)', border: '1px solid rgba(30,127,92,0.18)', color: GREEN,
       }}>
-        ✅ Stride Approved
+        <span style={{ width: 5, height: 5, borderRadius: '50%', background: GREEN, flexShrink: 0 }} />
+        Stride Approved
       </span>
     );
   }
   if (source === 'community' || confidence === 'community') {
     return (
-      <span title="Community data — submitted by users, not independently verified" style={{
-        fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 6,
-        background: 'rgba(124,58,237,0.07)', border: '1px solid rgba(124,58,237,0.18)', color: PURPLE,
+      <span title="User-submitted data, not independently verified" style={{
+        display: 'inline-flex', alignItems: 'center', gap: 4,
+        fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 6,
+        background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(124,58,237,0.15)', color: PURPLE,
       }}>
-        👥 Community
+        <span style={{ width: 5, height: 5, borderRadius: '50%', background: PURPLE, flexShrink: 0 }} />
+        Community
       </span>
     );
   }
-  // Everything else with a source (hpb, usda, estimated) → Estimated
   return (
-    <span title="Estimated — macros derived from reference data, may vary slightly" style={{
-      fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 6,
-      background: 'rgba(139,149,167,0.10)', border: `1px solid ${BORDER}`, color: FG3,
+    <span title="Derived from reference data, may vary slightly" style={{
+      display: 'inline-flex', alignItems: 'center', gap: 4,
+      fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 6,
+      background: 'rgba(139,149,167,0.08)', border: `1px solid ${BORDER}`, color: FG3,
     }}>
-      〜 Estimated
+      <span style={{ width: 5, height: 5, borderRadius: '50%', background: FG3, flexShrink: 0 }} />
+      Estimated
     </span>
   );
 }
@@ -158,10 +179,10 @@ function PpdBadge({ protein, price }: { protein: number; price?: number | null }
 function SetMealChip({ includes }: { includes?: string[] }) {
   return (
     <span style={{
-      fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 6,
-      background: 'rgba(242,169,59,0.10)', border: '1px solid rgba(242,169,59,0.28)', color: AMBER,
+      fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 6,
+      background: 'rgba(201,138,46,0.08)', border: '1px solid rgba(201,138,46,0.22)', color: AMBER,
     }}>
-      🍱 Set available{includes?.length ? `: ${includes.slice(0,2).join(', ')}${includes.length > 2 ? '…' : ''}` : ''}
+      Set available{includes?.length ? ` — ${includes.slice(0,2).join(', ')}${includes.length > 2 ? '…' : ''}` : ''}
     </span>
   );
 }
@@ -304,13 +325,10 @@ function MenuItemCard({
   return (
     <div style={{ background: CARD, borderRadius: 16, border: `1px solid ${BORDER}`, marginBottom: 10, boxShadow: SHADOW, overflow: 'hidden' }}>
       <div onClick={onToggle} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', cursor: 'pointer' }}>
-        <div style={{ width: 46, height: 46, borderRadius: 12, background: '#F0F4F8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>
-          {item.emoji}
-        </div>
+        <Initial name={item.name} size={46} radius={12} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: FG1, display: 'flex', alignItems: 'center', gap: 5 }}>
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
-            {item.isPopular && <span style={{ fontSize: 10, flexShrink: 0 }}>⭐</span>}
           </div>
           <div style={{ fontSize: 12, color: FG2, marginBottom: 4 }}>{restaurant.name}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
@@ -391,7 +409,7 @@ function RestaurantBrowseCard({ restaurant, distKm, onSelect }: {
   const serviceIcons: Record<ServiceType, string> = { dine_in: '🍽️', grab_go: '🥡', delivery: '🛵' };
   return (
     <div onClick={onSelect} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 0', borderBottom: `1px solid ${BORDER}`, cursor: 'pointer' }}>
-      <div style={{ width: 52, height: 52, borderRadius: 14, background: '#F0F4F8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, flexShrink: 0 }}>{restaurant.emoji}</div>
+      <Initial name={restaurant.name} size={52} radius={14} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: FG1, marginBottom: 2 }}>{restaurant.name}</div>
         <div style={{ fontSize: 12, color: FG2, marginBottom: 5 }}>
@@ -420,7 +438,7 @@ function RestaurantBrowseCard({ restaurant, distKm, onSelect }: {
 function GPSRestaurantCard({ place }: { place: NearbyPlace }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 0', borderBottom: `1px solid ${BORDER}` }}>
-      <div style={{ width: 52, height: 52, borderRadius: 14, background: '#F0F4F8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, flexShrink: 0 }}>{place.emoji}</div>
+      <Initial name={place.name} size={52} radius={14} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 15, fontWeight: 600, color: FG1, marginBottom: 2 }}>{place.name}</div>
         <div style={{ fontSize: 12, color: FG3, marginBottom: 4 }}>
@@ -451,7 +469,7 @@ function RecipeCard({ recipe, onLog, onUnlog, logged, isExpanded, onToggle }: {
   return (
     <div style={{ background: CARD, borderRadius: 16, border: `1px solid ${BORDER}`, marginBottom: 10, boxShadow: SHADOW, overflow: 'hidden' }}>
       <div onClick={onToggle} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', cursor: 'pointer' }}>
-        <div style={{ width: 46, height: 46, borderRadius: 12, background: '#F0F4F8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>{recipe.emoji}</div>
+        <Initial name={recipe.name} size={46} radius={12} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: FG1, marginBottom: 2 }}>{recipe.name}</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -591,11 +609,11 @@ function FilterSheet({
           <SL>Sort by</SL>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
             {([
-              { key: 'best_match'     as SortKey, label: '🎯 Best Match'       },
-              { key: 'protein_dollar' as SortKey, label: '💪 Protein/$'        },
-              { key: 'price'          as SortKey, label: '💰 Price: Low→High'  },
-              { key: 'calories'       as SortKey, label: '🔥 Lowest Calories'  },
-              ...(showDistance ? [{ key: 'distance' as SortKey, label: '📍 Nearest' }] : []),
+              { key: 'best_match'     as SortKey, label: 'Best Match'       },
+              { key: 'protein_dollar' as SortKey, label: 'Protein per $'    },
+              { key: 'price'          as SortKey, label: 'Price: Low→High'  },
+              { key: 'calories'       as SortKey, label: 'Lowest Calories'  },
+              ...(showDistance ? [{ key: 'distance' as SortKey, label: 'Nearest' }] : []),
             ]).map(o => (
               <button key={o.key} onClick={() => setSortKey(o.key)} style={chip(sortKey === o.key)}>{o.label}</button>
             ))}
@@ -608,7 +626,7 @@ function FilterSheet({
               ...chip(filterStrideApproved, GREEN),
               display: 'flex', alignItems: 'center', gap: 6,
             }}>
-              ✅ Stride Approved data only
+              Stride Approved data only
             </button>
             {filterStrideApproved && (
               <div style={{ fontSize: 11, color: FG3, marginTop: 6, lineHeight: 1.5 }}>
@@ -634,9 +652,9 @@ function FilterSheet({
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
             {([
               { val: 'all'      as DiningOption, label: 'All'         },
-              { val: 'dine_in'  as DiningOption, label: '🍽️ Dine-in'  },
-              { val: 'grab_go'  as DiningOption, label: '🥡 Takeaway' },
-              { val: 'delivery' as DiningOption, label: '🛵 Delivery' },
+              { val: 'dine_in'  as DiningOption, label: 'Dine-in'  },
+              { val: 'grab_go'  as DiningOption, label: 'Takeaway' },
+              { val: 'delivery' as DiningOption, label: 'Delivery' },
             ]).map(o => (
               <button key={o.val} onClick={() => setDiningOption(o.val)} style={chip(diningOption === o.val)}>{o.label}</button>
             ))}
@@ -1051,9 +1069,9 @@ export default function EatPage() {
         {/* View tabs */}
         <div style={{ display: 'flex' }}>
           {([
-            { key: 'meals'       as ViewType, label: '🍽️ Meals'      },
-            { key: 'restaurants' as ViewType, label: '🏪 Restaurants' },
-            { key: 'recipes'     as ViewType, label: '👨‍🍳 Recipes'    },
+            { key: 'meals'       as ViewType, label: 'Meals'       },
+            { key: 'restaurants' as ViewType, label: 'Restaurants'  },
+            { key: 'recipes'     as ViewType, label: 'Recipes'      },
           ]).map(tab => (
             <button key={tab.key}
               onClick={() => { setViewType(tab.key); if (tab.key !== 'meals') setFilterRestaurantId(null); }}
@@ -1079,9 +1097,10 @@ export default function EatPage() {
           fontSize: 12, fontWeight: 600, color: hasLocation ? GREEN : FG3,
           cursor: 'pointer', flexShrink: 0, maxWidth: 180,
         }}>
-          <span style={{ flexShrink: 0 }}>
-            {locState === 'loading' ? '⏳' : '📍'}
-          </span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <circle cx="12" cy="11" r="3"/>
+            <path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7z"/>
+          </svg>
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {locState === 'loading' ? 'Locating…' : locationLabel}
           </span>
@@ -1190,7 +1209,7 @@ export default function EatPage() {
           })()}
           {filterStrideApproved && (
             <span style={{ display:'inline-flex', alignItems:'center', gap:4, padding:'4px 10px', borderRadius:20, background:'rgba(30,127,92,0.08)', border:'1px solid rgba(30,127,92,0.2)', fontSize:11, fontWeight:700, color:GREEN, flexShrink:0 }}>
-              ✅ Stride Approved
+              Stride Approved
               <button onClick={() => setFilterStrideApproved(false)} style={{ background:'none', border:'none', cursor:'pointer', color:GREEN, fontSize:12, padding:0 }}>✕</button>
             </span>
           )}
@@ -1213,7 +1232,6 @@ export default function EatPage() {
 
           if (items.length === 0) return (
             <div style={{ textAlign: 'center', padding: '60px 20px', color: FG3 }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>🍽️</div>
               <div style={{ fontSize: 16, fontWeight: 600, color: FG2, marginBottom: 8 }}>No meals found</div>
               <div style={{ fontSize: 13 }}>Try adjusting your filters or search terms</div>
               {activeFilterCount > 0 && (
@@ -1222,7 +1240,7 @@ export default function EatPage() {
               {/* #6 fallback suggestions when empty */}
               {pooledItems.length > 0 && (
                 <div style={{ marginTop: 24, textAlign: 'left', background: CARD, borderRadius: 18, border: `1px solid ${BORDER}`, padding: 16, boxShadow: SHADOW }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: FG1, marginBottom: 12 }}>🌟 Other options nearby</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: FG1, marginBottom: 12 }}>Other options nearby</div>
                   {pooledItems.slice(0,5).map(({ item, restaurant, distKm }) => (
                     <MenuItemCard key={`${restaurant.id}__${item.id}`} item={item} restaurant={restaurant} distKm={distKm}
                       userFlags={userFlags} onLog={() => setPendingLog({ type:'item', item, restaurant })}
@@ -1256,7 +1274,7 @@ export default function EatPage() {
               {/* #6 "More options" fallback when few results */}
               {items.length > 0 && items.length < 5 && activeFilterCount > 0 && (
                 <div style={{ marginTop: 12, background: CARD, borderRadius: 16, border: `1px dashed ${BORDER}`, padding: '14px 16px' }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: FG2, marginBottom: 4 }}>🌟 More options outside your filters</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: FG2, marginBottom: 4 }}>More options outside your filters</div>
                   <div style={{ fontSize: 11, color: FG3, marginBottom: 10 }}>These don't match all your criteria but may be worth a look</div>
                   {pooledItems.filter(p => !items.find(i => i.item.id === p.item.id)).slice(0, 4).map(({ item, restaurant, distKm }) => (
                     <MenuItemCard key={`fallback__${restaurant.id}__${item.id}`} item={item} restaurant={restaurant} distKm={distKm}
@@ -1278,7 +1296,6 @@ export default function EatPage() {
           const showGps = gpsOnlyPlaces.length > 0 && !query.trim();
           if (restaurantList.length === 0 && !showGps) return (
             <div style={{ textAlign: 'center', padding: '60px 20px', color: FG3 }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>🏪</div>
               <div style={{ fontSize: 16, fontWeight: 600, color: FG2, marginBottom: 8 }}>No restaurants found</div>
             </div>
           );
@@ -1297,7 +1314,7 @@ export default function EatPage() {
               {showGps && (
                 <>
                   <div style={{ fontSize: 12, fontWeight: 700, color: FG3, padding: '14px 0 4px', borderTop: `1px dashed ${BORDER}`, marginTop: 6 }}>
-                    📍 Other places near you (no menu data yet)
+                    Other places near you — no menu data yet
                   </div>
                   {gpsOnlyPlaces.map(p => <GPSRestaurantCard key={p.id} place={p} />)}
                 </>
@@ -1310,7 +1327,6 @@ export default function EatPage() {
         {viewType === 'recipes' && (() => {
           if (recipeList.length === 0) return (
             <div style={{ textAlign: 'center', padding: '60px 20px', color: FG3 }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>👨‍🍳</div>
               <div style={{ fontSize: 16, fontWeight: 600, color: FG2, marginBottom: 8 }}>No recipes found</div>
             </div>
           );
