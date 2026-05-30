@@ -4,7 +4,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import dynamic from 'next/dynamic';
+import loadable from 'next/dynamic';
 import { useStrideStore } from '@/lib/store';
 import { track, Events } from '@/lib/analytics';
 import type { MapPin } from '@/components/MapView';
@@ -19,7 +19,7 @@ function MapLoadingPlaceholder() {
 }
 
 // Load MapView client-side only — Leaflet requires window
-const MapView = dynamic(() => import('@/components/MapView'), {
+const MapView = loadable(() => import('@/components/MapView'), {
   ssr: false,
   loading: MapLoadingPlaceholder,
 });
