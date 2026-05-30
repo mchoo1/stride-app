@@ -72,6 +72,8 @@ function normalise(p: any, userLat: number, userLng: number, mode: string) {
     type:       primaryType.replace(/_/g, ' '),
     distance:   fmtDist(km),
     distKm:     km,
+    lat:        pLat,
+    lng:        pLng,
     rating:     p.rating         ?? null,
     priceLevel: PRICE[p.priceLevel] ?? null,
     hours,

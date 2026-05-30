@@ -1,7 +1,16 @@
 'use client';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { useStrideStore } from '@/lib/store';
 import { track, Events } from '@/lib/analytics';
+import type { MapPin } from '@/components/MapView';
+
+// Load MapView client-side only (Leaflet requires window)
+const MapView = dynamic(() => import('@/components/MapView'), { ssr: false, loading: () => (
+  <div style={{ height: 'calc(100vh - 220px)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F0F2F5', color: '#8B95A7', fontSize: 14 }}>
+    Loading map…
+  </div>
+) });
 import {
   matchRestaurant, searchAll, searchRecipes, getMenuCategories,
   macroMatchScore, proteinPerDollar, ppdColor, filterItemsByDiet,
@@ -28,6 +37,7 @@ const SHADOW = '0 1px 2px rgba(15,27,45,0.04), 0 2px 6px rgba(15,27,45,0.05)';
 /* ── Types ── */
 interface NearbyPlace {
   id: string; name: string; type: string; distance: string; distKm?: number;
+  lat?: number; lng?: number;
   rating: number | null; priceLevel: string | null;
   hours: string; emoji: string; mapsUrl: string;
 }
@@ -764,6 +774,7 @@ export default function EatPage() {
 
   // ── Core state ──────────────────────────────────────────────────────────
   const [viewType,            setViewType]            = useState<ViewType>('meals');
+  const [mapMode,             setMapMode]             = useState(false); // list vs map
   const [query,               setQuery]               = useState('');
   const [expandedId,          setExpandedId]          = useState<string | null>(null);
   const [showFilters,         setShowFilters]         = useState(false);
@@ -787,6 +798,8 @@ export default function EatPage() {
 
   // ── Location state ──────────────────────────────────────────────────────
   const [locState,            setLocState]            = useState<'idle'|'loading'|'granted'|'denied'|'no_key'>('idle');
+  const [userLat,             setUserLat]             = useState<number>(1.3521);  // Singapore default
+  const [userLng,             setUserLng]             = useState<number>(103.8198);
   const [nearbyPlaces,        setNearbyPlaces]        = useState<NearbyPlace[]>([]);
   const [enrichedPlaces,      setEnrichedPlaces]      = useState<EnrichedPlace[]>([]);
   const [locationLabel,       setLocationLabel]       = useState('Current location');
@@ -820,10 +833,12 @@ export default function EatPage() {
     setLocState('loading');
     navigator.geolocation.getCurrentPosition(
       async pos => {
+        const { latitude: lat, longitude: lng } = pos.coords;
         setLocState('granted');
         setLocationLabel('Current location');
-        setSortKey('distance'); // #1 auto-switch sort
-        await fetchNearbyForCoords(pos.coords.latitude, pos.coords.longitude);
+        setUserLat(lat); setUserLng(lng);
+        setSortKey('distance');
+        await fetchNearbyForCoords(lat, lng);
       },
       () => setLocState('denied'),
       { timeout: 8000, maximumAge: 120_000 },
@@ -850,6 +865,7 @@ export default function EatPage() {
       const shortName = data.results[0].address_components?.[0]?.short_name ?? place;
       setLocationLabel(shortName);
       setLocState('granted');
+      setUserLat(lat); setUserLng(lng);
       setSortKey('distance');
       await fetchNearbyForCoords(lat, lng);
       setShowLocationPicker(false);
@@ -1028,6 +1044,49 @@ export default function EatPage() {
 
   const recipeList = recipeSearchResults ?? SG_RECIPES;
 
+  // ── Map pins — one per unique restaurant in current filtered results ─────
+  const mapPins = useMemo((): MapPin[] => {
+    const seen  = new Set<string>();
+    const pins: MapPin[] = [];
+
+    // DB restaurants — only those with GPS-matched coords
+    for (const { restaurant, distKm } of filteredItems) {
+      if (seen.has(restaurant.id)) continue;
+      seen.add(restaurant.id);
+      const ep = enrichedPlaces.find(e => e.dbMatch?.id === restaurant.id);
+      if (!ep?.lat || !ep?.lng) continue; // no coords available
+      const isApproved = restaurant.menu.some(i => i.source === 'official_sg' && i.verified);
+      pins.push({
+        id: restaurant.id, name: restaurant.name,
+        lat: ep.lat, lng: ep.lng,
+        restaurant, distKm,
+        tier: isApproved ? 'approved' : 'menu',
+      });
+    }
+
+    // GPS-only places (no DB match)
+    for (const ep of gpsOnlyPlaces) {
+      if (!ep.lat || !ep.lng) continue;
+      if (seen.has(ep.id)) continue;
+      seen.add(ep.id);
+      pins.push({
+        id: ep.id, name: ep.name,
+        lat: ep.lat, lng: ep.lng,
+        distKm: ep.distKm, tier: 'gps_only',
+      });
+    }
+
+    return pins.filter(p => p.lat !== 0 && p.lng !== 0);
+  }, [filteredItems, enrichedPlaces, gpsOnlyPlaces]);
+
+  const handleSearchArea = useCallback(async (lat: number, lng: number) => {
+    setUserLat(lat); setUserLng(lng);
+    setLocationLabel('This area');
+    setLocState('granted');
+    setSortKey('distance');
+    await fetchNearbyForCoords(lat, lng);
+  }, [fetchNearbyForCoords]);
+
   /* ══════════════════════════ Render ═════════════════════════════════════ */
   return (
     <div style={{ minHeight: '100vh', background: BG, paddingBottom: 100 }}>
@@ -1066,15 +1125,15 @@ export default function EatPage() {
           )}
         </div>
 
-        {/* View tabs */}
-        <div style={{ display: 'flex' }}>
+        {/* View tabs + List/Map toggle */}
+        <div style={{ display: 'flex', alignItems: 'stretch' }}>
           {([
             { key: 'meals'       as ViewType, label: 'Meals'       },
             { key: 'restaurants' as ViewType, label: 'Restaurants'  },
             { key: 'recipes'     as ViewType, label: 'Recipes'      },
           ]).map(tab => (
             <button key={tab.key}
-              onClick={() => { setViewType(tab.key); if (tab.key !== 'meals') setFilterRestaurantId(null); }}
+              onClick={() => { setViewType(tab.key); if (tab.key !== 'meals') setFilterRestaurantId(null); if (tab.key !== 'meals') setMapMode(false); }}
               style={{
                 flex: 1, padding: '10px 4px', border: 'none', background: 'none',
                 fontSize: 13, fontWeight: 700, cursor: 'pointer',
@@ -1084,6 +1143,38 @@ export default function EatPage() {
               }}
             >{tab.label}</button>
           ))}
+          {/* List / Map toggle — only shown on Meals tab */}
+          {viewType === 'meals' && (
+            <div style={{ display: 'flex', alignItems: 'center', paddingLeft: 8, paddingBottom: 2, gap: 2, flexShrink: 0 }}>
+              <button
+                onClick={() => setMapMode(false)}
+                title="List view"
+                style={{
+                  width: 30, height: 26, borderRadius: '6px 0 0 6px', border: `1px solid ${BORDER}`,
+                  background: !mapMode ? FG1 : CARD, color: !mapMode ? '#fff' : FG3,
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+              </button>
+              <button
+                onClick={() => setMapMode(true)}
+                title="Map view"
+                style={{
+                  width: 30, height: 26, borderRadius: '0 6px 6px 0', border: `1px solid ${BORDER}`, borderLeft: 'none',
+                  background: mapMode ? FG1 : CARD, color: mapMode ? '#fff' : FG3,
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
+                  <line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/>
+                </svg>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1221,8 +1312,24 @@ export default function EatPage() {
         </div>
       )}
 
+      {/* ── Map view (replaces results when mapMode=true on Meals tab) ── */}
+      {viewType === 'meals' && mapMode && (
+        <div style={{ padding: '0 0 0' }}>
+          <MapView
+            pins={mapPins}
+            centerLat={userLat}
+            centerLng={userLng}
+            onSearchArea={handleSearchArea}
+            onSelectRestaurant={(restaurant) => {
+              setFilterRestaurantId(restaurant.id);
+              setMapMode(false);
+            }}
+          />
+        </div>
+      )}
+
       {/* ── Results ── */}
-      <div style={{ padding: '8px 16px 0' }}>
+      <div style={{ padding: '8px 16px 0', display: mapMode ? 'none' : undefined }}>
 
         {/* MEALS */}
         {viewType === 'meals' && (() => {
