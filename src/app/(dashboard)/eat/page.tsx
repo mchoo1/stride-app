@@ -1,3 +1,4 @@
+'use client';
 /**
  * /eat — server-safe route entry point.
  *

@@ -1,3 +1,4 @@
+'use client';
 import loadable from 'next/dynamic';
 
 const DashboardPage = loadable(
