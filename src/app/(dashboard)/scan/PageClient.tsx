@@ -1,0 +1,284 @@
+'use client';
+import { useState, useRef, ChangeEvent } from 'react';
+import { useStrideStore } from '@/lib/store';
+import { auth } from '@/lib/firebase';
+import { useRouter } from 'next/navigation';
+
+/* ── Design tokens ── */
+const BG     = '#F7F8FB';
+const CARD   = '#FFFFFF';
+const BORDER = '#E5E9F2';
+const FG1    = '#0F1B2D';
+const FG2    = '#5B6576';
+const FG3    = '#8B95A7';
+const GREEN  = '#1E7F5C';
+const SHADOW = '0 1px 2px rgba(15,27,45,0.04), 0 2px 6px rgba(15,27,45,0.05)';
+
+type ScanResult = {
+  name: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  confidence: number;
+  emoji?: string;
+};
+
+export default function ScanPage() {
+  const store  = useStrideStore();
+  const router = useRouter();
+
+  const [phase,   setPhase]   = useState<'idle' | 'scanning' | 'result' | 'logged'>('idle');
+  const [preview, setPreview] = useState<string | null>(null);
+  const [result,  setResult]  = useState<ScanResult | null>(null);
+  const [toast,   setToast]   = useState('');
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(''), 2200);
+  };
+
+  const [scanError, setScanError] = useState('');
+
+  const handleFile = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setScanError('');
+    setPreview(URL.createObjectURL(file));
+    setPhase('scanning');
+
+    try {
+      // Read file as base64
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = ev => {
+          const dataUrl = ev.target?.result as string;
+          resolve(dataUrl.split(',')[1]);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      // Get Firebase auth token
+      const user = auth.currentUser;
+      const token = user ? await user.getIdToken() : '';
+
+      const res  = await fetch('/api/scan-food', {
+        method:  'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+        body: JSON.stringify({ image: base64, mimeType: file.type }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setResult(data);
+      setPhase('result');
+    } catch (err: unknown) {
+      setScanError(err instanceof Error ? err.message : 'Scan failed. Please try again.');
+      setPhase('idle');
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  };
+
+  const logMeal = () => {
+    if (!result) return;
+    store.addFoodEntry({
+      name: result.name, calories: result.calories,
+      protein: result.protein, carbs: result.carbs, fat: result.fat,
+      emoji: result.emoji ?? '📷', mealType: 'lunch' as const, foodItemId: '', quantity: 100,
+    });
+    setPhase('logged');
+    showToast(`✅ ${result.name} logged!`);
+    setTimeout(() => router.push('/dashboard'), 1200);
+  };
+
+  const reset = () => {
+    setPhase('idle'); setPreview(null); setResult(null);
+    if (fileRef.current) fileRef.current.value = '';
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: BG }}>
+
+      {/* ── Header ── */}
+      <div style={{ padding: '52px 20px 8px' }}>
+        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: FG3, textTransform: 'uppercase', margin: '0 0 4px' }}>
+          AI-POWERED NUTRITION
+        </p>
+        <h1 style={{ color: FG1, fontSize: 40, lineHeight: 1, margin: '0 0 8px', fontFamily: "'Anton', Impact, sans-serif" }}>
+          SCAN FOOD
+        </h1>
+        <p style={{ color: FG3, fontSize: 14, margin: 0 }}>
+          Snap a photo to get instant macro estimates
+        </p>
+      </div>
+
+      {/* ── Content ── */}
+      <div style={{ flex: 1, padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 100 }}>
+
+        {/* Coming Soon state */}
+        {phase === 'idle' && (
+          <>
+            <div style={{
+              width: '100%', padding: '48px 24px',
+              background: CARD, border: `2px dashed ${BORDER}`,
+              borderRadius: 20,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+              opacity: 0.75,
+            }}>
+              <span style={{ fontSize: 52 }}>📷</span>
+              <div style={{
+                background: 'rgba(124,58,237,0.10)', borderRadius: 20,
+                padding: '4px 14px',
+                fontSize: 11, fontWeight: 700, letterSpacing: '0.08em',
+                color: '#7C3AED', textTransform: 'uppercase',
+              }}>
+                Coming Soon
+              </div>
+              <span style={{ fontSize: 17, fontWeight: 700, color: FG1 }}>AI Food Scan</span>
+              <span style={{ fontSize: 13, color: FG3, textAlign: 'center', lineHeight: 1.6, maxWidth: 260 }}>
+                We&apos;re improving accuracy for Singapore dishes before launching this feature.
+              </span>
+            </div>
+
+            {/* What to do instead */}
+            <div style={{
+              background: 'rgba(30,127,92,0.06)', borderRadius: 14, padding: '14px 16px',
+              border: '1px solid rgba(30,127,92,0.15)',
+              display: 'flex', gap: 10, alignItems: 'flex-start',
+            }}>
+              <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>💡</span>
+              <div style={{ fontSize: 13, color: '#1E5C40', lineHeight: 1.6 }}>
+                <strong>In the meantime:</strong> use the <strong>Log tab</strong> to search for your food by name, or the <strong>Eat tab</strong> to find macros from nearby restaurants.
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Preview image */}
+        {preview && phase !== 'idle' && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={preview} alt="food" style={{
+            width: '100%', height: 220, objectFit: 'cover',
+            borderRadius: 18, border: `1px solid ${BORDER}`,
+          }} />
+        )}
+
+        {/* Error display */}
+        {scanError && phase === 'idle' && (
+          <div style={{
+            background: 'rgba(220,53,69,0.06)', borderRadius: 14, padding: '12px 14px',
+            border: '1px solid rgba(220,53,69,0.20)',
+            display: 'flex', gap: 10, alignItems: 'flex-start',
+          }}>
+            <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>⚠️</span>
+            <span style={{ fontSize: 13, color: '#B02A37', lineHeight: 1.6 }}>{scanError}</span>
+          </div>
+        )}
+
+        {/* Scanning spinner */}
+        {phase === 'scanning' && (
+          <div style={{
+            background: CARD, borderRadius: 20, padding: 28,
+            textAlign: 'center', border: `1px solid ${BORDER}`, boxShadow: SHADOW,
+          }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: '50%',
+              border: `3px solid ${BORDER}`, borderTopColor: GREEN,
+              animation: 'spin 1s linear infinite',
+              margin: '0 auto 16px',
+            }} />
+            <div style={{ fontSize: 16, fontWeight: 700, color: FG1 }}>Analyzing your food…</div>
+            <div style={{ fontSize: 13, color: FG3, marginTop: 4 }}>
+              Identifying ingredients and estimating nutrients
+            </div>
+          </div>
+        )}
+
+        {/* Result card */}
+        {phase === 'result' && result && (
+          <div style={{
+            background: CARD, borderRadius: 20, padding: 18,
+            border: `1px solid ${BORDER}`, boxShadow: SHADOW,
+          }}>
+            {/* Header row */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 16 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 17, fontWeight: 700, color: FG1 }}>{result.name}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 4 }}>
+                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: GREEN }} />
+                  <span style={{ fontSize: 12, color: GREEN, fontWeight: 600 }}>{Math.round(result.confidence * 100)}% confidence</span>
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 36, fontWeight: 900, color: FG1, lineHeight: 1, fontFamily: "'Anton', Impact, sans-serif" }}>{result.calories}</div>
+                <div style={{ fontSize: 13, color: FG3 }}>kcal</div>
+              </div>
+            </div>
+
+            {/* Macro boxes */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 12 }}>
+              {[
+                { label: 'Protein', value: `${result.protein}g`, bg: 'rgba(46,111,184,0.08)', color: '#2E6FB8' },
+                { label: 'Carbs',   value: `${result.carbs}g`,  bg: 'rgba(201,138,46,0.08)', color: '#C98A2E' },
+                { label: 'Fat',     value: `${result.fat}g`,    bg: 'rgba(30,127,92,0.08)',  color: GREEN     },
+              ].map(m => (
+                <div key={m.label} style={{ background: m.bg, borderRadius: 12, padding: '10px 0', textAlign: 'center' }}>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: m.color }}>{m.value}</div>
+                  <div style={{ fontSize: 11, color: FG3, marginTop: 2 }}>{m.label}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ fontSize: 11, color: FG3, textAlign: 'center', marginBottom: 14 }}>
+              * Estimates based on typical serving sizes. Adjust as needed.
+            </div>
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={reset} style={{
+                flex: 1, padding: '12px 0', borderRadius: 12,
+                background: CARD, border: `1.5px solid ${BORDER}`,
+                color: FG2, fontSize: 14, fontWeight: 600, cursor: 'pointer',
+              }}>
+                Try again
+              </button>
+              <button onClick={logMeal} style={{
+                flex: 2, padding: '12px 0', borderRadius: 12,
+                background: GREEN, border: 'none',
+                color: '#FFFFFF', fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                boxShadow: '0 4px 14px rgba(30,127,92,0.28)',
+              }}>
+                + Log This Meal
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Logged success */}
+        {phase === 'logged' && (
+          <div style={{
+            background: CARD, borderRadius: 20, padding: 32,
+            textAlign: 'center', border: `1px solid ${BORDER}`, boxShadow: SHADOW,
+          }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: GREEN }}>Logged successfully!</div>
+            <div style={{ fontSize: 13, color: FG3, marginTop: 6 }}>Redirecting to dashboard…</div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Toast ── */}
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: 90, left: '50%', transform: 'translateX(-50%)',
+          background: FG1, color: '#fff', padding: '10px 20px', borderRadius: 20,
+          fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', zIndex: 300,
+          boxShadow: '0 4px 20px rgba(15,27,45,0.18)',
+        }}>{toast}</div>
+      )}
+    </div>
+  );
+}

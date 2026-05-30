@@ -1,11 +1,10 @@
-'use client';
-export const dynamic = 'force-dynamic';
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import loadable from 'next/dynamic';
 
-// Onboarding is now part of the registration flow at /register
-export default function OnboardingPage() {
-  const router = useRouter();
-  useEffect(() => { router.replace('/register'); }, [router]);
-  return null;
+const PageClient = loadable(
+  () => import('./PageClient'),
+  { ssr: false }
+);
+
+export default function Page() {
+  return <PageClient />;
 }
