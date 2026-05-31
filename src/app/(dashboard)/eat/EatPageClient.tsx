@@ -1325,6 +1325,34 @@ export default function EatPage() {
         </div>
       )}
 
+      {/* ── Sort strip — visible above map and above list results ── */}
+      {viewType === 'meals' && (
+        <div style={{ padding: '4px 16px 8px', display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+          {([
+            { key: 'best_match'     as SortKey, label: 'Best Match'    },
+            { key: 'protein_dollar' as SortKey, label: 'Protein/$'     },
+            { key: 'price'          as SortKey, label: 'Price ↑'       },
+            { key: 'calories'       as SortKey, label: 'Calories ↑'    },
+            ...(hasLocation ? [{ key: 'distance' as SortKey, label: 'Nearest' }] : []),
+          ]).map(o => (
+            <button
+              key={o.key}
+              onClick={() => setSortKey(o.key)}
+              style={{
+                padding: '6px 14px', borderRadius: 20, flexShrink: 0, cursor: 'pointer',
+                border: `1.5px solid ${sortKey === o.key ? GREEN : BORDER}`,
+                background: sortKey === o.key ? 'rgba(30,127,92,0.08)' : CARD,
+                fontSize: 12, fontWeight: 700,
+                color: sortKey === o.key ? GREEN : FG2,
+                WebkitTapHighlightColor: 'transparent',
+              } as React.CSSProperties}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* ── Map view (replaces results when mapMode=true on Meals tab) ── */}
       {viewType === 'meals' && mapMode && (
         <div style={{ padding: '0 0 0' }}>
