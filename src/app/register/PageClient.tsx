@@ -132,6 +132,7 @@ export default function RegisterPage() {
     setError('');
     setLoading(true);
     try {
+      if (!auth) throw new Error('Firebase not configured');
       const { user } = await createUserWithEmailAndPassword(auth, data.email, data.password);
       await updateProfile(user, { displayName: data.name });
 
