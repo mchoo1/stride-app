@@ -828,6 +828,12 @@ export default function EatPage() {
   };
   const hasLocation = locState === 'granted';
 
+  // ── Toast — must be declared before any callback that uses it ────────────
+  const showToast = useCallback((msg: string) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(''), 2200);
+  }, []);
+
   // ── Location helpers ─────────────────────────────────────────────────────
   const fetchNearbyForCoords = useCallback(async (lat: number, lng: number) => {
     try {
@@ -989,11 +995,7 @@ export default function EatPage() {
     enrichedPlaces.filter(ep => !ep.dbMatch),
   [enrichedPlaces]);
 
-  // ── Toast ───────────────────────────────────────────────────────────────
-  const showToast = useCallback((msg: string) => {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(''), 2200);
-  }, []);
+  // showToast declared above (before searchByLocation) to avoid TDZ in deps array
 
   // ── #9 Log confirm handler ──────────────────────────────────────────────
   const commitLog = useCallback((mealType: MealType, _date: string, _time: string) => {
