@@ -1,0 +1,22 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Feature icons</title><link rel="stylesheet" href="../colors_and_type.css"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"><style>
+body{padding:16px;}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+.col{display:flex;flex-direction:column;gap:4px;}
+.sw{width:88px;height:56px;border-radius:12px;border:1px solid var(--hairline);}
+.sw-lg{width:120px;height:72px;border-radius:14px;border:1px solid var(--hairline);}
+.tile{display:flex;flex-direction:column;gap:6px;}
+.tile .name{font-size:12px;font-weight:600;color:var(--fg-1);}
+.tile .hex{font-family:var(--font-mono);font-size:11px;color:var(--fg-3);}
+</style></head><body>
+<style>.ic{width:44px;height:44px;display:flex;flex-direction:column;align-items:center;gap:4px;color:#0F1B2D;} .ic svg{width:24px;height:24px;} .g{display:flex;gap:14px;flex-wrap:wrap;} .lbl{font-size:10px;color:var(--fg-3);font-weight:600;}</style>
+<div class="g">
+<div class="ic"><div data-icon="feature-log-food"></div><div class="lbl">Log food</div></div><div class="ic"><div data-icon="feature-log-activity"></div><div class="lbl">Activity</div></div><div class="ic"><div data-icon="feature-weight"></div><div class="lbl">Weight</div></div><div class="ic"><div data-icon="feature-body-fat"></div><div class="lbl">Body fat</div></div><div class="ic"><div data-icon="feature-bmr"></div><div class="lbl">BMR/TDEE</div></div><div class="ic"><div data-icon="feature-pin-eat"></div><div class="lbl">Eat pin</div></div><div class="ic"><div data-icon="feature-pin-move"></div><div class="lbl">Move pin</div></div><div class="ic"><div data-icon="feature-report"></div><div class="lbl">Report</div></div>
+</div>
+<script>
+(async()=>{
+  for(const el of document.querySelectorAll('[data-icon]')){
+    const r = await fetch('../assets/icons/'+el.dataset.icon+'.svg');
+    el.innerHTML = await r.text();
+  }
+})();
+</script></body></html>

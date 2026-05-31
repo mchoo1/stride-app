@@ -1,0 +1,25 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Calorie progress</title><link rel="stylesheet" href="../colors_and_type.css"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"><style>
+body{padding:16px;}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+.col{display:flex;flex-direction:column;gap:4px;}
+.sw{width:88px;height:56px;border-radius:12px;border:1px solid var(--hairline);}
+.sw-lg{width:120px;height:72px;border-radius:14px;border:1px solid var(--hairline);}
+.tile{display:flex;flex-direction:column;gap:6px;}
+.tile .name{font-size:12px;font-weight:600;color:var(--fg-1);}
+.tile .hex{font-family:var(--font-mono);font-size:11px;color:var(--fg-3);}
+</style></head><body>
+<style>.bar{height:10px;background:#E5E9F2;border-radius:5px;overflow:hidden;width:320px;} .fill{height:100%;border-radius:5px;}</style>
+<div style="display:flex;flex-direction:column;gap:14px;">
+  <div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px;"><span style="color:#5B6576;font-weight:600;">1,240 / 1,720 kcal</span><span style="color:#1E7F5C;font-weight:700;">480 left</span></div>
+    <div class="bar"><div class="fill" style="width:72%;background:#1E7F5C;"></div></div>
+  </div>
+  <div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px;"><span style="color:#5B6576;font-weight:600;">1,640 / 1,720 kcal</span><span style="color:#B07B20;font-weight:700;">80 left</span></div>
+    <div class="bar"><div class="fill" style="width:95%;background:#F2A93B;"></div></div>
+  </div>
+  <div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px;"><span style="color:#5B6576;font-weight:600;">2,040 / 1,720 kcal</span><span style="color:#D04E36;font-weight:700;">320 over</span></div>
+    <div class="bar"><div class="fill" style="width:100%;background:#D04E36;"></div></div>
+  </div>
+</div></body></html>

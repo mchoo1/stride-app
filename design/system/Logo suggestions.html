@@ -1,0 +1,276 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Stride · logo suggestions</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&family=Archivo:wght@500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0F1B2D; --green:#1E7F5C; --bright:#13A26B;
+    --canvas:#F7F8FB; --card:#fff; --fg2:#5B6576; --fg3:#8B95A7; --hair:#E5E9F2;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;background:var(--canvas);color:var(--navy);font-family:Inter,system-ui;}
+  .page{max-width:1160px;margin:0 auto;padding:48px 40px 96px;}
+  h1{font-family:Anton;font-weight:400;font-size:56px;letter-spacing:.02em;margin:0 0 8px;text-transform:uppercase;}
+  .sub{color:var(--fg2);font-size:15px;margin-bottom:40px;max-width:720px;line-height:1.55;}
+
+  .section-label{
+    font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--fg3);margin:48px 0 16px;display:flex;align-items:center;gap:12px;
+  }
+  .section-label::after{content:'';flex:1;height:1px;background:var(--hair);}
+
+  /* Grid of option cards */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  .grid.cols-4{grid-template-columns:repeat(4,1fr);}
+  .card{
+    background:var(--card);border:1px solid var(--hair);border-radius:18px;
+    padding:28px 24px 18px;display:flex;flex-direction:column;gap:18px;min-height:220px;
+    box-shadow:0 1px 0 rgba(15,27,45,.02);
+  }
+  .card .stage{
+    flex:1;display:flex;align-items:center;justify-content:center;min-height:110px;
+  }
+  .meta{display:flex;justify-content:space-between;align-items:baseline;
+         padding-top:14px;border-top:1px solid var(--hair);}
+  .meta .name{font-size:12px;font-weight:700;color:var(--navy);letter-spacing:.02em;}
+  .meta .note{font-size:11px;color:var(--fg3);}
+
+  /* App icon containers */
+  .ios{width:96px;height:96px;border-radius:22px;overflow:hidden;
+       box-shadow:0 8px 28px rgba(15,27,45,.14);display:flex;align-items:center;justify-content:center;}
+  .chip{display:inline-flex;align-items:center;gap:10px;}
+  .mark{width:44px;height:44px;display:flex;align-items:center;justify-content:center;
+        background:linear-gradient(135deg,var(--green),var(--bright));border-radius:10px;color:#fff;}
+
+  /* Wordmark treatments */
+  .wm-anton{font-family:Anton;font-size:44px;letter-spacing:.04em;text-transform:uppercase;line-height:1;}
+  .wm-archivo{font-family:Archivo;font-weight:800;font-size:34px;letter-spacing:-.01em;line-height:1;}
+  .wm-grotesk{font-family:'Space Grotesk';font-weight:700;font-size:34px;letter-spacing:-.02em;line-height:1;}
+  .wm-fraunces{font-family:Fraunces;font-weight:600;font-size:36px;letter-spacing:-.01em;line-height:1;font-style:italic;}
+
+  .stack{display:flex;flex-direction:column;align-items:center;gap:10px;}
+  .horiz{display:flex;align-items:center;gap:14px;}
+
+  /* Dark showcase */
+  .dark{background:var(--navy);color:#fff;border-radius:24px;padding:40px;
+        display:grid;grid-template-columns:repeat(3,1fr);gap:32px;margin-top:24px;}
+  .dark .card{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.08);color:#fff;}
+  .dark .meta{border-color:rgba(255,255,255,.08);}
+  .dark .meta .name{color:#fff;}
+  .dark .meta .note{color:rgba(255,255,255,.55);}
+
+  .pill{display:inline-block;padding:3px 8px;border-radius:999px;background:var(--green);color:#fff;font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>STRIDE · logo directions</h1>
+  <div class="sub">Six full brand directions, each with a mark, lockup, and app icon. Think of these as <i>worlds</i>, not just icons — different tones of the same calm, clinical, warm product. Pick one (or mix parts) and I'll lock it in across tokens, slides and UI kit.</div>
+
+  <!-- ───────────── 1 · Primary lockups ───────────── -->
+  <div class="section-label">Wordmark + mark lockups</div>
+  <div class="grid">
+
+    <!-- Direction A · Anton condensed -->
+    <div class="card">
+      <div class="stage">
+        <div class="horiz">
+          <svg width="48" height="48" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#1E7F5C"/>
+            <path d="M70 20 C 44 20, 30 32, 30 48 C 30 62, 48 64, 62 68 C 76 72, 82 76, 82 86" fill="none" stroke="#fff" stroke-width="11" stroke-linecap="round"/>
+          </svg>
+          <div class="wm-anton">STRIDE</div>
+        </div>
+      </div>
+      <div class="meta"><span class="name">A · S-Stride</span><span class="note">Anton · bold display</span></div>
+    </div>
+
+    <!-- Direction B · Leaf + Archivo -->
+    <div class="card">
+      <div class="stage">
+        <div class="horiz">
+          <svg width="48" height="48" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#0F1B2D"/>
+            <path d="M26 74 C 26 56, 38 44, 54 40 C 70 36, 78 30, 76 20 C 66 30, 52 32, 40 36 C 22 44, 14 60, 22 78 Z" fill="#13A26B"/>
+          </svg>
+          <div class="wm-archivo">stride</div>
+        </div>
+      </div>
+      <div class="meta"><span class="name">B · Leaf</span><span class="note">Archivo Black · friendly</span></div>
+    </div>
+
+    <!-- Direction C · Chevron + Grotesk -->
+    <div class="card">
+      <div class="stage">
+        <div class="horiz">
+          <svg width="48" height="48" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#fff" stroke="#E5E9F2"/>
+            <path d="M28 66 L 50 38 L 58 46 L 76 26" stroke="#1E7F5C" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <path d="M66 26 L 76 26 L 76 36" stroke="#1E7F5C" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          </svg>
+          <div class="wm-grotesk">stride.</div>
+        </div>
+      </div>
+      <div class="meta"><span class="name">C · Trend</span><span class="note">Space Grotesk · tech-calm</span></div>
+    </div>
+
+    <!-- Direction D · Step + Fraunces -->
+    <div class="card">
+      <div class="stage">
+        <div class="horiz">
+          <svg width="48" height="48" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#F2A93B"/>
+            <path d="M28 72 C 28 56, 44 48, 58 38 C 66 32, 66 26, 62 20" stroke="#fff" stroke-width="9" stroke-linecap="round" fill="none"/>
+          </svg>
+          <div class="wm-fraunces">Stride</div>
+        </div>
+      </div>
+      <div class="meta"><span class="name">D · Step Arc</span><span class="note">Fraunces · editorial</span></div>
+    </div>
+
+    <!-- Direction E · Dot·S+chevron -->
+    <div class="card">
+      <div class="stage">
+        <div class="horiz" style="gap:10px">
+          <svg width="40" height="48" viewBox="0 0 80 100"><circle cx="18" cy="50" r="8" fill="#13A26B"/>
+            <path d="M36 50 L 56 30 M 36 50 L 56 70" stroke="#0F1B2D" stroke-width="9" stroke-linecap="round" fill="none"/>
+          </svg>
+          <div class="wm-anton" style="font-size:40px;">STRIDE</div>
+        </div>
+      </div>
+      <div class="meta"><span class="name">E · Dot + Chevron</span><span class="note">Anton · minimal, fast</span></div>
+    </div>
+
+    <!-- Direction F · Bar / progress -->
+    <div class="card">
+      <div class="stage">
+        <div class="horiz">
+          <svg width="60" height="48" viewBox="0 0 120 100">
+            <rect x="4" y="44" width="112" height="12" rx="6" fill="#E5E9F2"/>
+            <rect x="4" y="44" width="72" height="12" rx="6" fill="#1E7F5C"/>
+            <circle cx="76" cy="50" r="10" fill="#1E7F5C" stroke="#fff" stroke-width="3"/>
+          </svg>
+          <div class="wm-archivo" style="font-weight:700;">Stride</div>
+        </div>
+      </div>
+      <div class="meta"><span class="name">F · Progress</span><span class="note">Feature-literal · data-led</span></div>
+    </div>
+
+  </div>
+
+  <!-- ───────────── 2 · App icons on glass ───────────── -->
+  <div class="section-label">App icons · iOS rounded square</div>
+  <div class="grid cols-4">
+
+    <div class="card"><div class="stage">
+      <div class="ios" style="background:linear-gradient(135deg,#1E7F5C,#13A26B);">
+        <svg width="64" height="64" viewBox="0 0 100 100"><path d="M70 20 C 44 20, 30 32, 30 48 C 30 62, 48 64, 62 68 C 76 72, 82 76, 82 86" fill="none" stroke="#fff" stroke-width="11" stroke-linecap="round"/></svg>
+      </div>
+    </div><div class="meta"><span class="name">A · S-Stride</span><span class="note">Current primary</span></div></div>
+
+    <div class="card"><div class="stage">
+      <div class="ios" style="background:#0F1B2D;">
+        <svg width="64" height="64" viewBox="0 0 100 100"><path d="M26 74 C 26 56, 38 44, 54 40 C 70 36, 78 30, 76 20 C 66 30, 52 32, 40 36 C 22 44, 14 60, 22 78 Z" fill="#13A26B"/></svg>
+      </div>
+    </div><div class="meta"><span class="name">B · Leaf on navy</span><span class="note">Quiet, premium</span></div></div>
+
+    <div class="card"><div class="stage">
+      <div class="ios" style="background:#fff;border:1px solid var(--hair);">
+        <svg width="64" height="64" viewBox="0 0 100 100"><path d="M28 66 L 50 38 L 58 46 L 76 26" stroke="#1E7F5C" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M66 26 L 76 26 L 76 36" stroke="#1E7F5C" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      </div>
+    </div><div class="meta"><span class="name">C · Trend</span><span class="note">Clinical, bright</span></div></div>
+
+    <div class="card"><div class="stage">
+      <div class="ios" style="background:linear-gradient(135deg,#F2A93B,#E2932E);">
+        <svg width="64" height="64" viewBox="0 0 100 100"><path d="M28 72 C 28 56, 44 48, 58 38 C 66 32, 66 26, 62 20" stroke="#fff" stroke-width="10" stroke-linecap="round" fill="none"/></svg>
+      </div>
+    </div><div class="meta"><span class="name">D · Step Arc</span><span class="note">Warm, energetic</span></div></div>
+
+    <div class="card"><div class="stage">
+      <div class="ios" style="background:linear-gradient(135deg,#1E7F5C,#13A26B);">
+        <svg width="60" height="64" viewBox="0 0 80 100"><circle cx="18" cy="50" r="8" fill="#fff"/><path d="M36 50 L 56 30 M 36 50 L 56 70" stroke="#fff" stroke-width="11" stroke-linecap="round" fill="none"/></svg>
+      </div>
+    </div><div class="meta"><span class="name">E · Dot Chevron</span><span class="note">Direction of travel</span></div></div>
+
+    <div class="card"><div class="stage">
+      <div class="ios" style="background:#F7F8FB;">
+        <svg width="64" height="64" viewBox="0 0 120 100">
+          <rect x="10" y="44" width="100" height="12" rx="6" fill="#E5E9F2"/>
+          <rect x="10" y="44" width="64" height="12" rx="6" fill="#1E7F5C"/>
+          <circle cx="74" cy="50" r="10" fill="#1E7F5C" stroke="#fff" stroke-width="3"/>
+        </svg>
+      </div>
+    </div><div class="meta"><span class="name">F · Progress</span><span class="note">Literal, iconic</span></div></div>
+
+    <div class="card"><div class="stage">
+      <div class="ios" style="background:linear-gradient(135deg,#1E7F5C,#0F1B2D);">
+        <svg width="64" height="64" viewBox="0 0 100 100"><path d="M28 78 L 48 42 L 60 56 L 78 24" stroke="#13A26B" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      </div>
+    </div><div class="meta"><span class="name">G · Deep trend</span><span class="note">Moody, dashboard</span></div></div>
+
+    <div class="card"><div class="stage">
+      <div class="ios" style="background:#fff;border:1px solid var(--hair);">
+        <svg width="72" height="72" viewBox="0 0 100 100"><text x="50" y="72" text-anchor="middle" font-family="Anton" font-size="90" fill="#1E7F5C">S</text></svg>
+      </div>
+    </div><div class="meta"><span class="name">H · Anton S</span><span class="note">Wordmark-as-icon</span></div></div>
+  </div>
+
+  <!-- ───────────── 3 · Contexts ───────────── -->
+  <div class="section-label">In context — header, pill, dark</div>
+  <div class="grid">
+
+    <div class="card">
+      <div class="stage" style="flex-direction:column;gap:14px;align-items:flex-start;padding:0 6px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <svg width="24" height="24" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#1E7F5C"/><path d="M70 20 C 44 20, 30 32, 30 48 C 30 62, 48 64, 62 68 C 76 72, 82 76, 82 86" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round"/></svg>
+          <span style="font-family:Anton;font-size:22px;letter-spacing:.04em;">STRIDE</span>
+        </div>
+        <div style="font-size:13px;color:var(--fg2)">App bar · 24px mark + wordmark</div>
+      </div>
+      <div class="meta"><span class="name">In-app header</span><span class="note">Direction A</span></div>
+    </div>
+
+    <div class="card" style="background:#0F1B2D;color:#fff;border-color:transparent;">
+      <div class="stage">
+        <div class="horiz">
+          <svg width="40" height="40" viewBox="0 0 100 100"><path d="M70 20 C 44 20, 30 32, 30 48 C 30 62, 48 64, 62 68 C 76 72, 82 76, 82 86" fill="none" stroke="#13A26B" stroke-width="11" stroke-linecap="round"/></svg>
+          <div style="font-family:Anton;font-size:36px;letter-spacing:.04em;">STRIDE</div>
+        </div>
+      </div>
+      <div class="meta" style="border-color:rgba(255,255,255,.08);"><span class="name" style="color:#fff;">On navy</span><span class="note" style="color:rgba(255,255,255,.55);">Splash / marketing</span></div>
+    </div>
+
+    <div class="card">
+      <div class="stage" style="flex-direction:column;gap:14px;">
+        <div class="pill">Verified SG food</div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <svg width="20" height="20" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#1E7F5C"/><path d="M70 20 C 44 20, 30 32, 30 48 C 30 62, 48 64, 62 68 C 76 72, 82 76, 82 86" fill="none" stroke="#fff" stroke-width="13" stroke-linecap="round"/></svg>
+          <span style="font-family:Anton;font-size:15px;letter-spacing:.06em;">STRIDE</span>
+          <span style="color:var(--fg3);font-size:13px;">/ verified by</span>
+        </div>
+      </div>
+      <div class="meta"><span class="name">Byline</span><span class="note">Partner / endorsement</span></div>
+    </div>
+
+  </div>
+
+  <!-- My pick -->
+  <div class="section-label">My recommendation</div>
+  <div style="background:var(--card);border:1px solid var(--hair);border-radius:18px;padding:28px;display:flex;gap:28px;align-items:center;">
+    <div class="ios" style="background:linear-gradient(135deg,#1E7F5C,#13A26B);width:128px;height:128px;border-radius:28px;">
+      <svg width="80" height="80" viewBox="0 0 100 100"><path d="M70 20 C 44 20, 30 32, 30 48 C 30 62, 48 64, 62 68 C 76 72, 82 76, 82 86" fill="none" stroke="#fff" stroke-width="11" stroke-linecap="round"/></svg>
+    </div>
+    <div style="flex:1;">
+      <div style="font-family:Anton;font-size:36px;letter-spacing:.04em;text-transform:uppercase;margin-bottom:8px;">Direction A · S-Stride + Anton</div>
+      <div style="color:var(--fg2);font-size:14px;line-height:1.55;max-width:620px;">
+        It's the only mark that reads <b>at 16px in a phone header</b> and still has personality at 1024px.
+        The cursive S doubles as both the wordmark initial and a motion cue (stride = step forward).
+        Anton is already in the system. Lowest friction, strongest identity.
+        Runner-up: <b>B · Leaf on navy</b> for a quieter, more premium feel — consider as a "pro" / watch-face variant.
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

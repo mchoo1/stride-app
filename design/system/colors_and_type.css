@@ -1,0 +1,221 @@
+/* ==========================================================================
+   Stride Design System — tokens
+   Light theme. System font. Calm, clinical, warm.
+   ========================================================================== */
+
+:root {
+  /* ── Brand ─────────────────────────────────────────────────────────── */
+  --brand-navy:          #0F1B2D;   /* primary text, app bar */
+  --brand-green:         #1E7F5C;   /* primary brand, "on track" */
+  --brand-green-bright:  #13A26B;   /* accent / success confirmation */
+  --brand-amber:         #F2A93B;   /* attention, partial state */
+  --brand-red:           #D04E36;   /* over budget, errors */
+
+  /* ── Neutrals ──────────────────────────────────────────────────────── */
+  --canvas:              #F7F8FB;   /* screen background */
+  --card:                #FFFFFF;   /* card / sheet background */
+  --hairline:            #E5E9F2;   /* 1 px dividers, borders */
+  --hairline-strong:     #D3D9E3;   /* 1.5 px input borders */
+
+  /* ── Text ──────────────────────────────────────────────────────────── */
+  --fg-1:                #0F1B2D;   /* primary text */
+  --fg-2:                #5B6576;   /* secondary */
+  --fg-3:                #8B95A7;   /* muted / labels */
+  --fg-on-brand:         #FFFFFF;   /* text on brand-green */
+
+  /* ── Semantic / state ──────────────────────────────────────────────── */
+  --success:             var(--brand-green-bright);
+  --success-bg:          rgba(30, 127, 92, 0.10);
+  --warning:             var(--brand-amber);
+  --warning-bg:          rgba(242, 169, 59, 0.12);
+  --danger:              var(--brand-red);
+  --danger-bg:           rgba(208, 78, 54, 0.10);
+  --info:                var(--brand-navy);
+  --info-bg:             rgba(15, 27, 45, 0.06);
+
+  /* ── Macro colors (for charts only, not for buttons) ───────────────── */
+  --macro-protein:       #2E6FB8;
+  --macro-carbs:         #C98A2E;
+  --macro-fat:           var(--brand-green);
+
+  /* ── Pillar colors ─────────────────────────────────────────────────── */
+  --pillar-track:        var(--brand-green);
+  --pillar-monitor:      #2E6FB8;
+  --pillar-eat:          #C98A2E;
+  --pillar-move:         #7A4BC2;
+
+  /* ── Typography ────────────────────────────────────────────────────── */
+  /* Load Inter + Anton + Archivo Black from Google Fonts in the page <head>:
+     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+     <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"> */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
+               Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Anton", "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display",
+                  Impact, "Helvetica Neue", Arial, sans-serif;
+  /* Wordmark font — used ONLY in the Stride lockup (splash, marketing, lockup SVG).
+     Never for in-app body, buttons, or section titles. */
+  --font-wordmark: "Archivo Black", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SF Mono", ui-monospace, "Menlo", "Consolas", monospace;
+
+  /* Type scale (mobile-first) */
+  --fs-hero:       72px;
+  --fs-display:    40px;
+  --fs-h1:         28px;
+  --fs-h2:         22px;
+  --fs-h3:         18px;
+  --fs-body:       16px;
+  --fs-body-sm:    14px;
+  --fs-label:      12px;
+  --fs-caption:    11px;
+
+  --fw-regular:    400;
+  --fw-medium:     500;
+  --fw-semibold:   600;
+  --fw-bold:       700;
+  --fw-heavy:      800;
+
+  --lh-hero:       1.05;
+  --lh-display:    1.10;
+  --lh-heading:    1.25;
+  --lh-body:       1.45;
+
+  --tracking-hero: -0.02em;
+  --tracking-label: 0.06em;
+
+  /* ── Spacing (4 px grid) ───────────────────────────────────────────── */
+  --space-1:   4px;
+  --space-2:   8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-14: 56px;
+  --space-18: 72px;
+
+  /* ── Corner radii ──────────────────────────────────────────────────── */
+  --r-xs:    8px;
+  --r-sm:   12px;
+  --r-md:   16px;
+  --r-lg:   20px;
+  --r-xl:   28px;
+  --r-pill: 999px;
+
+  /* ── Shadows ───────────────────────────────────────────────────────── */
+  --shadow-card:   0 1px 2px rgba(15,27,45,0.04), 0 1px 3px rgba(15,27,45,0.03);
+  --shadow-raised: 0 2px 8px rgba(15,27,45,0.06), 0 1px 3px rgba(15,27,45,0.04);
+  --shadow-hero:   0 8px 24px rgba(15,27,45,0.08), 0 2px 8px rgba(15,27,45,0.04);
+  --shadow-cta:    0 6px 20px rgba(30,127,92,0.25);
+
+  /* ── Layout ────────────────────────────────────────────────────────── */
+  --nav-h:        68px;
+  --header-safe:  44px;
+  --gutter:       20px;
+  --max-mobile:  420px;
+
+  /* ── Motion ────────────────────────────────────────────────────────── */
+  --ease:          cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast:     120ms;
+  --dur:          200ms;
+  --dur-slow:     600ms;
+}
+
+/* ==========================================================================
+   Semantic element defaults (for design-system documentation pages)
+   ========================================================================== */
+
+html { color-scheme: light; }
+
+body {
+  background: var(--canvas);
+  color: var(--fg-1);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+}
+
+h1, .h1 {
+  font-family: var(--font-display);
+  font-size: var(--fs-h1);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-heading);
+  letter-spacing: -0.01em;
+  color: var(--fg-1);
+  margin: 0;
+}
+h2, .h2 {
+  font-family: var(--font-display);
+  font-size: var(--fs-h2);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-heading);
+  letter-spacing: -0.005em;
+  color: var(--fg-1);
+  margin: 0;
+}
+h3, .h3 {
+  font-size: var(--fs-h3);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-heading);
+  color: var(--fg-1);
+  margin: 0;
+}
+
+.hero-numeral {
+  font-family: var(--font-display);
+  font-size: var(--fs-hero);
+  font-weight: 400;           /* Anton is a single weight, naturally heavy */
+  line-height: var(--lh-hero);
+  letter-spacing: 0;           /* Anton is already condensed */
+  color: var(--fg-1);
+  font-variant-numeric: tabular-nums;
+}
+
+.display {
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  font-weight: 400;
+  line-height: var(--lh-display);
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+p, .body {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--fg-1);
+  margin: 0;
+}
+.body-sm {
+  font-size: var(--fs-body-sm);
+  line-height: 1.5;
+  color: var(--fg-2);
+}
+
+.label {
+  font-size: var(--fs-label);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--fg-3);
+}
+.caption {
+  font-size: var(--fs-caption);
+  color: var(--fg-3);
+}
+
+code, .mono {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+}
+
+/* Reusable card for preview pages */
+.card {
+  background: var(--card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-card);
+}
