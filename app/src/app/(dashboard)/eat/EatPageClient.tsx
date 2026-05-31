@@ -837,10 +837,10 @@ export default function EatPage() {
   // ── Location helpers ─────────────────────────────────────────────────────
   const fetchNearbyForCoords = useCallback(async (lat: number, lng: number) => {
     try {
-      const res = await fetch(`/api/nearby-places?lat=${lat}&lng=${lng}&mode=restaurant`);
+      const res = await fetch(`/api/nearby-places?lat=${lat}&lng=${lng}&type=food`);
       if (!res.ok) return;
       const data = await res.json();
-      setNearbyPlaces(data.results ?? []);
+      setNearbyPlaces(data.places ?? []);
     } catch { /* silent */ }
   }, []);
 
@@ -1327,7 +1327,7 @@ export default function EatPage() {
 
       {/* ── Sort strip — visible above map and above list results ── */}
       {viewType === 'meals' && (
-        <div style={{ padding: '4px 16px 8px', display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+        <div style={{ padding: '4px 0 8px', display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', paddingLeft: 16, paddingRight: 16 } as React.CSSProperties}>
           {([
             { key: 'best_match'     as SortKey, label: 'Best Match'    },
             { key: 'protein_dollar' as SortKey, label: 'Protein/$'     },
@@ -1360,6 +1360,7 @@ export default function EatPage() {
             pins={mapPins}
             centerLat={userLat}
             centerLng={userLng}
+            hasGPS={hasLocation}
             onSearchArea={handleSearchArea}
             onSelectRestaurant={(restaurant) => {
               setFilterRestaurantId(restaurant.id);

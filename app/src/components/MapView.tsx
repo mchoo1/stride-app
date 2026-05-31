@@ -25,6 +25,8 @@ interface Props {
   pins: MapPin[];
   centerLat: number;
   centerLng: number;
+  /** True when coords are from real GPS (use close zoom), false = default SG center (overview zoom) */
+  hasGPS?: boolean;
   onSearchArea: (lat: number, lng: number) => void;
   onSelectRestaurant: (restaurant: SGRestaurant) => void;
 }
@@ -173,7 +175,7 @@ function RestaurantPanel({ restaurant, distKm, onViewMenu, onClose }: {
 }
 
 /* ═══════════════════════════ MapView ════════════════════════════════════ */
-export default function MapView({ pins, centerLat, centerLng, onSearchArea, onSelectRestaurant }: Props) {
+export default function MapView({ pins, centerLat, centerLng, hasGPS = false, onSearchArea, onSelectRestaurant }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef       = useRef<any>(null);
   const markersRef   = useRef<Map<string, any>>(new Map());
@@ -192,7 +194,7 @@ export default function MapView({ pins, centerLat, centerLng, onSearchArea, onSe
 
       const map = L.map(containerRef.current, {
         center: [centerLat, centerLng],
-        zoom: 15,
+        zoom: 12,           // 12 = whole-Singapore overview; bumps to 15 when GPS granted
         zoomControl: false,
         attributionControl: true,
       });
@@ -237,7 +239,9 @@ export default function MapView({ pins, centerLat, centerLng, onSearchArea, onSe
   // ── Re-center when centerLat/lng changes ─────────────────────────────────
   useEffect(() => {
     if (!mapRef.current || !centerLat || !centerLng) return;
-    mapRef.current.setView([centerLat, centerLng], 15, { animate: true });
+    // Zoom to street level only when we have a real GPS fix; keep overview otherwise
+    const zoom = hasGPS ? 15 : 12;
+    mapRef.current.setView([centerLat, centerLng], zoom, { animate: true });
     searchCenterRef.current = { lat: centerLat, lng: centerLng };
     setShowSearchBtn(false);
   }, [centerLat, centerLng]);
@@ -302,7 +306,7 @@ export default function MapView({ pins, centerLat, centerLng, onSearchArea, onSe
   const selectedRestaurant = selectedPin?.restaurant ?? null;
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: 'calc(100vh - 220px)', minHeight: 400 }}>
+    <div style={{ position: 'relative', width: '100%', height: 'calc(100dvh - 310px)', minHeight: 320 }}>
       {/* Map container */}
       <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
 
