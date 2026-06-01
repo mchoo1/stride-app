@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useStrideStore } from '@/lib/store';
 import { calculateBMR, calculateTargetCalories, calculateMacros } from '@/lib/utils';
+import { useAuth } from '@/lib/auth-context';
 import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { api } from '@/lib/apiClient';
@@ -72,6 +73,7 @@ function WeightChart({ entries }: { entries: { date: string; weight: number }[] 
 }
 
 export default function MePage() {
+  const { user, loading } = useAuth();
   const store   = useStrideStore();
   const profile = store.profile;
   const trend   = store.getWeightTrend(30);
@@ -79,6 +81,64 @@ export default function MePage() {
 
   const bmr  = calculateBMR(profile);
   const tdee = calculateTargetCalories(profile);
+
+  // Show guest screen while auth is resolving or when not logged in
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#F7F8FB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 28, height: 28, border: '2.5px solid #1E7F5C', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#F7F8FB', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', gap: 0 }}>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        {/* Avatar placeholder */}
+        <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(30,127,92,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#1E7F5C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="8" r="4"/>
+            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+          </svg>
+        </div>
+        <div style={{ fontSize: 22, fontWeight: 800, color: '#0F1B2D', marginBottom: 8 }}>You're browsing as a guest</div>
+        <div style={{ fontSize: 14, color: '#5B6576', textAlign: 'center', lineHeight: 1.6, marginBottom: 32, maxWidth: 300 }}>
+          Create a free account to track your calories, save favourite meals, and get personalised macro targets.
+        </div>
+        {/* Feature list */}
+        <div style={{ width: '100%', maxWidth: 320, background: '#fff', borderRadius: 20, border: '1px solid #E5E9F2', padding: '20px 20px', marginBottom: 28, boxShadow: '0 1px 2px rgba(15,27,45,0.04), 0 4px 12px rgba(15,27,45,0.06)' }}>
+          {[
+            { emoji: '🎯', text: 'Personalised calorie & macro targets' },
+            { emoji: '📊', text: 'Daily nutrition tracking & streaks'   },
+            { emoji: '💾', text: 'Save meals and restaurant favourites'  },
+            { emoji: '📈', text: 'Weight trend & progress charts'        },
+          ].map(f => (
+            <div key={f.text} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0' }}>
+              <span style={{ fontSize: 20 }}>{f.emoji}</span>
+              <span style={{ fontSize: 13, color: '#0F1B2D', fontWeight: 600 }}>{f.text}</span>
+            </div>
+          ))}
+        </div>
+        <Link href="/register" style={{
+          display: 'block', width: '100%', maxWidth: 320, textAlign: 'center',
+          background: '#1E7F5C', color: '#fff', fontWeight: 800, fontSize: 15,
+          borderRadius: 16, padding: '16px 0', textDecoration: 'none',
+          boxShadow: '0 4px 16px rgba(30,127,92,0.28)', marginBottom: 14,
+        }}>
+          Create Free Account →
+        </Link>
+        <Link href="/login" style={{
+          display: 'block', width: '100%', maxWidth: 320, textAlign: 'center',
+          background: '#F7F8FB', color: '#5B6576', fontWeight: 700, fontSize: 14,
+          borderRadius: 16, padding: '14px 0', textDecoration: 'none',
+          border: '1.5px solid #E5E9F2',
+        }}>
+          Already have an account? Sign in
+        </Link>
+      </div>
+    );
+  }
 
   const [tab,         setTab        ] = useState<'body' | 'goals' | 'settings'>('body');
   const [weightInput, setWeightInput] = useState('');

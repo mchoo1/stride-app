@@ -1,11 +1,6 @@
-'use client';
-import loadable from 'next/dynamic';
+import { redirect } from 'next/navigation';
 
-const PageClient = loadable(
-  () => import('./PageClient'),
-  { ssr: false }
-);
-
+// Send everyone straight to the home/discovery page — no login required.
 export default function Page() {
-  return <PageClient />;
+  redirect('/dashboard');
 }

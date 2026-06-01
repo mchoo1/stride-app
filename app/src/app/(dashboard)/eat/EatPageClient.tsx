@@ -26,7 +26,7 @@ import {
   matchRestaurant, searchAll, searchRecipes, getMenuCategories,
   macroMatchScore, proteinPerDollar, ppdColor, filterItemsByDiet,
   resolveIngredients, calcCostPerServing,
-  SG_RESTAURANTS, SG_RECIPES,
+  SG_RESTAURANTS, SG_RECIPES, SG_INGREDIENTS,
   type SGRestaurant, type SGMenuItem, type SGRecipe, type ServiceType, type RestaurantTier,
 } from '@/lib/sgFoodDb';
 import type { DietaryFlag } from '@/types';
@@ -238,8 +238,8 @@ function LogConfirmSheet({
 
   const name    = pending.item?.name ?? pending.recipe?.name ?? '';
   const emoji   = pending.item?.emoji ?? pending.recipe?.emoji ?? '🍽️';
-  const cal     = pending.item?.calories ?? pending.recipe?.calories ?? 0;
-  const protein = pending.item?.protein  ?? pending.recipe?.protein  ?? 0;
+  const cal     = pending.item?.calories ?? pending.recipe?.macrosPerServing?.calories ?? 0;
+  const protein = pending.item?.protein  ?? pending.recipe?.macrosPerServing?.protein  ?? 0;
   const price   = pending.item?.price;
 
   const mealTypes: MealType[] = ['breakfast', 'lunch', 'snack', 'dinner'];
@@ -482,10 +482,12 @@ function RecipeCard({ recipe, onLog, onUnlog, logged, isExpanded, onToggle }: {
   recipe: SGRecipe; onLog: () => void; onUnlog: () => void; logged: boolean;
   isExpanded: boolean; onToggle: () => void;
 }) {
-  const rawCost = calcCostPerServing(recipe);
-  const cost    = rawCost ?? 0;
+  const macros  = recipe.macrosPerServing;
+  const cost    = recipe.costPerServing ?? 0;
   const hasCost = cost > 0;
-  const ppd     = hasCost ? proteinPerDollar(recipe.protein, cost) : 0;
+  const ppd     = hasCost ? proteinPerDollar(macros?.protein ?? 0, cost) : 0;
+  const totalMins = (recipe.prepMins ?? 0) + (recipe.cookMins ?? 0);
+  const prepLabel = totalMins > 0 ? `${totalMins}min` : '';
 
   return (
     <div style={{ background: CARD, borderRadius: 16, border: `1px solid ${BORDER}`, marginBottom: 10, boxShadow: SHADOW, overflow: 'hidden' }}>
@@ -495,9 +497,9 @@ function RecipeCard({ recipe, onLog, onUnlog, logged, isExpanded, onToggle }: {
           <div style={{ fontSize: 14, fontWeight: 700, color: FG1, marginBottom: 2 }}>{recipe.name}</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
             {hasCost && <span style={{ fontSize: 13, fontWeight: 700, color: FG1 }}>${cost.toFixed(2)}</span>}
-            <span style={{ fontSize: 11, color: FG3 }}>{recipe.calories} cal</span>
-            <span style={{ fontSize: 11, color: FG3 }}>{recipe.prepTime} · {recipe.servings} serving{recipe.servings !== 1 ? 's' : ''}</span>
-            {hasCost && ppd > 0 && <PpdBadge protein={recipe.protein} price={cost} />}
+            <span style={{ fontSize: 11, color: FG3 }}>{macros?.calories ?? 0} cal</span>
+            <span style={{ fontSize: 11, color: FG3 }}>{prepLabel}{prepLabel ? ' · ' : ''}{recipe.servings} serving{recipe.servings !== 1 ? 's' : ''}</span>
+            {hasCost && ppd > 0 && <PpdBadge protein={macros?.protein ?? 0} price={cost} />}
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flexShrink: 0 }}>
@@ -518,10 +520,10 @@ function RecipeCard({ recipe, onLog, onUnlog, logged, isExpanded, onToggle }: {
         <div style={{ borderTop: `1px solid ${BORDER}`, padding: '12px 14px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginBottom: 12 }}>
             {[
-              { label: 'Protein', val: `${recipe.protein}g`, color: BLUE },
-              { label: 'Carbs',   val: `${recipe.carbs}g`,   color: AMBER },
-              { label: 'Fat',     val: `${recipe.fat}g`,     color: GREEN },
-              { label: 'Fibre',   val: recipe.fibre ? `${recipe.fibre}g` : '—', color: FG2 },
+              { label: 'Protein', val: `${macros?.protein ?? 0}g`, color: BLUE },
+              { label: 'Carbs',   val: `${macros?.carbs   ?? 0}g`, color: AMBER },
+              { label: 'Fat',     val: `${macros?.fat     ?? 0}g`, color: GREEN },
+              { label: 'Fibre',   val: macros?.fibre ? `${macros.fibre}g` : '—', color: FG2 },
             ].map(m => (
               <div key={m.label} style={{ textAlign: 'center', background: BG, borderRadius: 10, padding: '8px 4px' }}>
                 <div style={{ fontSize: 13, fontWeight: 800, color: m.color }}>{m.val}</div>
@@ -529,15 +531,20 @@ function RecipeCard({ recipe, onLog, onUnlog, logged, isExpanded, onToggle }: {
               </div>
             ))}
           </div>
-          {resolveIngredients(recipe).length > 0 && (
+          {recipe.ingredients && recipe.ingredients.length > 0 && (
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, color: FG2, marginBottom: 6 }}>Ingredients</div>
-              {resolveIngredients(recipe).map(ri => (
-                <div key={ri.ingredientId} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: `1px solid ${BORDER}`, fontSize: 12 }}>
-                  <span style={{ color: FG1 }}>{ri.ingredientId}</span>
-                  <span style={{ color: FG3 }}>{ri.quantityG}g</span>
-                </div>
-              ))}
+              {recipe.ingredients.map(ri => {
+                const ing = SG_INGREDIENTS.find(i => i.id === ri.ingredientId);
+                const displayName = ing?.name ?? ri.ingredientId.replace(/^ing_/, '').replace(/_/g, ' ');
+                const grams = Math.round(ri.quantity * (ing?.unit?.includes('100g') ? 100 : 1000));
+                return (
+                  <div key={ri.ingredientId} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: `1px solid ${BORDER}`, fontSize: 12 }}>
+                    <span style={{ color: FG1, textTransform: 'capitalize' }}>{displayName}</span>
+                    <span style={{ color: FG3 }}>{ri.note ?? `${grams}g`}</span>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -966,7 +973,7 @@ export default function EatPage() {
   // ── Search results ──────────────────────────────────────────────────────
   const searchResults = useMemo(() => {
     if (!query.trim()) return null;
-    return searchAll(query).map(h => ({ ...h, distKm: distLookup.get(h.restaurant.id) }));
+    return searchAll(query).items.map(h => ({ ...h, distKm: distLookup.get(h.restaurant.id) }));
   }, [query, distLookup]);
 
   const recipeSearchResults = useMemo(() => {
@@ -1015,16 +1022,17 @@ export default function EatPage() {
       showToast(`${item.emoji} ${item.name} logged!`);
       track(Events.MEAL_LOGGED, { source: 'eat_page', itemId: item.id, calories: item.calories });
     } else if (type === 'recipe' && recipe) {
+      const m = recipe.macrosPerServing;
       const entry = {
         name: recipe.name, emoji: recipe.emoji, mealType,
-        calories: recipe.calories, protein: recipe.protein, carbs: recipe.carbs, fat: recipe.fat,
-        fibre: recipe.fibre, quantity: 1,
+        calories: m?.calories ?? 0, protein: m?.protein ?? 0, carbs: m?.carbs ?? 0, fat: m?.fat ?? 0,
+        fibre: m?.fibre, quantity: 1,
       };
       store.addFoodEntry(entry);
       const newId = store.foodLog[store.foodLog.length - 1]?.id ?? recipe.id;
       setLoggedEntryIds(prev => new Map([...prev, [recipe.id, newId]]));
       showToast(`${recipe.emoji} ${recipe.name} logged!`);
-      track(Events.MEAL_LOGGED, { source: 'eat_page_recipe', recipeId: recipe.id, calories: recipe.calories });
+      track(Events.MEAL_LOGGED, { source: 'eat_page_recipe', recipeId: recipe.id, calories: recipe.macrosPerServing?.calories ?? 0 });
     }
     setPendingLog(null);
   }, [pendingLog, store, showToast]);

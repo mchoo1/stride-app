@@ -62,7 +62,7 @@ export default function FoodLogPage() {
         const q = search.trim().toLowerCase();
 
         // 1. Search sgFoodDb — restaurant menu items
-        const menuResults = searchAll(q).map(({ item, restaurant }) => ({
+        const menuResults = searchAll(q).items.map(({ item, restaurant }) => ({
           id:       item.id,
           name:     `${item.name} (${restaurant.name})`,
           emoji:    item.emoji,

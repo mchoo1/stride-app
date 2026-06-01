@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/lib/auth-context';
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 const HomeOutline = () => (
@@ -67,7 +68,12 @@ const GREEN = '#1E7F5C';
 const MUTED = '#8B95A7';
 
 export default function BottomNav() {
-  const path = usePathname();
+  const path     = usePathname();
+  // useAuth available for future conditional nav items
+  const { user } = useAuth();
+  void user;
+
+  const navItems = NAV_ITEMS;
 
   return (
     <nav style={{
@@ -79,12 +85,12 @@ export default function BottomNav() {
       padding: '8px 0 max(20px, env(safe-area-inset-bottom))',
     }}>
       <div style={{ maxWidth: 500, margin: '0 auto', display: 'flex', alignItems: 'center' }}>
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const active = path === item.prefix || path.startsWith(item.prefix + '/');
           const Icon   = active ? item.Fill : item.Outline;
           const color  = active ? GREEN : MUTED;
           return (
-            <Link key={item.href} href={item.href} style={{
+            <Link key={item.prefix} href={item.href} style={{
               flex: 1, display: 'flex', flexDirection: 'column',
               alignItems: 'center', gap: 3,
               padding: '4px 0', textDecoration: 'none', color,

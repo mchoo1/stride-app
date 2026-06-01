@@ -105,7 +105,7 @@ export default function LandingPage() {
     const q = query.trim().toLowerCase();
 
     // 1. Restaurant menu items
-    const menuItems: ResultItem[] = searchAll(q).map(({ item, restaurant }) => {
+    const menuItems: ResultItem[] = searchAll(q).items.map(({ item, restaurant }) => {
       const ppd = item.protein >= 10 ? proteinPerDollar(item.protein, item.price) : 0;
       return {
         id: item.id,
