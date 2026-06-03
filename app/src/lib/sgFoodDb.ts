@@ -12838,6 +12838,13 @@ export function searchAll(
   const q = query.toLowerCase().trim();
   if (!q) return { restaurants: [], items: [] };
 
+  // Category match: only on whole-word boundaries so "chick" doesn't match "Chicken & Sides"
+  // but "chicken" or "rice" would still match their respective categories.
+  const categoryMatch = (category: string) => {
+    const words = category.toLowerCase().split(/[\s&,/\-]+/);
+    return words.some(w => w === q || w.startsWith(q + ' ') || (q.length >= 4 && w.startsWith(q)));
+  };
+
   const restaurants: SGRestaurant[] = [];
   const items: { item: SGMenuItem; restaurant: SGRestaurant }[] = [];
 
@@ -12845,7 +12852,7 @@ export function searchAll(
     if (serviceFilter && r.tab !== serviceFilter) continue;
     const nameMatch = r.name.toLowerCase().includes(q) || r.aliases.some(a => a.includes(q));
     const matchingItems = r.menu.filter(
-      i => i.name.toLowerCase().includes(q) || (i.category ?? '').toLowerCase().includes(q)
+      i => i.name.toLowerCase().includes(q) || categoryMatch(i.category ?? '')
     );
     if (nameMatch) restaurants.push(r);
     for (const item of matchingItems) {
