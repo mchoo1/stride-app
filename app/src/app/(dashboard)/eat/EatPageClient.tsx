@@ -895,8 +895,6 @@ export default function EatPage() {
   }, []);
 
   const requestLocation = useCallback(() => {
-    const key = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
-    if (!key) { setLocState('no_key'); return; }
     setLocState('loading');
     navigator.geolocation.getCurrentPosition(
       async pos => {
@@ -915,21 +913,53 @@ export default function EatPage() {
   // Geocode a typed location name → lat/lng → nearby places
   const searchByLocation = useCallback(async (place: string) => {
     if (!place.trim()) return;
-    const key = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
-    if (!key) { showToast('Location search needs Google Maps key'); return; }
     setGeocoding(true);
     try {
-      const q = encodeURIComponent(`${place}, Singapore`);
-      const res = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?address=${q}&key=${key}&region=sg`
-      );
-      const data = await res.json();
-      if (data.status !== 'OK' || !data.results?.[0]) {
-        showToast('Location not found — try another area name');
+      const q = place.trim();
+      let lat: number | null = null;
+      let lng: number | null = null;
+      let shortName = q;
+
+      // 1️⃣ OneMap SG — best for postal codes, MRT stations, buildings, roads
+      try {
+        const omRes = await fetch(
+          `https://www.onemap.gov.sg/api/common/elastic/search?searchVal=${encodeURIComponent(q)}&returnGeom=Y&getAddrDetails=Y&pageNum=1`
+        );
+        if (omRes.ok) {
+          const omData = await omRes.json();
+          if (omData.found > 0 && omData.results?.[0]) {
+            const r = omData.results[0];
+            lat = parseFloat(r.LATITUDE);
+            lng = parseFloat(r.LONGITUDE);
+            // Pick the most descriptive label: building > road > search value
+            shortName = r.BUILDING && r.BUILDING !== 'NIL'
+              ? r.BUILDING.toLowerCase().replace(/\b\w/g, (c: string) => c.toUpperCase())
+              : r.ROAD_NAME && r.ROAD_NAME !== 'NIL'
+                ? r.ROAD_NAME.toLowerCase().replace(/\b\w/g, (c: string) => c.toUpperCase())
+                : r.SEARCHVAL;
+          }
+        }
+      } catch { /* fall through to Nominatim */ }
+
+      // 2️⃣ Nominatim fallback — good for general area names (Orchard, CBD, Jurong…)
+      if (lat === null) {
+        const nomRes = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q + ', Singapore')}&format=json&limit=1&countrycodes=sg`,
+          { headers: { 'Accept-Language': 'en', 'User-Agent': 'StrideApp/1.0' } }
+        );
+        const nomData = await nomRes.json();
+        if (Array.isArray(nomData) && nomData.length > 0) {
+          lat = parseFloat(nomData[0].lat);
+          lng = parseFloat(nomData[0].lon);
+          shortName = nomData[0].display_name?.split(',')[0] ?? q;
+        }
+      }
+
+      if (lat === null || lng === null) {
+        showToast('Location not found — try a postal code or MRT name');
         return;
       }
-      const { lat, lng } = data.results[0].geometry.location;
-      const shortName = data.results[0].address_components?.[0]?.short_name ?? place;
+
       setLocationLabel(shortName);
       setLocState('granted');
       setUserLat(lat); setUserLng(lng);
@@ -1324,7 +1354,7 @@ export default function EatPage() {
                 value={locationInput}
                 onChange={e => setLocationInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && searchByLocation(locationInput)}
-                placeholder="e.g. Orchard, Tampines, Jurong…"
+                placeholder="Postal code, MRT, building, area…"
                 style={{
                   flex: 1, padding: '10px 12px', borderRadius: 12,
                   border: `1px solid ${BORDER}`, fontSize: 13, color: FG1,
