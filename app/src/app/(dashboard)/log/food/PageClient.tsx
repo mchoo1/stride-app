@@ -4,6 +4,7 @@ import { useStrideStore } from '@/lib/store';
 import { MOCK_FOODS, MOCK_SCAN_RESULTS } from '@/lib/mockFoods';
 import { api } from '@/lib/apiClient';
 import { searchAll, SG_MACRO_FOODS } from '@/lib/sgFoodDb';
+import MealFeedbackSheet from '@/components/MealFeedbackSheet';
 
 // Unified food shape for search results (mock + API)
 interface FoodSearchResult {
@@ -39,6 +40,9 @@ export default function FoodLogPage() {
   const aiInputRef = useRef<HTMLInputElement>(null);
 
   /* ── Manual tab ── */
+  // Feedback sheet
+  const [feedbackTarget, setFeedbackTarget] = useState<{ id: string; name: string } | null>(null);
+
   const [mPhoto, setMPhoto] = useState<string | null>(null);
   const [mName,  setMName]  = useState('');
   const [mQty,   setMQty]   = useState('100');
@@ -403,16 +407,21 @@ export default function FoodLogPage() {
                       </div>
                     )}
                     {!searchLoading && displayFoods.map(f => (
-                      <div key={f.id} onClick={() => setSelectedFood(f)} style={{
+                      <div key={f.id} style={{
                         display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
-                        borderRadius: 12, marginBottom: 4, cursor: 'pointer', background: '#f8f9fa',
+                        borderRadius: 12, marginBottom: 4, background: '#f8f9fa',
                       }}>
-                        <span style={{ fontSize: 24 }}>{f.emoji}</span>
-                        <div style={{ flex: 1 }}>
+                        <span onClick={() => setSelectedFood(f)} style={{ fontSize: 24, cursor: 'pointer' }}>{f.emoji}</span>
+                        <div onClick={() => setSelectedFood(f)} style={{ flex: 1, cursor: 'pointer' }}>
                           <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e' }}>{f.name}</div>
-                          <div style={{ fontSize: 11, color: '#aaa' }}>{f.calories} kcal · P:{f.protein}g · C:{f.carbs}g · F:{f.fat}g per 100g</div>
+                          <div style={{ fontSize: 11, color: '#aaa' }}>{f.calories} kcal · P:{f.protein}g · C:{f.carbs}g · F:{f.fat}g</div>
                         </div>
-                        <span style={{ color: '#4CAF82', fontSize: 20 }}>›</span>
+                        <button
+                          onClick={() => setFeedbackTarget({ id: f.id, name: f.name })}
+                          title="Rate accuracy"
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#ccc', padding: '4px 6px', flexShrink: 0 }}
+                        >⭐</button>
+                        <span onClick={() => setSelectedFood(f)} style={{ color: '#4CAF82', fontSize: 20, cursor: 'pointer' }}>›</span>
                       </div>
                     ))}
                     {!searchLoading && search.trim() && displayFoods.length === 0 && (
@@ -562,6 +571,17 @@ export default function FoodLogPage() {
           fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', zIndex: 300,
         }}>{toast}</div>
       )}
+
+      {/* Meal feedback sheet */}
+      {feedbackTarget && (
+        <MealFeedbackSheet
+          mealId={feedbackTarget.id}
+          mealName={feedbackTarget.name}
+          isOpen={true}
+          onClose={() => setFeedbackTarget(null)}
+        />
+      )}
+
       <style>{`@keyframes loadBar { from { width: 0% } to { width: 100% } }`}</style>
     </div>
   );

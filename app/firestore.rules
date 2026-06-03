@@ -45,7 +45,7 @@ service cloud.firestore {
       allow write:  if isOwner(uid);
     }
 
-    // ── Foods database — read by all, write by authenticated ──
+    // ── Foods database (legacy) — read by all, write by authenticated ──
     match /foods/{foodId} {
       allow read:   if true;
       allow create: if isAuth();
@@ -53,6 +53,38 @@ service cloud.firestore {
         resource.data.submittedBy == request.auth.uid || isVerifiedPro()
       );
       allow delete: if false;
+    }
+
+    // ── Restaurants — public read, no direct client writes ────────────────
+    // Populated exclusively by the seed script (server-side admin SDK).
+    match /restaurants/{restaurantId} {
+      allow read:   if true;
+      allow write:  if false;   // admin/seed script only
+    }
+
+    // ── Meals — public read, no direct client writes ───────────────────────
+    // Populated exclusively by the seed script.
+    // meal_feedback writes are handled via /api/meal-feedback route.
+    match /meals/{mealId} {
+      allow read:   if true;
+      allow write:  if false;   // admin/seed script only
+    }
+
+    // ── Meal feedback — authenticated create only ──────────────────────────
+    // Users can submit feedback. Updates (moderation) are server-side only.
+    match /meal_feedback/{feedbackId} {
+      allow read:   if isAuth() && resource.data.userId == request.auth.uid;
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+      allow update: if false;   // server-side moderation only
+      allow delete: if false;
+    }
+
+    // ── Meal community stats — public read, server-side write only ─────────
+    // Updated by Cloud Function when feedback is approved.
+    // Read publicly so any user (including unauthenticated) can see community ratings.
+    match /meal_community_stats/{mealId} {
+      allow read:   if true;
+      allow write:  if false;   // Cloud Function / admin SDK only
     }
 
     // ── Community posts ───────────────────────────────────────

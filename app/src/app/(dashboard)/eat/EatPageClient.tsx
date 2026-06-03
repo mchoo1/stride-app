@@ -30,6 +30,7 @@ import {
   type SGRestaurant, type SGMenuItem, type SGRecipe, type ServiceType, type RestaurantTier,
 } from '@/lib/sgFoodDb';
 import type { DietaryFlag } from '@/types';
+import MealFeedbackSheet from '@/components/MealFeedbackSheet';
 
 /* ── Design tokens ── */
 const BG     = '#F7F8FB';
@@ -331,12 +332,14 @@ function LogConfirmSheet({
 /* ── MenuItemCard — expandable ── */
 function MenuItemCard({
   item, restaurant, distKm, userFlags, onLog, onUnlog, logged,
-  isExpanded, onToggle,
+  isExpanded, onToggle, onRestaurantFilter,
 }: {
   item: SGMenuItem; restaurant: SGRestaurant; distKm?: number;
   userFlags: DietaryFlag[]; onLog: () => void; onUnlog: () => void; logged: boolean;
   isExpanded: boolean; onToggle: () => void;
+  onRestaurantFilter?: () => void;
 }) {
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const ppd     = item.price ? proteinPerDollar(item.protein, item.price) : 0;
   const dietFit = getDietFit(item.compatibleWith ?? [], userFlags);
   const grabUrl  = `https://food.grab.com/sg/en/search?query=${encodeURIComponent(restaurant.name)}`;
@@ -351,11 +354,26 @@ function MenuItemCard({
           <div style={{ fontSize: 14, fontWeight: 700, color: FG1, display: 'flex', alignItems: 'center', gap: 5 }}>
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
           </div>
-          <div style={{ fontSize: 12, color: FG2, marginBottom: 4 }}>{restaurant.name}</div>
+          {/* Restaurant tag — tappable to filter to that eatery */}
+          <button
+            onClick={e => { e.stopPropagation(); onRestaurantFilter?.(); }}
+            style={{
+              background: 'none', border: 'none', padding: 0, cursor: onRestaurantFilter ? 'pointer' : 'default',
+              fontSize: 12, color: GREEN, fontWeight: 600, marginBottom: 4, textAlign: 'left',
+              display: 'flex', alignItems: 'center', gap: 3,
+            }}
+          >
+            {restaurant.name}
+            {onRestaurantFilter && <span style={{ fontSize: 10, opacity: 0.6 }}>›</span>}
+          </button>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
             {item.price != null && <span style={{ fontSize: 13, fontWeight: 700, color: FG1 }}>${item.price.toFixed(2)}</span>}
             <span style={{ fontSize: 11, color: FG3 }}>{item.calories} cal</span>
-            {distKm !== undefined && <span style={{ fontSize: 11, color: FG3 }}>📍 {distKm < 1 ? `${(distKm*1000).toFixed(0)}m` : `${distKm.toFixed(1)}km`}</span>}
+            <span style={{ fontSize: 11, color: FG3 }}>
+              {distKm !== undefined
+                ? `📍 ${distKm < 1 ? `${(distKm * 1000).toFixed(0)}m away` : `${distKm.toFixed(1)}km away`}`
+                : '📍 Singapore'}
+            </span>
             {item.price && ppd > 0 && <PpdBadge protein={item.protein} price={item.price} />}
           </div>
         </div>
@@ -404,7 +422,7 @@ function MenuItemCard({
             <DietBadge fit={getDietFit(item.compatibleWith ?? [], userFlags)} />
           </div>
           {/* CTAs */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 10 }}>
             {[
               { href: grabUrl,  label: '🛵 Grab',  color: GREEN },
               { href: pandaUrl, label: '🐼 Panda', color: RED   },
@@ -417,8 +435,31 @@ function MenuItemCard({
               </a>
             ))}
           </div>
+
+          {/* Feedback row */}
+          <button
+            onClick={e => { e.stopPropagation(); setFeedbackOpen(true); }}
+            style={{
+              width: '100%', padding: '9px 0', marginBottom: 14,
+              background: 'none', border: `1px solid ${BORDER}`,
+              borderRadius: 10, cursor: 'pointer',
+              fontSize: 11, fontWeight: 600, color: FG3,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+            }}
+          >
+            <span>⭐</span> Was this accurate? Rate it
+          </button>
         </div>
       )}
+
+      {/* Feedback sheet */}
+      <MealFeedbackSheet
+        mealId={item.id}
+        mealName={item.name}
+        restaurantName={restaurant.name}
+        isOpen={feedbackOpen}
+        onClose={() => setFeedbackOpen(false)}
+      />
     </div>
   );
 }
@@ -435,7 +476,9 @@ function RestaurantBrowseCard({ restaurant, distKm, onSelect }: {
         <div style={{ fontSize: 15, fontWeight: 700, color: FG1, marginBottom: 2 }}>{restaurant.name}</div>
         <div style={{ fontSize: 12, color: FG2, marginBottom: 5 }}>
           {restaurant.cuisine}{restaurant.priceRange ? ` · ${restaurant.priceRange}` : ''}
-          {distKm !== undefined ? ` · ${distKm < 1 ? `${(distKm*1000).toFixed(0)}m` : `${distKm.toFixed(1)}km`}` : ''}
+          {distKm !== undefined
+            ? ` · ${distKm < 1 ? `${(distKm * 1000).toFixed(0)}m away` : `${distKm.toFixed(1)}km away`}`
+            : ' · 📍 Singapore'}
         </div>
         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
           {/* #1 diet icons */}
@@ -966,7 +1009,17 @@ export default function EatPage() {
     if (sortKey === 'protein_dollar') f = [...f].sort((a,b) => proteinPerDollar(b.item.protein,b.item.price??0) - proteinPerDollar(a.item.protein,a.item.price??0));
     else if (sortKey === 'price')    f = [...f].sort((a,b) => (a.item.price??999) - (b.item.price??999));
     else if (sortKey === 'calories') f = [...f].sort((a,b) => a.item.calories - b.item.calories);
-    else if (sortKey === 'distance') f = [...f].sort((a,b) => (a.distKm??99) - (b.distKm??99));
+    else if (sortKey === 'distance') f = [...f].sort((a, b) => {
+      const aDist = a.distKm;
+      const bDist = b.distKm;
+      // Both have GPS distance → sort by real distance
+      if (aDist !== undefined && bDist !== undefined) return aDist - bDist;
+      // One has GPS, one doesn't → GPS item first
+      if (aDist !== undefined) return -1;
+      if (bDist !== undefined) return 1;
+      // Neither has GPS → sort by protein/$ as useful secondary rank
+      return proteinPerDollar(b.item.protein, b.item.price ?? 0) - proteinPerDollar(a.item.protein, a.item.price ?? 0);
+    });
     return f;
   }, [pooledItems, filterRestaurantId, diningOption, priceFilter, filterDietFlags, filterMinProtein, filterMaxCalories, distFilter, sortKey, filterStrideApproved]);
 
@@ -1405,6 +1458,7 @@ export default function EatPage() {
                       logged={loggedIds.has(item.id)}
                       isExpanded={expandedId === item.id}
                       onToggle={() => setExpandedId(expandedId === item.id ? null : item.id)}
+                      onRestaurantFilter={() => { setFilterRestaurantId(restaurant.id); setViewType('meals'); }}
                     />
                   ))}
                 </div>
@@ -1415,9 +1469,34 @@ export default function EatPage() {
           return (
             <>
               <div style={{ fontSize: 12, color: FG3, marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>{searchResults ? `${items.length} results for "${query}"` : `${items.length} meals`}</span>
+                <span>
+                  {searchResults
+                    ? `${items.length} results for "${query}"`
+                    : `${items.length} meals`}
+                </span>
                 {filterRestaurantId && <span style={{ color: GREEN, fontSize: 11, fontWeight: 600 }}>from {SG_RESTAURANTS.find(r => r.id === filterRestaurantId)?.name}</span>}
               </div>
+
+              {/* GPS prompt — shown only when no location and not filtering by restaurant */}
+              {!hasLocation && !filterRestaurantId && !searchResults && locState !== 'loading' && (
+                <button
+                  onClick={requestLocation}
+                  style={{
+                    width: '100%', marginBottom: 12,
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '12px 14px', borderRadius: 14, cursor: 'pointer',
+                    background: 'rgba(30,127,92,0.06)',
+                    border: '1.5px dashed rgba(30,127,92,0.3)',
+                  }}
+                >
+                  <span style={{ fontSize: 18 }}>📍</span>
+                  <div style={{ flex: 1, textAlign: 'left' }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: GREEN }}>Enable GPS to find meals near you</div>
+                    <div style={{ fontSize: 11, color: FG2, marginTop: 1 }}>See how far each restaurant is from your location</div>
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: GREEN, flexShrink: 0 }}>Enable →</span>
+                </button>
+              )}
               {items.map(({ item, restaurant, distKm }) => (
                 <MenuItemCard key={`${restaurant.id}__${item.id}`} item={item} restaurant={restaurant} distKm={distKm}
                   userFlags={userFlags} onLog={() => setPendingLog({ type:'item', item, restaurant })}
@@ -1425,6 +1504,7 @@ export default function EatPage() {
                   logged={loggedIds.has(item.id)}
                   isExpanded={expandedId === item.id}
                   onToggle={() => { setExpandedId(expandedId === item.id ? null : item.id); if (expandedId !== item.id) track(Events.EAT_ITEM_EXPANDED, { itemId: item.id }); }}
+                  onRestaurantFilter={filterRestaurantId ? undefined : () => { setFilterRestaurantId(restaurant.id); setViewType('meals'); }}
                 />
               ))}
 
@@ -1440,6 +1520,7 @@ export default function EatPage() {
                       logged={loggedIds.has(item.id)}
                       isExpanded={expandedId === item.id}
                       onToggle={() => setExpandedId(expandedId === item.id ? null : item.id)}
+                      onRestaurantFilter={() => { setFilterRestaurantId(restaurant.id); setViewType('meals'); }}
                     />
                   ))}
                 </div>
@@ -1457,6 +1538,27 @@ export default function EatPage() {
             </div>
           );
           return (
+            <>
+              {/* GPS prompt for restaurants */}
+              {!hasLocation && !query.trim() && locState !== 'loading' && (
+                <button
+                  onClick={requestLocation}
+                  style={{
+                    width: '100%', marginBottom: 12,
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '12px 14px', borderRadius: 14, cursor: 'pointer',
+                    background: 'rgba(30,127,92,0.06)',
+                    border: '1.5px dashed rgba(30,127,92,0.3)',
+                  }}
+                >
+                  <span style={{ fontSize: 18 }}>📍</span>
+                  <div style={{ flex: 1, textAlign: 'left' }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: GREEN }}>Enable GPS to find restaurants near you</div>
+                    <div style={{ fontSize: 11, color: FG2, marginTop: 1 }}>See distance and discover places within walking distance</div>
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: GREEN, flexShrink: 0 }}>Enable →</span>
+                </button>
+              )}
             <div style={{ background: CARD, borderRadius: 18, border: `1px solid ${BORDER}`, padding: '0 14px', boxShadow: SHADOW }}>
               <div style={{ fontSize: 12, color: FG3, padding: '12px 0 4px' }}>
                 {restaurantList.length} restaurant{restaurantList.length !== 1 ? 's' : ''} with menu data
@@ -1477,6 +1579,7 @@ export default function EatPage() {
                 </>
               )}
             </div>
+            </>
           );
         })()}
 

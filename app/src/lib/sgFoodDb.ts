@@ -61,6 +61,73 @@ export type VerifiedSource =
  */
 export type RestaurantTier = 'full_menu' | 'estimated_menu' | 'place_only';
 
+/**
+ * Allergen information for a menu item.
+ *
+ * ─── MVP STATUS: SECONDARY DATA — DO NOT DISPLAY IN APP YET ───────────────
+ *
+ * Allergen data is logged here for future use but is intentionally NOT
+ * surfaced in the UI for the initial MVP release. Reason: data coverage
+ * is incomplete and unverified across most outlets. Displaying partial
+ * allergen data is more dangerous than showing none — a user with a nut
+ * allergy who sees "peanuts: false" on an unverified item may be harmed.
+ *
+ * CURRENT STATE (2026-05-29):
+ *   - Schema and type defined ✅
+ *   - McDonald's top items populated (partially — some fields still null) ✅
+ *   - KFC, Subway, and all other outlets: NOT YET populated ⏳
+ *   - UI display layer: NOT YET built ⏳
+ *   - Verification against official SG PDFs: IN PROGRESS ⏳
+ *
+ * PLAN:
+ *   Phase 1 (now):    Log allergen data as we research. Keep null for unknowns.
+ *   Phase 2 (post-MVP): Verify all null fields against official SG PDFs.
+ *                       Build UI display for verified items only.
+ *                       Show allergen badges only for source='official_sg'|'hpb'.
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ * THREE-STATE SYSTEM — critical for safety:
+ *   true  = item is CONFIRMED to CONTAIN this allergen (official source)
+ *   false = item is CONFIRMED to be FREE of this allergen (official source only)
+ *   null  = UNKNOWN — data not yet verified (treat as "may contain", show nothing)
+ *   field absent = same as null (unknown)
+ *
+ * ⚠️  RULES:
+ *   - Only set `false` (free-from) when confirmed by official_sg or hpb source.
+ *     A wrong free-from claim can cause an anaphylactic reaction.
+ *   - When in doubt, omit the field or leave it null.
+ *   - Always show disclaimer: "Verify allergen info directly with the restaurant."
+ *   - Community-sourced items (source: 'community' | 'ai_estimate') must NEVER
+ *     have allergen data displayed to users, regardless of what's stored here.
+ *
+ * SG Food Allergen Labelling Order (MOH/HPB guidelines):
+ *   gluten, dairy, eggs, peanuts, treeNuts, shellfish, soy, sesame
+ *
+ * Sources to use (in order):
+ *   1. Brand's official SG allergen table / nutrition PDF
+ *   2. HPB Healthy Eating in Singapore database
+ *   Never use: USDA (different SG recipe formulations), community estimates
+ */
+export interface SGAllergens {
+  /** Wheat, barley, rye — present in most buns, bread, battered items */
+  gluten?:    boolean | null;
+  /** Milk, cheese, butter, cream */
+  dairy?:     boolean | null;
+  /** Whole eggs and egg products */
+  eggs?:      boolean | null;
+  /** Groundnuts / peanuts */
+  peanuts?:   boolean | null;
+  /** Almonds, cashews, walnuts, pistachios, macadamia, etc. */
+  treeNuts?:  boolean | null;
+  /** Prawns, crab, lobster, crayfish — NOT fish */
+  shellfish?: boolean | null;
+  /** Soy / tofu / edamame */
+  soy?:       boolean | null;
+  /** Sesame seeds and sesame oil */
+  sesame?:    boolean | null;
+}
+
 // ─── Menu item ───────────────────────────────────────────────────────────────
 
 export interface SGMenuItem {
@@ -130,6 +197,22 @@ export interface SGMenuItem {
    *   community  — user-submitted, needs review
    */
   confidence?: 'verified' | 'estimated' | 'community';
+
+  /**
+   * Allergen information for this item.
+   *
+   * THREE-STATE: true=contains · false=verified free · null/absent=unknown
+   *
+   * ⚠️  Only populate from official_sg or hpb sources.
+   *     Only display to users when item.source === 'official_sg' || 'hpb'.
+   *     Always show disclaimer alongside any allergen data shown.
+   *
+   * Leave this field absent (undefined) if allergen data has not been
+   * researched yet. Do NOT default fields to false — omit them instead.
+   *
+   * See SGAllergens interface for full documentation.
+   */
+  allergens?: SGAllergens;
 
   // ── Set meal fields ───────────────────────────────────────────────────────
 
@@ -495,6 +578,16 @@ export const SG_RESTAURANTS: SGRestaurant[] = [
         source: 'official_sg',
         verified: true,
         lastVerified: '2026-04-18',
+        allergens: {
+          gluten:    true,   // sesame seed bun (wheat flour)
+          dairy:     true,   // processed cheese slice
+          eggs:      true,   // special sauce (mayo base)
+          peanuts:   false,
+          treeNuts:  false,
+          shellfish: false,
+          soy:       true,   // bun, beef patty seasoning
+          sesame:    true,   // sesame seed bun
+        },
       },
       {
         id: 'mcd_mcchicken',
@@ -514,6 +607,16 @@ export const SG_RESTAURANTS: SGRestaurant[] = [
         source: 'official_sg',
         verified: true,
         lastVerified: '2026-04-18',
+        allergens: {
+          gluten:    true,   // bun + chicken coating
+          dairy:     false,  // no cheese
+          eggs:      true,   // mayo
+          peanuts:   false,
+          treeNuts:  false,
+          shellfish: false,
+          soy:       true,   // bun, chicken coating
+          sesame:    false,
+        },
       },
       {
         id: 'mcd_mcspicy',
@@ -533,6 +636,16 @@ export const SG_RESTAURANTS: SGRestaurant[] = [
         source: 'official_sg',
         verified: true,
         lastVerified: '2026-04-18',
+        allergens: {
+          gluten:    true,   // bun + spicy crispy coating
+          dairy:     false,  // no cheese on McSpicy
+          eggs:      null,   // coating may contain egg — verify with SG allergen guide
+          peanuts:   false,
+          treeNuts:  false,
+          shellfish: false,
+          soy:       true,   // bun, coating
+          sesame:    false,
+        },
       },
       {
         id: 'mcd_filet_o_fish',
@@ -550,6 +663,16 @@ export const SG_RESTAURANTS: SGRestaurant[] = [
         source: 'official_sg',
         verified: true,
         lastVerified: '2026-04-18',
+        allergens: {
+          gluten:    true,   // bun + fish coating
+          dairy:     true,   // cheese slice
+          eggs:      true,   // tartar sauce (mayo base)
+          peanuts:   false,
+          treeNuts:  false,
+          shellfish: false,  // pollock fish fillet — not shellfish
+          soy:       true,   // bun
+          sesame:    false,
+        },
       },
       // ── Breakfast ────────────────────────────────────────────────────────
       {
@@ -570,6 +693,16 @@ export const SG_RESTAURANTS: SGRestaurant[] = [
         source: 'official_sg',
         verified: true,
         lastVerified: '2026-04-18',
+        allergens: {
+          gluten:    true,   // English muffin
+          dairy:     true,   // cheese, butter
+          eggs:      true,   // whole egg patty
+          peanuts:   false,
+          treeNuts:  false,
+          shellfish: false,
+          soy:       null,   // verify against official SG guide
+          sesame:    false,
+        },
       },
       {
         id: 'mcd_hotcakes',
@@ -588,6 +721,16 @@ export const SG_RESTAURANTS: SGRestaurant[] = [
         source: 'official_sg',
         verified: true,
         lastVerified: '2026-04-18',
+        allergens: {
+          gluten:    true,   // wheat flour batter
+          dairy:     true,   // butter, milk in batter
+          eggs:      true,   // batter
+          peanuts:   false,
+          treeNuts:  false,
+          shellfish: false,
+          soy:       null,   // verify against official SG guide
+          sesame:    false,
+        },
       },
       // ── Chicken & Sides ──────────────────────────────────────────────────
       {
@@ -607,6 +750,16 @@ export const SG_RESTAURANTS: SGRestaurant[] = [
         source: 'official_sg',
         verified: true,
         lastVerified: '2026-04-18',
+        allergens: {
+          gluten:    true,   // crispy coating
+          dairy:     false,
+          eggs:      null,   // marinade — verify against official SG guide
+          peanuts:   false,
+          treeNuts:  false,
+          shellfish: false,
+          soy:       true,   // marinade seasoning
+          sesame:    null,
+        },
       },
       {
         id: 'mcd_fries_m',
@@ -626,6 +779,16 @@ export const SG_RESTAURANTS: SGRestaurant[] = [
         source: 'official_sg',
         verified: true,
         lastVerified: '2026-04-18',
+        allergens: {
+          gluten:    null,   // fries ingredients are GF but cooked in shared fryer — cross-contact risk
+          dairy:     null,   // shared fryer cross-contact possible
+          eggs:      false,
+          peanuts:   false,
+          treeNuts:  false,
+          shellfish: false,
+          soy:       null,   // verify oil type against official SG guide
+          sesame:    false,
+        },
       },
       // ── Drinks ───────────────────────────────────────────────────────────
       {
@@ -642,6 +805,16 @@ export const SG_RESTAURANTS: SGRestaurant[] = [
         source: 'official_sg',
         verified: true,
         lastVerified: '2026-04-18',
+        allergens: {
+          gluten:    false,
+          dairy:     true,   // milk-based
+          eggs:      false,
+          peanuts:   false,
+          treeNuts:  false,
+          shellfish: false,
+          soy:       null,
+          sesame:    false,
+        },
       },
       // ── Desserts ─────────────────────────────────────────────────────────
       {
@@ -659,6 +832,16 @@ export const SG_RESTAURANTS: SGRestaurant[] = [
         source: 'official_sg',
         verified: true,
         lastVerified: '2026-04-18',
+        allergens: {
+          gluten:    true,   // pastry casing
+          dairy:     null,   // verify against official SG guide
+          eggs:      null,
+          peanuts:   false,
+          treeNuts:  false,
+          shellfish: false,
+          soy:       null,
+          sesame:    false,
+        },
       },
       {
         id: 'mcd_cone',
@@ -674,6 +857,16 @@ export const SG_RESTAURANTS: SGRestaurant[] = [
         source: 'official_sg',
         verified: true,
         lastVerified: '2026-05-29',
+        allergens: {
+          gluten:    true,   // waffle cone (wheat)
+          dairy:     true,   // soft serve ice cream
+          eggs:      null,   // verify — soft serve mix may contain eggs
+          peanuts:   false,
+          treeNuts:  false,
+          shellfish: false,
+          soy:       null,
+          sesame:    false,
+        },
       },
       // ── Set Meals ────────────────────────────────────────────────────────────
       {

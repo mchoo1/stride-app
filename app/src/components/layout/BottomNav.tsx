@@ -1,7 +1,6 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useAuth } from '@/lib/auth-context';
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 const HomeOutline = () => (
@@ -58,22 +57,17 @@ const ProfileFill = () => (
 );
 
 const NAV_ITEMS = [
-  { href: '/dashboard', prefix: '/dashboard', label: 'Home',    Outline: HomeOutline,    Fill: HomeFill    },
-  { href: '/eat',       prefix: '/eat',       label: 'Search',  Outline: SearchOutline,  Fill: SearchFill  },
-  { href: '/log',       prefix: '/log',       label: 'Log',     Outline: LogOutline,     Fill: LogFill     },
-  { href: '/me',        prefix: '/me',        label: 'Profile', Outline: ProfileOutline, Fill: ProfileFill },
+  { href: '/',    prefix: '/',    label: 'Home',    Outline: HomeOutline,    Fill: HomeFill    },
+  { href: '/eat', prefix: '/eat', label: 'Search',  Outline: SearchOutline,  Fill: SearchFill  },
+  { href: '/log', prefix: '/log', label: 'Log',     Outline: LogOutline,     Fill: LogFill     },
+  { href: '/me',  prefix: '/me',  label: 'Profile', Outline: ProfileOutline, Fill: ProfileFill },
 ];
 
 const GREEN = '#1E7F5C';
 const MUTED = '#8B95A7';
 
 export default function BottomNav() {
-  const path     = usePathname();
-  // useAuth available for future conditional nav items
-  const { user } = useAuth();
-  void user;
-
-  const navItems = NAV_ITEMS;
+  const path = usePathname();
 
   return (
     <nav style={{
@@ -85,8 +79,11 @@ export default function BottomNav() {
       padding: '8px 0 max(20px, env(safe-area-inset-bottom))',
     }}>
       <div style={{ maxWidth: 500, margin: '0 auto', display: 'flex', alignItems: 'center' }}>
-        {navItems.map((item) => {
-          const active = path === item.prefix || path.startsWith(item.prefix + '/');
+        {NAV_ITEMS.map((item) => {
+          // Root '/' must be an exact match — startsWith('/') would always be true
+          const active = item.prefix === '/'
+            ? path === '/'
+            : path === item.prefix || path.startsWith(item.prefix + '/');
           const Icon   = active ? item.Fill : item.Outline;
           const color  = active ? GREEN : MUTED;
           return (

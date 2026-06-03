@@ -1,6 +1,13 @@
-import { redirect } from 'next/navigation';
+'use client';
+import loadable from 'next/dynamic';
 
-// Send everyone straight to the home/discovery page — no login required.
+// Home page — food discovery, no login required.
+// Loaded client-side only to avoid Turbopack TDZ issues in production.
+const PageClient = loadable(
+  () => import('./PageClient'),
+  { ssr: false }
+);
+
 export default function Page() {
-  redirect('/dashboard');
+  return <PageClient />;
 }
