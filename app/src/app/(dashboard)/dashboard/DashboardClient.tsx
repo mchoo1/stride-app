@@ -179,30 +179,57 @@ export default function DashboardClient() {
         )}
       </div>
 
-      {/* ── Slim today strip ── */}
+      {/* ── Today strip (logged in) / Sign-up banner (guest) ── */}
       <div style={{ padding: '0 20px', marginBottom: 22 }}>
-        <Link href="/log" style={{
-          display: 'flex', alignItems: 'center', gap: 12,
-          background: 'var(--surface)', borderRadius: 'var(--r-card)',
-          boxShadow: 'var(--shadow-md)', padding: '12px 14px', textDecoration: 'none',
-        }}>
-          <MiniRing frac={frac} size={40} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
-              <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.02em' }}>
-                {remaining.toLocaleString()}
-              </span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-2)' }}>kcal left today</span>
+        {user ? (
+          /* Calorie strip for authenticated users */
+          <Link href="/log" style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            background: 'var(--surface)', borderRadius: 'var(--r-card)',
+            boxShadow: 'var(--shadow-md)', padding: '12px 14px', textDecoration: 'none',
+          }}>
+            <MiniRing frac={frac} size={40} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
+                <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.02em' }}>
+                  {remaining.toLocaleString()}
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-2)' }}>kcal left today</span>
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 500, marginTop: 1 }}>
+                {onTrack ? 'On track' : 'Over budget'} · tap to log a meal
+              </div>
             </div>
-            <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 500, marginTop: 1 }}>
-              {onTrack ? 'On track' : 'Over budget'} · tap to log a meal
+            <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 13, fontWeight: 600, color: 'var(--green)', flexShrink: 0 }}>
+              Log
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+            </span>
+          </Link>
+        ) : (
+          /* Sign-up CTA for guests */
+          <Link href="/register" style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            background: 'var(--green-tint)', borderRadius: 'var(--r-card)',
+            border: '1px solid var(--green-tint-2)', padding: '14px 16px', textDecoration: 'none',
+          }}>
+            <div style={{
+              width: 40, height: 40, borderRadius: 12, background: 'var(--green)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+              </svg>
             </div>
-          </div>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 13, fontWeight: 600, color: 'var(--green)', flexShrink: 0 }}>
-            Log
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
-          </span>
-        </Link>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--green-deep)', lineHeight: 1.2 }}>
+                Start tracking calories today
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--green)', fontWeight: 500, marginTop: 2 }}>
+                Create your free Stride account →
+              </div>
+            </div>
+          </Link>
+        )}
       </div>
 
       {/* ── Search hero ── */}
@@ -292,19 +319,8 @@ export default function DashboardClient() {
         </div>
       </div>
 
-      {/* Guest CTA */}
-      {!user && (
-        <div style={{ padding: '24px 20px 0' }}>
-          <div style={{ background: 'var(--surface)', borderRadius: 'var(--r-card)', boxShadow: 'var(--shadow-md)', padding: '22px 20px' }}>
-            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--ink)', marginBottom: 6 }}>Track what you eat</div>
-            <div style={{ fontSize: 13, color: 'var(--ink-2)', marginBottom: 20, lineHeight: 1.6 }}>Sign in to log meals, track macros, and monitor progress.</div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <Link href="/login" style={{ flex: 1, textAlign: 'center', padding: '12px', borderRadius: 12, border: '1.5px solid var(--line)', color: 'var(--ink)', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>Sign in</Link>
-              <Link href="/register" style={{ flex: 1, textAlign: 'center', padding: '12px', borderRadius: 12, background: 'var(--green)', color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none', boxShadow: 'var(--shadow-green)' }}>Get started</Link>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Extra breathing room at bottom for guests */}
+      {!user && <div style={{ height: 8 }} />}
     </div>
   );
 }
