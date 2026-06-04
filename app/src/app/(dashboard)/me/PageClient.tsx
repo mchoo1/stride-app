@@ -82,10 +82,25 @@ export default function MePage() {
   const bmr  = calculateBMR(profile);
   const tdee = calculateTargetCalories(profile);
 
-  // Show guest screen while auth is resolving or when not logged in
+  // All hooks must be declared before any early returns (React rules of hooks)
+  const [tab,         setTab        ] = useState<'body' | 'goals' | 'settings'>('body');
+  const [weightInput, setWeightInput] = useState('');
+  const [bfInput,     setBfInput    ] = useState('');
+  const [saved,       setSaved      ] = useState(false);
+  const [form,        setForm       ] = useState({ ...profile });
+  const [dietFlags,   setDietFlags  ] = useState<DietaryFlag[]>(profile.dietaryFlags ?? []);
+  const [dietSaved,   setDietSaved  ] = useState(false);
+
+  // Sync profile from Firestore on mount
+  useEffect(() => {
+    store.syncProfileFromServer().catch(() => {/* offline — local state serves fine */});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: '#F7F8FB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         <div style={{ width: 28, height: 28, border: '2.5px solid var(--green)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
       </div>
     );
@@ -139,20 +154,6 @@ export default function MePage() {
       </div>
     );
   }
-
-  const [tab,         setTab        ] = useState<'body' | 'goals' | 'settings'>('body');
-  const [weightInput, setWeightInput] = useState('');
-  const [bfInput,     setBfInput    ] = useState('');
-  const [saved,       setSaved      ] = useState(false);
-  const [form,        setForm       ] = useState({ ...profile });
-  const [dietFlags,   setDietFlags  ] = useState<DietaryFlag[]>(profile.dietaryFlags ?? []);
-  const [dietSaved,   setDietSaved  ] = useState(false);
-
-  // Sync profile from Firestore on mount so Me page always shows live data
-  useEffect(() => {
-    store.syncProfileFromServer().catch(() => {/* offline — local state serves fine */});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const toggleDietFlag = (flag: DietaryFlag) => {
     setDietFlags(prev => prev.includes(flag) ? prev.filter(f => f !== flag) : [...prev, flag]);

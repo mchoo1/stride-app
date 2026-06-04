@@ -1,5 +1,7 @@
 'use client';
 import Link from 'next/link';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import BottomNav from '@/components/layout/BottomNav';
 import {
@@ -128,8 +130,17 @@ function MealRow({ item, restaurant }: { item: SGMenuItem; restaurant: SGRestaur
 /* ── Main page ──────────────────────────────────────────────────── */
 export default function HomePage() {
   const { user }  = useAuth();
+  const router    = useRouter();
   const greeting  = getMealGreeting();
   const firstName = user?.displayName?.split(' ')[0];
+
+  // Redirect logged-in users straight to the redesigned dashboard
+  useEffect(() => {
+    if (user) router.replace('/dashboard');
+  }, [user, router]);
+
+  // Show nothing while redirecting
+  if (user) return null;
 
   const featuredRestaurants = SG_RESTAURANTS.filter(r => r.tab !== 'store');
   const nearbyMeals         = getAllPopularMeals().slice(0, 14);
@@ -237,14 +248,4 @@ export default function HomePage() {
             <Link href="/login" style={{ flex: 1, textAlign: 'center', padding: '12px', borderRadius: 12, border: `1.5px solid ${T.border}`, color: T.text1, fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
               Sign in
             </Link>
-            <Link href="/register" style={{ flex: 1, textAlign: 'center', padding: '12px', borderRadius: 12, background: T.green, color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
-              Get started
-            </Link>
-          </div>
-        </div>
-      )}
-
-      <BottomNav />
-    </div>
-  );
-}
+            <Link href="/register" style={{ flex: 1, textAlign: 'center', paddin
