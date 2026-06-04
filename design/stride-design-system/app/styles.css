@@ -1,0 +1,283 @@
+/* ============================================================
+   STRIDE — Design System
+   Value-forward food + calorie app. Green primary, gold = value,
+   coral = energy/calories. Space Grotesk (display/numerics) +
+   Hanken Grotesk (body/UI).
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap');
+
+:root {
+  /* ---- Brand & neutrals ---- */
+  --bg:          #f1f5f0;
+  --surface:     #ffffff;
+  --surface-2:   #e9efe8;
+  --surface-3:   #f4f8f3;
+
+  --ink:         #0f2a1d;
+  --ink-2:       #46564e;
+  --muted:       #8a978f;
+  --faint:       #b6c0b8;
+  --line:        #e5ebe4;
+  --line-2:      #eef2ed;
+
+  /* ---- Primary green ---- */
+  --green:       #0e7a4f;
+  --green-deep:  #0a5c3b;
+  --green-bright:#16a06a;
+  --green-tint:  #e1efe8;
+  --green-tint-2:#cfe6d9;
+
+  /* ---- Gold = VALUE (protein per $) ---- */
+  --gold:        #c6841a;
+  --gold-bright: #e6a52a;
+  --gold-tint:   #f9edd2;
+  --gold-tint-2: #f1dfb4;
+
+  /* ---- Coral = ENERGY / calories ---- */
+  --coral:       #df5f3b;
+  --coral-tint:  #fae2d9;
+
+  /* ---- Type ---- */
+  --font-display:'Space Grotesk', system-ui, sans-serif;
+  --font-body:   'Hanken Grotesk', system-ui, sans-serif;
+  --font-num:    'Space Grotesk', system-ui, sans-serif;
+
+  /* ---- Radii ---- */
+  --r-card: 22px;
+  --r-card-lg: 28px;
+  --r-chip: 999px;
+  --r-btn: 15px;
+  --r-sm: 12px;
+
+  /* ---- Shadows ---- */
+  --sh-sm: 0 1px 2px rgba(15,42,29,0.05);
+  --sh-md: 0 2px 4px rgba(15,42,29,0.04), 0 8px 22px rgba(15,42,29,0.06);
+  --sh-lg: 0 6px 16px rgba(15,42,29,0.07), 0 18px 44px rgba(15,42,29,0.10);
+  --sh-green: 0 8px 22px rgba(14,122,79,0.28);
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
+* { box-sizing: border-box; }
+
+.stride {
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  letter-spacing: -0.01em;
+}
+
+.stride button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+.stride ::-webkit-scrollbar { width: 0; height: 0; }
+
+.screen-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  padding-bottom: 26px;
+}
+.screen-scroll::-webkit-scrollbar { display: none; }
+
+/* clears the absolute status bar / dynamic island */
+.screen-top { padding-top: 60px; }
+
+.pad { padding-left: 20px; padding-right: 20px; }
+
+/* ============================================================
+   Type utilities
+   ============================================================ */
+.num { font-family: var(--font-num); font-feature-settings: "tnum" 1; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.display { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.03em; line-height: 1.02; }
+.eyebrow {
+  font-family: var(--font-body); font-weight: 600; font-size: 11px;
+  text-transform: uppercase; letter-spacing: 0.10em; color: var(--muted);
+}
+.h-screen { font-family: var(--font-display); font-weight: 700; font-size: 32px; letter-spacing: -0.03em; color: var(--ink); }
+.h-sec { font-family: var(--font-display); font-weight: 600; font-size: 18px; letter-spacing: -0.02em; color: var(--ink); }
+
+/* ============================================================
+   Cards & surfaces
+   ============================================================ */
+.card {
+  background: var(--surface);
+  border-radius: var(--r-card);
+  box-shadow: var(--sh-md);
+}
+.card-flat {
+  background: var(--surface);
+  border-radius: var(--r-card);
+  border: 1px solid var(--line);
+}
+
+/* ============================================================
+   Chips
+   ============================================================ */
+.chip-row { display: flex; gap: 9px; overflow-x: auto; scrollbar-width: none; padding: 2px 20px; }
+.chip-row::-webkit-scrollbar { display: none; }
+.chip {
+  flex: 0 0 auto;
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 38px; padding: 0 16px;
+  border-radius: var(--r-chip);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: 14px; font-weight: 600; color: var(--ink-2);
+  white-space: nowrap;
+  transition: all .15s ease;
+}
+.chip:active { transform: scale(0.96); }
+.chip.is-active { background: var(--ink); color: #fff; border-color: var(--ink); }
+.chip.is-green { background: var(--green); color: #fff; border-color: var(--green); }
+
+/* sort pills (smaller) */
+.sort {
+  flex: 0 0 auto;
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 34px; padding: 0 13px;
+  border-radius: var(--r-chip);
+  background: var(--surface); border: 1px solid var(--line);
+  font-size: 13px; font-weight: 600; color: var(--ink-2);
+  white-space: nowrap;
+}
+.sort.is-active { background: var(--green-tint); color: var(--green-deep); border-color: var(--green-tint-2); }
+
+/* ============================================================
+   Value badge (HERO metric — protein per $)
+   ============================================================ */
+.value-badge {
+  display: inline-flex; align-items: baseline; gap: 3px;
+  padding: 4px 9px; border-radius: 9px;
+  background: var(--gold-tint); color: var(--gold);
+  font-family: var(--font-num); font-weight: 700; font-size: 13px;
+  letter-spacing: -0.02em;
+}
+.value-badge .u { font-size: 10px; font-weight: 600; opacity: .8; letter-spacing: 0; }
+.value-badge.is-top { background: var(--gold); color: #fff; }
+
+/* metric inline (cal / protein) */
+.metric { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--ink-2); }
+.metric .num { font-weight: 600; color: var(--ink); }
+.dot { width: 6px; height: 6px; border-radius: 999px; flex: 0 0 auto; }
+
+/* ============================================================
+   Avatar (consistent system — no rainbow)
+   ============================================================ */
+.avatar {
+  flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 14px;
+  background: var(--surface-2);
+  color: var(--green-deep);
+  font-family: var(--font-display); font-weight: 700;
+}
+
+/* ============================================================
+   Buttons
+   ============================================================ */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 52px; padding: 0 22px; border-radius: var(--r-btn);
+  font-family: var(--font-body); font-weight: 600; font-size: 16px;
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.btn:active { transform: scale(0.98); }
+.btn-primary { background: var(--green); color: #fff; box-shadow: var(--sh-green); }
+.btn-ghost { background: var(--surface-2); color: var(--ink); }
+.btn-add {
+  width: 40px; height: 40px; border-radius: 13px;
+  background: var(--green-tint); color: var(--green-deep);
+  display: flex; align-items: center; justify-content: center;
+  transition: transform .12s ease;
+}
+.btn-add:active { transform: scale(0.9); }
+
+/* ============================================================
+   Meal value meter (mini bar showing protein-per-$ strength)
+   ============================================================ */
+.meter { height: 5px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.meter > i { display: block; height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, var(--gold-bright), var(--gold)); }
+
+/* ============================================================
+   Search field
+   ============================================================ */
+.search {
+  display: flex; align-items: center; gap: 11px;
+  height: 54px; padding: 0 16px;
+  background: var(--surface); border-radius: 16px;
+  box-shadow: var(--sh-md);
+  color: var(--muted); font-size: 15.5px; font-weight: 500;
+}
+
+/* ============================================================
+   Bottom nav
+   ============================================================ */
+.nav {
+  flex: 0 0 auto;
+  display: flex; align-items: flex-start; justify-content: space-around;
+  padding: 12px 14px 30px;
+  background: rgba(255,255,255,0.82);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border-top: 1px solid var(--line-2);
+}
+.nav-item {
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600; color: var(--faint);
+  flex: 1; padding-top: 2px;
+  transition: color .15s ease;
+}
+.nav-item.is-active { color: var(--green); }
+.nav-item svg { width: 24px; height: 24px; }
+
+/* ============================================================
+   Segmented control
+   ============================================================ */
+.seg {
+  display: flex; gap: 4px; padding: 4px;
+  background: var(--surface-2); border-radius: 15px;
+}
+.seg button {
+  flex: 1; height: 42px; border-radius: 11px;
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  font-size: 14px; font-weight: 600; color: var(--ink-2);
+  transition: all .15s ease;
+}
+.seg button.is-active { background: var(--surface); color: var(--ink); box-shadow: var(--sh-sm); }
+.seg button.is-active.green { background: var(--green); color: #fff; }
+
+/* ============================================================
+   Rings / progress
+   ============================================================ */
+.ring-num { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.03em; }
+
+/* macro bar */
+.macro { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.macro-track { height: 6px; border-radius: 999px; background: rgba(255,255,255,0.18); overflow: hidden; }
+.macro-track > i { display: block; height: 100%; border-radius: 999px; }
+
+/* ============================================================
+   Animations
+   ============================================================ */
+@keyframes rise { from { transform: translateY(12px); } to { transform: none; } }
+.rise { animation: rise .5s cubic-bezier(.22,.61,.36,1) both; }
+
+@keyframes pop { from { transform: scale(.96); } to { transform: none; } }
+.pop { animation: pop .4s cubic-bezier(.22,.61,.36,1) both; }
+
+@media (prefers-reduced-motion: reduce) { .rise, .pop { animation: none; } }
+
+/* divider */
+.hr { height: 1px; background: var(--line); border: none; margin: 0; }
+
+/* generic flex helpers */
+.row { display: flex; align-items: center; }
+.between { display: flex; align-items: center; justify-content: space-between; }
+.col { display: flex; flex-direction: column; }

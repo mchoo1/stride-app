@@ -32,19 +32,19 @@ import {
 import type { DietaryFlag } from '@/types';
 import MealFeedbackSheet from '@/components/MealFeedbackSheet';
 
-/* ── Design tokens ── */
-const BG     = '#F7F8FB';
-const CARD   = '#FFFFFF';
-const BORDER = '#E5E9F2';
-const FG1    = '#0F1B2D';
-const FG2    = '#5B6576';
-const FG3    = '#8B95A7';
-const GREEN  = '#1E7F5C';
+/* ── Design tokens — now aligned to Stride design system ── */
+const BG     = 'var(--bg)';
+const CARD   = 'var(--surface)';
+const BORDER = 'var(--line)';
+const FG1    = 'var(--ink)';
+const FG2    = 'var(--ink-2)';
+const FG3    = 'var(--muted)';
+const GREEN  = 'var(--green)';
 const BLUE   = '#2E6FB8';
-const AMBER  = '#C98A2E';
-const RED    = '#D04E36';
+const AMBER  = 'var(--gold)';
+const RED    = 'var(--coral)';
 const PURPLE = '#7C3AED';
-const SHADOW = '0 1px 2px rgba(15,27,45,0.04), 0 2px 6px rgba(15,27,45,0.05)';
+const SHADOW = 'var(--shadow-md)';
 
 /* ── Types ── */
 interface NearbyPlace {
@@ -89,19 +89,19 @@ const DIET_LABEL: Record<DietaryFlag, string> = {
   no_pork:     'No Pork',
 };
 
-// ── Initial avatar — consistent across all cards ───────────────────────────
-const AVATAR_HUES = [215, 160, 280, 30, 190, 340, 120, 260, 80, 320];
-function Initial({ name, size = 46, radius = 12 }: { name: string; size?: number; radius?: number }) {
-  const hue = AVATAR_HUES[name.charCodeAt(0) % AVATAR_HUES.length];
+// ── Avatar — ONE consistent style, no rainbow ────────────────────────────
+function Initial({ name, size = 46, radius = 14 }: { name: string; size?: number; radius?: number }) {
   return (
     <div style={{
       width: size, height: size, borderRadius: radius, flexShrink: 0,
-      background: `hsl(${hue},28%,92%)`,
+      background: 'var(--surface-2)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: Math.round(size * 0.4), fontWeight: 700,
-      color: `hsl(${hue},35%,42%)`,
+      fontSize: Math.round(size * 0.42), fontWeight: 700,
+      fontFamily: '"Space Grotesk", system-ui, sans-serif',
+      color: 'var(--green-deep)',
+      userSelect: 'none',
     }}>
-      {name.charAt(0).toUpperCase()}
+      {name.trim().charAt(0).toUpperCase()}
     </div>
   );
 }
@@ -189,10 +189,17 @@ function PpdBadge({ protein, price }: { protein: number; price?: number | null }
   if (!price) return null;
   const v = proteinPerDollar(protein, price);
   if (!v) return null;
-  const c = ppdColor(v);
+  const top = v >= 5;
   return (
-    <span style={{ fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 6, background: `${c}14`, border: `1px solid ${c}30`, color: c }}>
-      {v}g/$
+    <span style={{
+      display: 'inline-flex', alignItems: 'baseline', gap: 2,
+      padding: '3px 9px', borderRadius: 9,
+      background: top ? 'var(--gold)' : 'var(--gold-tint)',
+      color: top ? '#fff' : 'var(--gold)',
+      fontFamily: '"Space Grotesk", system-ui, sans-serif',
+      fontWeight: 700, fontSize: 12, letterSpacing: '-0.02em', whiteSpace: 'nowrap',
+    }}>
+      {v.toFixed(1)}<span style={{ fontSize: 10, fontWeight: 600, opacity: 0.85 }}>g/$</span>
     </span>
   );
 }
@@ -1204,13 +1211,13 @@ export default function EatPage() {
       {/* ── Sticky header ── */}
       <div style={{
         position: 'sticky', top: 0, zIndex: 100,
-        background: 'rgba(247,248,251,0.96)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
-        borderBottom: `1px solid ${BORDER}`, padding: '48px 16px 0',
+        background: 'rgba(241,245,240,0.96)', backdropFilter: 'blur(18px) saturate(160%)', WebkitBackdropFilter: 'blur(18px) saturate(160%)',
+        borderBottom: '1px solid var(--line-2)', padding: '48px 20px 0',
       }}>
         {/* Search bar */}
-        <div style={{ position: 'relative', marginBottom: 12 }}>
-          <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={FG3} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <div style={{ position: 'relative', marginBottom: 14 }}>
+          <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/>
             </svg>
           </span>
@@ -1219,13 +1226,14 @@ export default function EatPage() {
             onChange={e => handleQueryChange(e.target.value)}
             placeholder={viewType === 'restaurants' ? 'Search restaurants…' : viewType === 'recipes' ? 'Search recipes…' : 'Search meals, restaurants, recipes…'}
             style={{
-              width: '100%', background: CARD, border: `1px solid ${BORDER}`, borderRadius: 16,
-              padding: '13px 40px 13px 44px', fontSize: 15, color: FG1, outline: 'none',
-              boxSizing: 'border-box', boxShadow: SHADOW,
+              width: '100%', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16,
+              padding: '14px 40px 14px 46px', fontSize: 15, color: 'var(--ink)', outline: 'none',
+              boxSizing: 'border-box', boxShadow: 'var(--shadow-md)',
+              fontFamily: '"Hanken Grotesk", system-ui, sans-serif', fontWeight: 500,
             }}
           />
           {query && (
-            <button onClick={() => setQuery('')} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: FG3, fontSize: 18, lineHeight: 1, padding: 4 }}>✕</button>
+            <button onClick={() => setQuery('')} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 18, lineHeight: 1, padding: 4 }}>✕</button>
           )}
         </div>
 
@@ -1239,23 +1247,24 @@ export default function EatPage() {
             <button key={tab.key}
               onClick={() => { setViewType(tab.key); if (tab.key !== 'meals') setFilterRestaurantId(null); if (tab.key !== 'meals') setMapMode(false); }}
               style={{
-                flex: 1, padding: '10px 4px', border: 'none', background: 'none',
-                fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                color: viewType === tab.key ? GREEN : FG3,
-                borderBottom: `2.5px solid ${viewType === tab.key ? GREEN : 'transparent'}`,
+                flex: 1, padding: '11px 4px', border: 'none', background: 'none',
+                fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                color: viewType === tab.key ? 'var(--ink)' : 'var(--muted)',
+                borderBottom: `2.5px solid ${viewType === tab.key ? 'var(--green)' : 'transparent'}`,
                 transition: 'all .15s', WebkitTapHighlightColor: 'transparent',
+                fontFamily: '"Hanken Grotesk", system-ui, sans-serif',
               }}
             >{tab.label}</button>
           ))}
           {/* List / Map toggle — only shown on Meals tab */}
           {viewType === 'meals' && (
-            <div style={{ display: 'flex', alignItems: 'center', paddingLeft: 8, paddingBottom: 2, gap: 2, flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', paddingLeft: 8, paddingBottom: 4, gap: 2, flexShrink: 0 }}>
               <button
                 onClick={() => setMapMode(false)}
                 title="List view"
                 style={{
-                  width: 30, height: 26, borderRadius: '6px 0 0 6px', border: `1px solid ${BORDER}`,
-                  background: !mapMode ? FG1 : CARD, color: !mapMode ? '#fff' : FG3,
+                  width: 30, height: 26, borderRadius: '6px 0 0 6px', border: '1px solid var(--line)',
+                  background: !mapMode ? 'var(--ink)' : 'var(--surface)', color: !mapMode ? '#fff' : 'var(--muted)',
                   cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}
               >
@@ -1283,33 +1292,36 @@ export default function EatPage() {
       </div>
 
       {/* ── Location + filter bar ── */}
-      <div style={{ padding: '12px 16px 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ padding: '12px 20px 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
         {/* Location pill */}
         <button onClick={() => setShowLocationPicker(!showLocationPicker)} style={{
-          display: 'flex', alignItems: 'center', gap: 5, padding: '7px 12px', borderRadius: 20,
-          border: `1px solid ${hasLocation ? 'rgba(30,127,92,0.25)' : BORDER}`,
-          background: hasLocation ? 'rgba(30,127,92,0.06)' : CARD,
-          fontSize: 12, fontWeight: 600, color: hasLocation ? GREEN : FG3,
+          display: 'flex', alignItems: 'center', gap: 5, padding: '7px 13px', borderRadius: 999,
+          border: `1px solid ${hasLocation ? 'var(--green-tint-2)' : 'var(--line)'}`,
+          background: hasLocation ? 'var(--green-tint)' : 'var(--surface)',
+          fontSize: 13, fontWeight: 600, color: hasLocation ? 'var(--green-deep)' : 'var(--ink-2)',
           cursor: 'pointer', flexShrink: 0, maxWidth: 180,
+          fontFamily: '"Hanken Grotesk", system-ui, sans-serif',
         }}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, color: 'var(--green)' }}>
             <circle cx="12" cy="11" r="3"/>
             <path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7z"/>
           </svg>
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {locState === 'loading' ? 'Locating…' : locationLabel}
           </span>
-          <span style={{ fontSize: 10, color: FG3, flexShrink: 0 }}>▾</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M6 9l6 6 6-6"/></svg>
         </button>
         <div style={{ flex: 1 }} />
         <button onClick={() => setShowFilters(true)} style={{
-          display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 20,
-          border: `1.5px solid ${activeFilterCount > 0 ? GREEN : BORDER}`,
-          background: activeFilterCount > 0 ? 'rgba(30,127,92,0.08)' : CARD,
-          fontSize: 12, fontWeight: 700, color: activeFilterCount > 0 ? GREEN : FG2,
+          display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 999,
+          border: 'none',
+          background: activeFilterCount > 0 ? 'var(--green)' : 'var(--ink)',
+          fontSize: 13, fontWeight: 600, color: '#fff',
           cursor: 'pointer', flexShrink: 0,
+          fontFamily: '"Hanken Grotesk", system-ui, sans-serif',
+          boxShadow: activeFilterCount > 0 ? 'var(--shadow-green)' : 'var(--shadow-sm)',
         }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
             <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
           </svg>
           {activeFilterCount > 0 ? `Filters (${activeFilterCount})` : 'Filter & Sort'}
@@ -1418,29 +1430,31 @@ export default function EatPage() {
 
       {/* ── Sort strip — visible above map and above list results ── */}
       {viewType === 'meals' && (
-        <div style={{ padding: '4px 0 8px', display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', paddingLeft: 16, paddingRight: 16 } as React.CSSProperties}>
+        <div style={{ padding: '4px 0 8px', display: 'flex', gap: 7, overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', paddingLeft: 20, paddingRight: 20 } as React.CSSProperties}>
           {([
-            { key: 'best_match'     as SortKey, label: 'Best Match'    },
-            { key: 'protein_dollar' as SortKey, label: 'Protein/$'     },
-            { key: 'price'          as SortKey, label: 'Price ↑'       },
-            { key: 'calories'       as SortKey, label: 'Calories ↑'    },
-            ...(hasLocation ? [{ key: 'distance' as SortKey, label: 'Nearest' }] : []),
-          ]).map(o => (
-            <button
-              key={o.key}
-              onClick={() => setSortKey(o.key)}
-              style={{
-                padding: '6px 14px', borderRadius: 20, flexShrink: 0, cursor: 'pointer',
-                border: `1.5px solid ${sortKey === o.key ? GREEN : BORDER}`,
-                background: sortKey === o.key ? 'rgba(30,127,92,0.08)' : CARD,
-                fontSize: 12, fontWeight: 700,
-                color: sortKey === o.key ? GREEN : FG2,
-                WebkitTapHighlightColor: 'transparent',
-              } as React.CSSProperties}
-            >
-              {o.label}
-            </button>
-          ))}
+            { key: 'best_match'     as SortKey, label: 'Best Match', icon: false },
+            { key: 'protein_dollar' as SortKey, label: 'Protein/$',  icon: true  },
+            { key: 'price'          as SortKey, label: 'Price ↑',    icon: false },
+            { key: 'calories'       as SortKey, label: 'Calories ↑', icon: false },
+            ...(hasLocation ? [{ key: 'distance' as SortKey, label: 'Nearest', icon: false }] : []),
+          ]).map(o => {
+            const active = sortKey === o.key;
+            return (
+              <button
+                key={o.key}
+                onClick={() => setSortKey(o.key)}
+                className={'sort-chip' + (active ? ' active' : '')}
+                style={{ WebkitTapHighlightColor: 'transparent' } as React.CSSProperties}
+              >
+                {o.icon && (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                  </svg>
+                )}
+                {o.label}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -1462,7 +1476,7 @@ export default function EatPage() {
       )}
 
       {/* ── Results ── */}
-      <div style={{ padding: '8px 16px 0', display: mapMode ? 'none' : undefined }}>
+      <div style={{ padding: '8px 20px 0', display: mapMode ? 'none' : undefined }}>
 
         {/* MEALS */}
         {viewType === 'meals' && (() => {
@@ -1569,7 +1583,6 @@ export default function EatPage() {
           );
           return (
             <>
-              {/* GPS prompt for restaurants */}
               {!hasLocation && !query.trim() && locState !== 'loading' && (
                 <button
                   onClick={requestLocation}
@@ -1589,26 +1602,25 @@ export default function EatPage() {
                   <span style={{ fontSize: 12, fontWeight: 700, color: GREEN, flexShrink: 0 }}>Enable →</span>
                 </button>
               )}
-            <div style={{ background: CARD, borderRadius: 18, border: `1px solid ${BORDER}`, padding: '0 14px', boxShadow: SHADOW }}>
-              <div style={{ fontSize: 12, color: FG3, padding: '12px 0 4px' }}>
-                {restaurantList.length} restaurant{restaurantList.length !== 1 ? 's' : ''} with menu data
-                {showGps ? ` · ${gpsOnlyPlaces.length} more nearby` : ''}
+              <div style={{ background: CARD, borderRadius: 18, border: `1px solid ${BORDER}`, padding: '0 14px', boxShadow: SHADOW }}>
+                <div style={{ fontSize: 12, color: FG3, padding: '12px 0 4px' }}>
+                  {restaurantList.length} restaurant{restaurantList.length !== 1 ? 's' : ''} with menu data
+                  {showGps ? ` · ${gpsOnlyPlaces.length} more nearby` : ''}
+                </div>
+                {restaurantList.map(r => (
+                  <RestaurantBrowseCard key={r.id} restaurant={r} distKm={distLookup.get(r.id)}
+                    onSelect={() => { setFilterRestaurantId(r.id); setViewType('meals'); setQuery(''); }}
+                  />
+                ))}
+                {showGps && (
+                  <>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: FG3, padding: '14px 0 4px', borderTop: `1px dashed ${BORDER}`, marginTop: 6 }}>
+                      Other places near you — no menu data yet
+                    </div>
+                    {gpsOnlyPlaces.map(p => <GPSRestaurantCard key={p.id} place={p} />)}
+                  </>
+                )}
               </div>
-              {restaurantList.map(r => (
-                <RestaurantBrowseCard key={r.id} restaurant={r} distKm={distLookup.get(r.id)}
-                  onSelect={() => { setFilterRestaurantId(r.id); setViewType('meals'); setQuery(''); }}
-                />
-              ))}
-              {/* #5 GPS-only restaurants below */}
-              {showGps && (
-                <>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: FG3, padding: '14px 0 4px', borderTop: `1px dashed ${BORDER}`, marginTop: 6 }}>
-                    Other places near you — no menu data yet
-                  </div>
-                  {gpsOnlyPlaces.map(p => <GPSRestaurantCard key={p.id} place={p} />)}
-                </>
-              )}
-            </div>
             </>
           );
         })()}
@@ -1639,7 +1651,6 @@ export default function EatPage() {
         })()}
       </div>
 
-      {/* Filter sheet */}
       <FilterSheet
         open={showFilters} onClose={() => setShowFilters(false)}
         diningOption={diningOption} setDiningOption={setDiningOption}
@@ -1654,7 +1665,6 @@ export default function EatPage() {
         onClear={clearAllFilters}
       />
 
-      {/* #9 Log confirm sheet */}
       {pendingLog && (
         <LogConfirmSheet
           pending={pendingLog}

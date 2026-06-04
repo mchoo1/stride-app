@@ -9,49 +9,62 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        brand: {
-          navy:          '#0F1B2D',
-          green:         '#1E7F5C',
-          'green-bright':'#13A26B',
-          amber:         '#F2A93B',
-          red:           '#D04E36',
+        // ── Surfaces ────────────────────────────────────────────────────────
+        bg:         '#f1f5f0',
+        surface:    '#ffffff',
+        'surface-2':'#e9efe8',
+        'surface-3':'#f4f8f3',
+
+        // ── Ink ─────────────────────────────────────────────────────────────
+        ink:   '#0f2a1d',
+        'ink-2':'#46564e',
+        muted: '#8a978f',
+        faint: '#b6c0b8',
+        line:  '#e5ebe4',
+
+        // ── Brand green ─────────────────────────────────────────────────────
+        green: {
+          DEFAULT:  '#0e7a4f',
+          deep:     '#0a5c3b',
+          bright:   '#16a06a',
+          tint:     '#e1efe8',
+          'tint-2': '#cfe6d9',
         },
-        canvas:   '#F7F8FB',
-        card:     '#FFFFFF',
-        hairline: '#E5E9F2',
-        fg: {
-          1: '#0F1B2D',
-          2: '#5B6576',
-          3: '#8B95A7',
+
+        // ── Gold (VALUE = protein per dollar) ───────────────────────────────
+        gold: {
+          DEFAULT: '#c6841a',
+          bright:  '#e6a52a',
+          tint:    '#f9edd2',
         },
-        macro: {
-          protein: '#2E6FB8',
-          carbs:   '#C98A2E',
-          fat:     '#1E7F5C',
-        },
-        pillar: {
-          track:   '#1E7F5C',
-          monitor: '#2E6FB8',
-          eat:     '#C98A2E',
-          move:    '#7A4BC2',
+
+        // ── Coral (ENERGY = calories) ────────────────────────────────────────
+        coral: {
+          DEFAULT: '#df5f3b',
+          tint:    '#fae2d9',
         },
       },
+
       fontFamily: {
-        sans:    ['Inter', '-apple-system', 'BlinkMacSystemFont', 'SF Pro Text', 'system-ui', 'sans-serif'],
-        display: ['Anton', 'Impact', 'Helvetica Neue', 'Arial', 'sans-serif'],
+        display: ['"Space Grotesk"', 'system-ui', 'sans-serif'],
+        sans:    ['"Hanken Grotesk"', 'system-ui', 'sans-serif'],
+        mono:    ['ui-monospace', 'monospace'],
       },
-      boxShadow: {
-        card:   '0 1px 2px rgba(15,27,45,0.04), 0 1px 3px rgba(15,27,45,0.03)',
-        raised: '0 2px 8px rgba(15,27,45,0.06), 0 1px 3px rgba(15,27,45,0.04)',
-        hero:   '0 8px 24px rgba(15,27,45,0.08), 0 2px 8px rgba(15,27,45,0.04)',
-        cta:    '0 6px 20px rgba(30,127,92,0.25)',
+
+      fontSize: {
+        'title':   ['32px', { fontWeight: '700', lineHeight: '1.1' }],
+        'section': ['18px', { fontWeight: '600', lineHeight: '1.3' }],
+        'body':    ['15px', { fontWeight: '500', lineHeight: '1.5' }],
+        'body-sm': ['14px', { fontWeight: '500', lineHeight: '1.5' }],
+        'eyebrow': ['11px', { fontWeight: '600', lineHeight: '1.4' }],
       },
+
       borderRadius: {
-        xs:   '8px',
-        sm:   '12px',
-        md:   '16px',
-        lg:   '20px',
-        xl:   '28px',
+        card:   '22px',
+        hero:   '28px',
+        chip:   '999px',
+        btn:    '15px',
+        sm:     '12px',
         pill: '999px',
       },
       animation: {

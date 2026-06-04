@@ -281,124 +281,130 @@ function LogInner() {
     }, 1600);
   };
 
-  // ── Design tokens ──
-  const BG     = '#F7F8FB';
-  const CARD   = '#FFFFFF';
-  const BORDER = '#E5E9F2';
-  const FG1    = '#0F1B2D';
-  const FG2    = '#5B6576';
-  const FG3    = '#8B95A7';
-  const GREEN  = '#1E7F5C';
-  const SHADOW = '0 1px 2px rgba(15,27,45,0.04), 0 2px 6px rgba(15,27,45,0.05)';
+  // ── Design tokens — now using Stride CSS variables ──
+  const BG     = 'var(--bg)';
+  const CARD   = 'var(--surface)';
+  const BORDER = 'var(--line)';
+  const FG1    = 'var(--ink)';
+  const FG2    = 'var(--ink-2)';
+  const FG3    = 'var(--muted)';
+  const GREEN  = 'var(--green)';
+  const SHADOW = 'var(--shadow-md)';
 
   // ── Styles ───────────────────────────────────────────────────────────────────
   const cardStyle = {
-    background: CARD, borderRadius: 20, padding: 16,
-    border: `1px solid ${BORDER}`, boxShadow: SHADOW,
+    background: 'var(--surface)', borderRadius: 22, padding: 18,
+    border: '1px solid var(--line)', boxShadow: 'var(--shadow-md)',
   };
 
   const inputStyle: React.CSSProperties = {
-    width: '100%', background: BG,
-    border: `1.5px solid ${BORDER}`,
-    borderRadius: 12, padding: '11px 14px',
-    fontSize: 15, color: FG1, outline: 'none',
-    fontFamily: 'Inter, sans-serif',
-    transition: 'border-color .15s',
+    width: '100%', background: 'var(--surface-3)',
+    border: '1.5px solid var(--line)',
+    borderRadius: 14, padding: '13px 16px',
+    fontSize: 15, color: 'var(--ink)', outline: 'none',
+    fontFamily: '"Hanken Grotesk", system-ui, sans-serif',
+    transition: 'border-color .15s, box-shadow .15s',
     boxSizing: 'border-box',
   };
 
   const tabBtnStyle = (active: boolean): React.CSSProperties => ({
-    flex: 1, padding: '10px 0', borderRadius: 12, border: 'none',
-    fontSize: 13, fontWeight: 700, cursor: 'pointer',
-    background: active ? 'rgba(30,127,92,0.12)' : 'transparent',
-    color: active ? GREEN : FG3,
-    transition: 'all .2s',
+    flex: 1, padding: '11px 0', borderRadius: 11, border: 'none',
+    fontSize: 13, fontWeight: 600, cursor: 'pointer',
+    background: active ? 'var(--green)' : 'transparent',
+    color: active ? '#fff' : 'var(--ink-2)',
+    transition: 'all .15s',
+    fontFamily: '"Hanken Grotesk", system-ui, sans-serif',
   });
 
   return (
     <div style={{ background: BG, minHeight: '100vh' }}>
 
       {/* ── Header ── */}
-      <div style={{ padding: '52px 20px 0', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-        <button onClick={() => router.back()} style={{
-          background: CARD, border: `1px solid ${BORDER}`,
-          borderRadius: 10, width: 36, height: 36, color: FG2,
-          fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: SHADOW,
-        }}>←</button>
-        <h1 style={{ fontSize: 20, fontWeight: 800, color: FG1, margin: 0, flex: 1 }}>Log</h1>
+      <div style={{ padding: '52px 20px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+        <h1 className="title" style={{ margin: 0 }}>Log</h1>
+        <Link href="/log/history" style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--green)', fontWeight: 600, fontSize: 14, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+          Full log
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </Link>
       </div>
 
       {/* ── 7-Day History ── */}
-      <div style={{ padding: '0 16px', marginBottom: 14 }}>
-        <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, boxShadow: SHADOW, padding: '14px 16px 12px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: FG3, textTransform: 'uppercase' }}>
-              7-Day History
-            </span>
-            <Link href="/log/history" style={{ fontSize: 13, fontWeight: 600, color: '#2E6FB8', textDecoration: 'none' }}>
-              Full log →
-            </Link>
-          </div>
+      <div style={{ padding: '0 20px', marginBottom: 18 }}>
+        <div style={{ background: 'var(--surface)', borderRadius: 'var(--r-card)', border: '1px solid var(--line)', boxShadow: 'var(--shadow-md)', padding: 20 }}>
           {histLoading ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0' }}>
-              <div style={{ width: 14, height: 14, borderRadius: '50%', border: `2px solid ${BORDER}`, borderTopColor: GREEN, animation: 'spin 1s linear infinite' }} />
-              <span style={{ fontSize: 12, color: FG3 }}>Loading history…</span>
+              <div style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid var(--green-tint)', borderTopColor: 'var(--green)', animation: 'spin 1s linear infinite' }} />
+              <span style={{ fontSize: 13, color: 'var(--muted)' }}>Loading history…</span>
             </div>
           ) : (
             <>
               {/* Stats row */}
-              <div style={{ display: 'flex', gap: 0, marginBottom: 14 }}>
+              <div style={{ display: 'flex', gap: 0, marginBottom: 18 }}>
                 {[
-                  { label: 'Avg calories', value: history.length ? Math.round(history.reduce((s, d) => s + d.calories, 0) / history.length) : 0, unit: 'kcal/day', color: FG1 },
-                  { label: 'Total burned',  value: history.reduce((s, d) => s + d.burned, 0), unit: 'kcal', color: '#F2A93B' },
-                  { label: 'Active days',   value: history.filter(d => d.calories > 0 || d.burned > 0).length, unit: '/ 7', color: GREEN },
+                  { label: 'Avg / day', value: history.length ? Math.round(history.reduce((s, d) => s + d.calories, 0) / history.length).toLocaleString() : '0', unit: 'kcal', color: 'var(--ink)' },
+                  { label: 'Burned',    value: history.reduce((s, d) => s + d.burned, 0).toLocaleString(), unit: 'kcal', color: 'var(--gold)' },
+                  { label: 'Active',    value: String(history.filter(d => d.calories > 0 || d.burned > 0).length), unit: '/ 7 days', color: 'var(--green)' },
                 ].map((s, i) => (
-                  <div key={s.label} style={{ flex: 1, borderLeft: i > 0 ? `1px solid ${BORDER}` : 'none', paddingLeft: i > 0 ? 12 : 0, marginLeft: i > 0 ? 12 : 0 }}>
-                    <div style={{ fontSize: 10, color: FG3, fontWeight: 600, marginBottom: 2 }}>{s.label}</div>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
-                      <span style={{ fontSize: 18, fontWeight: 700, color: s.color, fontFamily: "'Anton', Impact, sans-serif" }}>{s.value}</span>
-                      <span style={{ fontSize: 10, color: FG3 }}>{s.unit}</span>
+                  <div key={s.label} style={{ flex: 1, borderLeft: i > 0 ? '1px solid var(--line)' : 'none', paddingLeft: i > 0 ? 16 : 0 }}>
+                    <div className="eyebrow" style={{ fontSize: 10, marginBottom: 4 }}>{s.label}</div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                      <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 22, fontWeight: 700, color: s.color, letterSpacing: '-0.02em' }}>{s.value}</span>
+                      <span style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 500 }}>{s.unit}</span>
                     </div>
                   </div>
                 ))}
               </div>
-              {/* Mini bar chart */}
-              <div style={{ display: 'flex', gap: 5, alignItems: 'flex-end', height: 52 }}>
-                {history.map((d, i) => {
-                  const maxCal = Math.max(...history.map(h => h.calories), profile.targetCalories, 1);
-                  const pct    = d.calories / maxCal;
-                  const isToday = i === 6;
-                  const days   = ['Su','Mo','Tu','We','Th','Fr','Sa'];
-                  const dow    = new Date(d.date + 'T00:00:00').getDay();
-                  return (
-                    <div key={d.date} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                      <div style={{ width: '100%', height: 40, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-                        <div style={{
-                          width: '70%', height: `${Math.max(pct * 100, d.calories > 0 ? 8 : 3)}%`,
-                          background: isToday ? GREEN : d.calories > 0 ? 'rgba(30,127,92,0.35)' : BORDER,
-                          borderRadius: 3, transition: 'height .4s',
-                          minHeight: 3,
-                        }} />
-                      </div>
-                      <span style={{ fontSize: 9, color: isToday ? GREEN : FG3, fontWeight: isToday ? 800 : 500 }}>
-                        {isToday ? 'Now' : days[dow]}
+              {/* Bar chart */}
+              {(() => {
+                const goalCal = profile.targetCalories || 2000;
+                const maxCal = Math.max(...history.map(h => h.calories), goalCal, 1);
+                const H = 96;
+                const goalY = H - (goalCal / maxCal) * H;
+                return (
+                  <div style={{ position: 'relative', height: H + 24, marginTop: 6 }}>
+                    {/* Goal dashed line */}
+                    <div style={{ position: 'absolute', left: 0, right: 0, top: goalY, borderTop: '1.5px dashed var(--green-tint-2)', zIndex: 1 }}>
+                      <span style={{ position: 'absolute', right: 0, top: -16, fontSize: 10, fontWeight: 600, color: 'var(--green)', fontFamily: '"Space Grotesk",system-ui,sans-serif' }}>
+                        goal {goalCal.toLocaleString()}
                       </span>
                     </div>
-                  );
-                })}
-              </div>
+                    {/* Bars */}
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 0, justifyContent: 'space-between', height: H }}>
+                      {history.map((d, i) => {
+                        const isToday = i === history.length - 1;
+                        const over    = d.calories > goalCal;
+                        const h       = d.calories > 0 ? Math.max(6, (d.calories / maxCal) * H) : 4;
+                        const days    = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+                        const dow     = new Date(d.date + 'T00:00:00').getDay();
+                        return (
+                          <div key={d.date} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, flex: 1 }}>
+                            <div style={{
+                              width: 22, height: h, borderRadius: 7, position: 'relative',
+                              background: isToday ? 'var(--green)' : over ? 'var(--coral-tint)' : 'var(--green-tint-2)',
+                              boxShadow: isToday ? 'var(--shadow-green)' : 'none',
+                              transition: 'height .6s ease',
+                              outline: over && !isToday ? '1.5px solid var(--coral)' : 'none',
+                            }} />
+                            <span style={{ fontSize: 11, fontWeight: isToday ? 700 : 500, color: isToday ? 'var(--green)' : 'var(--faint)' }}>
+                              {isToday ? 'Now' : days[dow]}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
             </>
           )}
         </div>
       </div>
 
       {/* ── Tab Switcher ── */}
-      <div style={{ padding: '0 16px', marginBottom: 16 }}>
+      <div style={{ padding: '0 20px', marginBottom: 14 }}>
         <div style={{
-          background: CARD, borderRadius: 16, padding: 4,
-          display: 'flex', gap: 4, border: `1px solid ${BORDER}`,
-          boxShadow: SHADOW,
+          background: 'var(--surface-2)', borderRadius: 15, padding: 4,
+          display: 'flex', gap: 3,
         }}>
           <button style={tabBtnStyle(tab === 'food')}     onClick={() => setTab('food')}>🍽 Food</button>
           <button style={tabBtnStyle(tab === 'scan')}     onClick={() => setTab('scan')}>📷 Scan</button>
@@ -406,22 +412,22 @@ function LogInner() {
         </div>
       </div>
 
-      <div style={{ padding: '0 16px 100px' }}>
+      <div style={{ padding: '0 20px 100px' }}>
 
         {/* ══════════════════════ FOOD TAB ══════════════════════ */}
         {tab === 'food' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
             {/* Meal type selector */}
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
               {MEAL_TYPES.map(m => (
                 <button key={m} onClick={() => setMealType(m)} style={{
-                  flex: 1, padding: '8px 0', borderRadius: 12,
-                  fontSize: 11, fontWeight: 700, cursor: 'pointer', textTransform: 'capitalize',
-                  background: mealType === m ? 'rgba(30,127,92,0.10)' : CARD,
-                  color:      mealType === m ? GREEN : FG3,
-                  border: `1px solid ${mealType === m ? 'rgba(30,127,92,0.28)' : BORDER}`,
-                  transition: 'all .2s',
+                  height: 34, padding: '0 13px', borderRadius: 999,
+                  fontSize: 13, fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize',
+                  background: mealType === m ? 'var(--green-tint)' : 'transparent',
+                  color:      mealType === m ? 'var(--green-deep)' : 'var(--muted)',
+                  border: mealType === m ? '1px solid var(--green-tint-2)' : '1px solid transparent',
+                  transition: 'all .15s', fontFamily: '"Hanken Grotesk",system-ui,sans-serif',
                 }}>{m}</button>
               ))}
             </div>
@@ -556,26 +562,26 @@ function LogInner() {
               </>
             )}
 
-            {/* Eat page discovery banner */}
-            <div style={{
-              background: 'rgba(46,111,184,0.06)',
-              border: '1px solid rgba(46,111,184,0.14)',
-              borderRadius: 16,
-              padding: 14,
-              marginTop: 4,
+            {/* Find best-value meals CTA */}
+            <Link href="/eat?sort=ppd" style={{
+              display: 'block', textDecoration: 'none',
+              background: 'var(--green-tint)', borderRadius: 'var(--r-card)', padding: 18,
             }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#0F1B2D', marginBottom: 2 }}>
-                🍜 Find something to eat
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 13, background: 'var(--green)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/>
+                    </svg>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--green-deep)' }}>Find best-value meals</span>
+                    <span style={{ fontSize: 12.5, color: 'var(--green)', fontWeight: 500 }}>Grab &amp; Go options with full macros</span>
+                  </div>
+                </div>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
               </div>
-              <div style={{ fontSize: 11, color: '#8B95A7', marginBottom: 10 }}>
-                Browse Grab &amp; Go options with full macro info
-              </div>
-              <Link href="/eat?tab=grab_go" style={{
-                fontSize: 12, color: '#2E6FB8', fontWeight: 700, textDecoration: 'none',
-              }}>
-                Browse Grab &amp; Go →
-              </Link>
-            </div>
+            </Link>
           </div>
         )}
 
@@ -870,12 +876,12 @@ function LogInner() {
                       {/* Log button */}
                       <button onClick={logActivity} style={{
                         width: '100%', padding: '14px 0',
-                        background: actLogged ? 'rgba(30,127,92,0.12)' : GREEN,
-                        color: actLogged ? GREEN : '#fff',
-                        border: actLogged ? `1px solid rgba(30,127,92,0.3)` : 'none',
+                        background: actLogged ? 'rgba(14,122,79,0.12)' : 'var(--green)',
+                        color: actLogged ? 'var(--green)' : '#fff',
+                        border: actLogged ? '1px solid var(--green-tint-2)' : 'none',
                         borderRadius: 14,
-                        fontSize: 14, fontWeight: 800, cursor: 'pointer', transition: 'all .2s',
-                        boxShadow: actLogged ? 'none' : '0 4px 14px rgba(30,127,92,0.28)',
+                        fontSize: 14, fontWeight: 700, cursor: 'pointer', transition: 'all .15s',
+                        boxShadow: actLogged ? 'none' : 'var(--shadow-green)',
                       }}>
                         {actLogged ? '✓ Activity Logged!' : `Log ${effectiveAct?.name}`}
                       </button>
@@ -896,8 +902,8 @@ function LogInner() {
 export default function LogPage() {
   return (
     <Suspense fallback={
-      <div style={{ background: '#F7F8FB', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid #E5E9F2', borderTopColor: '#1E7F5C', animation: 'spin 1s linear infinite' }} />
+      <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid var(--green-tint-2)', borderTopColor: 'var(--green)', animation: 'spin 1s linear infinite' }} />
       </div>
     }>
       <LogInner />
