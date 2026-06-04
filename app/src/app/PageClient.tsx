@@ -248,4 +248,14 @@ export default function HomePage() {
             <Link href="/login" style={{ flex: 1, textAlign: 'center', padding: '12px', borderRadius: 12, border: `1.5px solid ${T.border}`, color: T.text1, fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
               Sign in
             </Link>
-            <Link href="/register" style={{ flex: 1, textAlign: 'center', paddin
+            <Link href="/register" style={{ flex: 1, textAlign: 'center', padding: '12px', borderRadius: 12, background: T.green, color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
+              Get started
+            </Link>
+          </div>
+        </div>
+      )}
+
+      <BottomNav />
+    </div>
+  );
+}
