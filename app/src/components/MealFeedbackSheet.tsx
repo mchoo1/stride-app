@@ -73,11 +73,11 @@ export default function MealFeedbackSheet({
   // ── Submit ───────────────────────────────────────────────────────────────────
 
   const submit = async () => {
-    if (!user || !auth.currentUser) return;
+    if (!user || !auth?.currentUser) return;
     setSubmitting(true);
     setError('');
     try {
-      const token = await auth.currentUser.getIdToken();
+      const token = await auth!.currentUser!.getIdToken();
 
       // Always submit an accuracy_rating if rating is set
       if (rating > 0) {

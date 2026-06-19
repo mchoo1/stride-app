@@ -650,10 +650,6 @@ export default function MePage() {
                 cursor: 'pointer',
                 transition: 'all .2s',
                 boxShadow: dietSaved ? 'none' : '0 4px 14px rgba(30,127,92,0.22)',
-                fontWeight: 800,
-                cursor: 'pointer',
-                transition: 'all .2s',
-                boxShadow: dietSaved ? 'none' : '0 4px 14px rgba(14,122,79,0.22)',
                 fontFamily: '"Hanken Grotesk", system-ui, sans-serif',
               }}>
                 {dietSaved ? '✓ Preferences Saved!' : 'Save Dietary Preferences'}
@@ -698,7 +694,7 @@ export default function MePage() {
               <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 12 }}>Account</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <button onClick={async () => {
-                  try { await signOut(auth); } catch { /* ignore */ }
+                  try { await signOut(auth!); } catch { /* ignore */ }
                   window.location.href = '/login';
                 }} style={{
                   width: '100%', borderRadius: 14, padding: '12px 0',
@@ -712,7 +708,7 @@ export default function MePage() {
                 <button onClick={async () => {
                   if (confirm('Reset all app data and start over? This will clear all logs.')) {
                     store.resetAll();
-                    try { await signOut(auth); } catch { /* ignore */ }
+                    try { await signOut(auth!); } catch { /* ignore */ }
                     window.location.href = '/register';
                   }
                 }} style={{

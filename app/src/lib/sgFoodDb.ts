@@ -46,6 +46,9 @@ export type PriceRange = '$' | '$$' | '$$$' | '$$$$';
 /** Data verification status */
 export type VerifiedSource =
   | 'official_sg'        // brand's own Singapore nutrition page
+  | 'official_us'        // brand's official US nutrition (same item served in SG)
+  | 'official_au'        // brand's official Australia nutrition (same item served in SG)
+  | 'official_jp'        // brand's official Japan nutrition (same item served in SG)
   | 'hpb'               // Health Promotion Board SG
   | 'usda'              // USDA FoodData Central
   | 'open_food_facts'   // Open Food Facts (barcode scan)
@@ -59,7 +62,7 @@ export type VerifiedSource =
  *   estimated_menu — place is known but nutrition pulled from SG_MACRO_FOODS reference DB (hawkers)
  *   place_only     — GPS-detected place with no DB match at all (runtime fallback)
  */
-export type RestaurantTier = 'full_menu' | 'estimated_menu' | 'place_only';
+export type RestaurantTier = 'full_menu' | 'partial_menu' | 'estimated_menu' | 'place_only';
 
 /**
  * Allergen information for a menu item.
@@ -180,6 +183,15 @@ export interface SGMenuItem {
   /** Where the macro data came from */
   source?: VerifiedSource;
 
+  /** URL of the official nutrition source this item's data came from */
+  sourceUrl?: string | null;
+
+  /** Free-text note about the nutrition data (e.g. provenance caveats) */
+  nutritionNote?: string;
+
+  /** Human-readable serving size, e.g. '1 piece (180g)' */
+  servingSize?: string;
+
   /** Set false if data is an estimate and needs verification */
   verified?: boolean;
 
@@ -226,8 +238,37 @@ export interface SGMenuItem {
    * Human-readable list of what's included in the set.
    * e.g. ['McSpicy Burger', 'Medium Fries', 'Regular Drink']
    * Keep each entry short — shown as a comma-separated line under the item name.
+   *
+   * @deprecated Prefer `setComponents` (structured refs). Keep until migrated.
    */
   setIncludes?: string[];
+
+  /**
+   * Structured set composition by reference — replaces free-text `setIncludes`.
+   * Each entry points at another SGMenuItem.id with a quantity. The set keeps
+   * its OWN macros as authoritative; this is an enrichment + cross-check layer.
+   */
+  setComponents?: { itemId: string; qty: number }[];
+
+  /**
+   * Whether this item appears on the orderable menu, or exists only as a set
+   * building block.
+   *   'menu'           — normal, orderable item (default when omitted).
+   *   'component_only' — a set part not sold standalone (Medium Fries, Regular
+   *                      Coke): full macros, hidden from the orderable menu,
+   *                      referenced by every set that contains it.
+   */
+  visibility?: 'menu' | 'component_only';
+
+  /**
+   * Whether these macros are specific to this outlet or a generic estimate
+   * tagged onto it. Pairs with `macroDbRef` (the pointer).
+   *   'outlet_specific' — measured/sourced for this exact outlet (default).
+   *   'generic'         — a standalone generic reference.
+   *   'generic_tagged'  — generic macros pinned to a named outlet via macroDbRef;
+   *                       display as an estimate, never imply outlet precision.
+   */
+  macroSpecificity?: 'outlet_specific' | 'generic' | 'generic_tagged';
 
   /**
    * Dine-in price in SGD — only add when it differs from `price`.
@@ -318,6 +359,12 @@ export interface SGRestaurant {
    *   ready_to_eat — convenience store or packaged ready meals (7-Eleven, Cheers, FairPrice Xpress)
    */
   outletType: OutletType;
+
+  /**
+   * Optional UI grouping tab used by the Eat page (e.g. 'store' for convenience
+   * outlets). Most entries leave this unset.
+   */
+  tab?: string;
 }
 
 // ─── Grocery ingredient ───────────────────────────────────────────────────────
@@ -5087,7 +5134,7 @@ export const SG_RESTAURANTS: SGRestaurant[] = [
     priceRange: '$$$',
     nutritionUrl: 'https://www.nandos.com.sg/food/nutritional-information',
     lastUpdated: '2026-05-01',
-    serviceTypes: ['dine_in', 'takeaway', 'delivery'],
+    serviceTypes: ['dine_in', 'grab_go', 'delivery'],
     aliases: ['nandos', "nando's", 'nandos peri peri', "nando's peri-peri"],
     dietTags: ['halal'],
     menu: [
@@ -5455,7 +5502,7 @@ export const SG_RESTAURANTS: SGRestaurant[] = [
     priceRange: '$$',
     nutritionUrl: 'https://www.pizzahut.com.sg/nutrition',
     lastUpdated: '2026-05-01',
-    serviceTypes: ['dine_in', 'delivery', 'takeaway'],
+    serviceTypes: ['dine_in', 'delivery', 'grab_go'],
     aliases: ['pizza hut', 'pizzahut', 'pizza hut sg'],
     dietTags: [],
     menu: [
@@ -5703,7 +5750,7 @@ export const SG_RESTAURANTS: SGRestaurant[] = [
     priceRange: '$$',
     nutritionUrl: 'https://www.dominos.com.sg/en/pages/nutrition/',
     lastUpdated: '2026-05-01',
-    serviceTypes: ['delivery', 'dine_in', 'takeaway'],
+    serviceTypes: ['delivery', 'dine_in', 'grab_go'],
     aliases: ['dominos', "domino's", "domino's pizza", 'dominos pizza'],
     dietTags: ['halal'],
     menu: [
@@ -5951,7 +5998,7 @@ export const SG_RESTAURANTS: SGRestaurant[] = [
     priceRange: '$$',
     nutritionUrl: 'https://www.wingstop.com/nutrition',
     lastUpdated: '2026-05-01',
-    serviceTypes: ['dine_in', 'takeaway', 'delivery'],
+    serviceTypes: ['dine_in', 'grab_go', 'delivery'],
     aliases: ['wingstop', 'wing stop'],
     dietTags: ['halal'],
     menu: [
@@ -6240,7 +6287,7 @@ export const SG_RESTAURANTS: SGRestaurant[] = [
     priceRange: '$$',
     nutritionUrl: 'https://www.guzmanygomez.com/menu/nutrition',
     lastUpdated: '2026-05-01',
-    serviceTypes: ['dine_in', 'takeaway', 'delivery'],
+    serviceTypes: ['dine_in', 'grab_go', 'delivery'],
     aliases: ['guzman y gomez', 'gyg', 'guzman', 'guzman gomez'],
     dietTags: ['halal'],
     menu: [
@@ -6451,7 +6498,7 @@ export const SG_RESTAURANTS: SGRestaurant[] = [
     priceRange: '$$$',
     nutritionUrl: 'https://www.shakeshack.com/location/singapore/nutrition',
     lastUpdated: '2026-05-01',
-    serviceTypes: ['dine_in', 'takeaway', 'delivery'],
+    serviceTypes: ['dine_in', 'grab_go', 'delivery'],
     aliases: ['shake shack', 'shakeshack', 'shack'],
     dietTags: [],
     menu: [
@@ -6777,7 +6824,7 @@ export const SG_RESTAURANTS: SGRestaurant[] = [
     priceRange: '$$$',
     nutritionUrl: 'https://www.fiveguys.com/fans/toppings-and-nutrition/nutrition-facts',
     lastUpdated: '2026-05-01',
-    serviceTypes: ['dine_in', 'takeaway', 'delivery'],
+    serviceTypes: ['dine_in', 'grab_go', 'delivery'],
     aliases: ['five guys', 'fiveguys'],
     dietTags: [],
     menu: [
@@ -12296,6 +12343,557 @@ export const SG_MACRO_FOODS: SGMacroFood[] = [
     source: 'hpb', verified: true, lastVerified: '2026-04-18',
     dietTags: ['lactose_free'],
   },
+
+  // ── Curry / coconut noodles ──────────────────────────────────────────────────
+  {
+    id: 'macro_laksa',
+    name: 'Laksa',
+    emoji: '🍜',
+    aliases: ['laksa', 'katong laksa', 'curry laksa', 'laksa lemak'],
+    calories: 589, protein: 27, carbs: 68, fat: 22, fibre: 3, sodium: 1400,
+    servingG: 500, servingNote: '1 bowl with coconut gravy (~500g)',
+    typicalPriceSgd: 5.00,
+    source: 'hpb', verified: true, lastVerified: '2026-06-07',
+    dietTags: ['lactose_free'],
+  },
+
+  // ── Malay / Indian dishes ────────────────────────────────────────────────────
+  {
+    id: 'macro_nasi_lemak',
+    name: 'Nasi Lemak (with Egg & Ikan Bilis)',
+    emoji: '🍚',
+    aliases: ['nasi lemak', 'coconut rice', 'nasi lemak biasa'],
+    calories: 494, protein: 14, carbs: 60, fat: 22, fibre: 3, sodium: 900,
+    servingG: 350, servingNote: '1 plate: coconut rice, egg, ikan bilis, sambal',
+    typicalPriceSgd: 3.50,
+    source: 'hpb', verified: true, lastVerified: '2026-06-07',
+    dietTags: ['halal', 'lactose_free'],
+  },
+  {
+    id: 'macro_satay_chicken',
+    name: 'Chicken Satay (5 sticks)',
+    emoji: '🍢',
+    aliases: ['satay', 'chicken satay', 'satay chicken', 'sate'],
+    calories: 375, protein: 30, carbs: 20, fat: 18, fibre: 2, sodium: 700,
+    servingG: 175, servingNote: '5 sticks with peanut sauce',
+    typicalPriceSgd: 6.00,
+    source: 'hpb', verified: true, lastVerified: '2026-06-07',
+    dietTags: ['halal', 'gluten_free', 'lactose_free'],
+  },
+  {
+    id: 'macro_roti_prata_plain',
+    name: 'Roti Prata (Plain)',
+    emoji: '🫓',
+    aliases: ['roti prata', 'prata', 'plain prata', 'roti canai'],
+    calories: 150, protein: 4, carbs: 20, fat: 6, fibre: 1, sodium: 220,
+    servingG: 80, servingNote: '1 plain prata with curry',
+    typicalPriceSgd: 1.20,
+    source: 'hpb', verified: true, lastVerified: '2026-06-07',
+    dietTags: ['halal', 'vegetarian'],
+  },
+  {
+    id: 'macro_roti_prata_egg',
+    name: 'Roti Prata (Egg)',
+    emoji: '🫓',
+    aliases: ['egg prata', 'roti prata egg', 'prata telur'],
+    calories: 220, protein: 7, carbs: 22, fat: 11, fibre: 1, sodium: 300,
+    servingG: 110, servingNote: '1 egg prata with curry',
+    typicalPriceSgd: 1.80,
+    source: 'hpb', verified: true, lastVerified: '2026-06-07',
+    dietTags: ['halal', 'vegetarian'],
+  },
+  {
+    id: 'macro_thosai',
+    name: 'Thosai (Plain)',
+    emoji: '🥞',
+    aliases: ['thosai', 'dosai', 'dosa', 'plain thosai'],
+    calories: 158, protein: 5, carbs: 28, fat: 3, fibre: 2, sodium: 320,
+    servingG: 120, servingNote: '1 plain thosai with chutney',
+    typicalPriceSgd: 1.50,
+    source: 'hpb', verified: true, lastVerified: '2026-06-07',
+    dietTags: ['halal', 'vegetarian', 'vegan', 'lactose_free'],
+  },
+
+  // ── Snacks / sides ───────────────────────────────────────────────────────────
+  {
+    id: 'macro_popiah',
+    name: 'Popiah (Fresh)',
+    emoji: '🌯',
+    aliases: ['popiah', 'fresh spring roll', 'poh piah'],
+    calories: 195, protein: 8, carbs: 28, fat: 5, fibre: 4, sodium: 480,
+    servingG: 180, servingNote: '1 roll (~180g)',
+    typicalPriceSgd: 2.00,
+    source: 'hpb', verified: true, lastVerified: '2026-06-07',
+    dietTags: ['vegetarian', 'lactose_free'],
+  },
+  {
+    id: 'macro_oyster_omelette',
+    name: 'Oyster Omelette (Orh Luak)',
+    emoji: '🦪',
+    aliases: ['oyster omelette', 'orh luak', 'or luak', 'oyster egg'],
+    calories: 510, protein: 18, carbs: 30, fat: 32, fibre: 1, sodium: 900,
+    servingG: 250, servingNote: '1 plate (~250g)',
+    typicalPriceSgd: 6.00,
+    source: 'hpb', verified: false, lastVerified: '2026-06-07',
+    dietTags: ['lactose_free'],
+  },
+  {
+    id: 'macro_carrot_cake_black',
+    name: 'Fried Carrot Cake (Black)',
+    emoji: '🍳',
+    aliases: ['carrot cake black', 'black carrot cake', 'chai tow kway black', 'fried radish cake'],
+    calories: 450, protein: 10, carbs: 52, fat: 22, fibre: 2, sodium: 1050,
+    servingG: 280, servingNote: '1 plate black, sweet sauce (~280g)',
+    typicalPriceSgd: 4.00,
+    source: 'hpb', verified: false, lastVerified: '2026-06-07',
+    dietTags: ['vegetarian', 'lactose_free'],
+  },
+  {
+    id: 'macro_carrot_cake_white',
+    name: 'Fried Carrot Cake (White)',
+    emoji: '🍳',
+    aliases: ['carrot cake white', 'white carrot cake', 'chai tow kway white'],
+    calories: 400, protein: 10, carbs: 50, fat: 18, fibre: 2, sodium: 1000,
+    servingG: 280, servingNote: '1 plate white (~280g)',
+    typicalPriceSgd: 4.00,
+    source: 'hpb', verified: false, lastVerified: '2026-06-07',
+    dietTags: ['vegetarian', 'lactose_free'],
+  },
+
+  // ── Desserts ─────────────────────────────────────────────────────────────────
+  {
+    id: 'macro_ice_kachang',
+    name: 'Ice Kachang',
+    emoji: '🍧',
+    aliases: ['ice kachang', 'ais kacang', 'ice kacang', 'shaved ice'],
+    calories: 208, protein: 4, carbs: 44, fat: 2, fibre: 2, sodium: 80,
+    servingG: 300, servingNote: '1 bowl (~300g)',
+    typicalPriceSgd: 2.50,
+    source: 'hpb', verified: false, lastVerified: '2026-06-07',
+    dietTags: ['vegetarian', 'gluten_free'],
+  },
+  {
+    id: 'macro_tau_huay',
+    name: 'Tau Huay (Beancurd Dessert)',
+    emoji: '🍮',
+    aliases: ['tau huay', 'tau huey', 'beancurd', 'douhua', 'soya beancurd'],
+    calories: 140, protein: 6, carbs: 24, fat: 2, fibre: 1, sodium: 30,
+    servingG: 250, servingNote: '1 bowl sweet (~250g)',
+    typicalPriceSgd: 1.50,
+    source: 'hpb', verified: true, lastVerified: '2026-06-07',
+    dietTags: ['vegetarian', 'vegan', 'gluten_free', 'lactose_free'],
+  },
+
+  // ── Drinks ───────────────────────────────────────────────────────────────────
+  {
+    id: 'macro_kopi_o',
+    name: 'Kopi-O (Black Coffee with Sugar)',
+    emoji: '☕',
+    aliases: ['kopi o', 'kopi-o', 'black coffee', 'kopi kosong'],
+    calories: 60, protein: 0, carbs: 14, fat: 0, fibre: 0, sodium: 15,
+    servingG: 200, servingNote: '1 cup (~200ml)',
+    typicalPriceSgd: 1.20,
+    source: 'hpb', verified: true, lastVerified: '2026-06-07',
+    dietTags: ['halal', 'vegetarian', 'vegan', 'gluten_free', 'lactose_free'],
+  },
+  {
+    id: 'macro_teh_tarik',
+    name: 'Teh Tarik (Pulled Milk Tea)',
+    emoji: '🍵',
+    aliases: ['teh tarik', 'pulled tea', 'teh', 'milk tea'],
+    calories: 112, protein: 4, carbs: 18, fat: 3, fibre: 0, sodium: 60,
+    servingG: 220, servingNote: '1 cup (~220ml)',
+    typicalPriceSgd: 1.50,
+    source: 'hpb', verified: true, lastVerified: '2026-06-07',
+    dietTags: ['halal', 'vegetarian'],
+  },
+
+  // ── Breakfast / Western ──────────────────────────────────────────────────────
+  {
+    id: 'macro_economy_beehoon',
+    name: 'Economy Bee Hoon',
+    emoji: '🍜',
+    aliases: ['economy beehoon', 'economy bee hoon', 'mee hoon breakfast', 'fried beehoon'],
+    calories: 380, protein: 12, carbs: 58, fat: 11, fibre: 2, sodium: 760,
+    servingG: 300, servingNote: '1 plate: bee hoon + 1–2 sides',
+    typicalPriceSgd: 2.50,
+    source: 'hpb', verified: false, lastVerified: '2026-06-07',
+    dietTags: ['halal', 'lactose_free'],
+  },
+  {
+    id: 'macro_fish_and_chips',
+    name: 'Fish and Chips',
+    emoji: '🍟',
+    aliases: ['fish and chips', 'fish n chips', 'battered fish chips'],
+    calories: 600, protein: 30, carbs: 55, fat: 30, fibre: 3, sodium: 900,
+    servingG: 350, servingNote: '1 plate (~350g)',
+    typicalPriceSgd: 8.00,
+    source: 'usda', verified: false, lastVerified: '2026-06-07',
+    dietTags: [],
+  },
+
+  // ── More noodle dishes ───────────────────────────────────────────────────────
+  {
+    id: 'macro_hokkien_mee',
+    name: 'Fried Hokkien Mee',
+    emoji: '🍜',
+    aliases: ['hokkien mee', 'fried hokkien mee', 'hokkien prawn mee', 'hokkien fried mee'],
+    calories: 522, protein: 22, carbs: 58, fat: 22, fibre: 2, sodium: 1300,
+    servingG: 400, servingNote: '1 plate (~400g)',
+    typicalPriceSgd: 5.50,
+    source: 'hpb', verified: true, lastVerified: '2026-06-07',
+    dietTags: ['lactose_free'],
+  },
+  {
+    id: 'macro_lor_mee',
+    name: 'Lor Mee',
+    emoji: '🍜',
+    aliases: ['lor mee', 'loh mee', 'braised noodles', 'thick gravy noodles'],
+    calories: 595, protein: 22, carbs: 80, fat: 20, fibre: 3, sodium: 1500,
+    servingG: 450, servingNote: '1 bowl thick gravy (~450g)',
+    typicalPriceSgd: 4.50,
+    source: 'hpb', verified: true, lastVerified: '2026-06-07',
+    dietTags: ['lactose_free'],
+  },
+  {
+    id: 'macro_mee_rebus',
+    name: 'Mee Rebus',
+    emoji: '🍜',
+    aliases: ['mee rebus', 'mi rebus', 'gravy noodles malay'],
+    calories: 571, protein: 18, carbs: 82, fat: 18, fibre: 4, sodium: 1400,
+    servingG: 450, servingNote: '1 plate sweet potato gravy (~450g)',
+    typicalPriceSgd: 4.00,
+    source: 'hpb', verified: true, lastVerified: '2026-06-07',
+    dietTags: ['halal', 'lactose_free'],
+  },
+  {
+    id: 'macro_yong_tau_foo_soup',
+    name: 'Yong Tau Foo (Soup, no noodles)',
+    emoji: '🍲',
+    aliases: ['yong tau foo', 'ytf', 'yong tau fu', 'niang dou fu'],
+    calories: 297, protein: 25, carbs: 20, fat: 12, fibre: 4, sodium: 900,
+    servingG: 350, servingNote: '7 mixed pieces in soup, no noodles',
+    typicalPriceSgd: 5.00,
+    source: 'hpb', verified: true, lastVerified: '2026-06-07',
+    dietTags: ['lactose_free'],
+  },
+  {
+    id: 'macro_chwee_kueh',
+    name: 'Chwee Kueh',
+    emoji: '🍥',
+    aliases: ['chwee kueh', 'chwee kway', 'water rice cake', 'steamed rice cake'],
+    calories: 342, protein: 5, carbs: 56, fat: 11, fibre: 2, sodium: 800,
+    servingG: 240, servingNote: '6 pieces with preserved radish',
+    typicalPriceSgd: 3.00,
+    source: 'hpb', verified: true, lastVerified: '2026-06-07',
+    dietTags: ['vegetarian', 'lactose_free'],
+  },
+
+  // ── Western / breakfast ──────────────────────────────────────────────────────
+  {
+    id: 'macro_chicken_chop',
+    name: 'Western Chicken Chop',
+    emoji: '🍗',
+    aliases: ['chicken chop', 'western chicken chop', 'grilled chicken chop'],
+    calories: 650, protein: 40, carbs: 45, fat: 32, fibre: 3, sodium: 950,
+    servingG: 400, servingNote: '1 plate with fries & salad (~400g)',
+    typicalPriceSgd: 8.00,
+    source: 'usda', verified: false, lastVerified: '2026-06-07',
+    dietTags: ['halal'],
+  },
+  {
+    id: 'macro_kaya_toast_set',
+    name: 'Kaya Toast Set',
+    emoji: '🍞',
+    aliases: ['kaya toast', 'kaya toast set', 'breakfast set', 'toast and eggs'],
+    calories: 430, protein: 14, carbs: 50, fat: 18, fibre: 2, sodium: 700,
+    servingG: 280, servingNote: 'set: 2 kaya toast, 2 soft-boiled eggs, drink',
+    typicalPriceSgd: 4.50,
+    source: 'hpb', verified: true, lastVerified: '2026-06-07',
+    dietTags: ['halal', 'vegetarian'],
+  },
+
+  // ── Seafood / grill ──────────────────────────────────────────────────────────
+  {
+    id: 'macro_sambal_stingray',
+    name: 'Sambal Stingray (BBQ)',
+    emoji: '🐟',
+    aliases: ['sambal stingray', 'bbq stingray', 'grilled stingray', 'ikan bakar stingray'],
+    calories: 320, protein: 38, carbs: 8, fat: 14, fibre: 1, sodium: 1000,
+    servingG: 250, servingNote: '1 portion grilled with sambal (~250g)',
+    typicalPriceSgd: 12.00,
+    source: 'hpb', verified: false, lastVerified: '2026-06-07',
+    dietTags: ['halal', 'gluten_free', 'lactose_free'],
+  },
+
+  // ── Rice dishes (more) ───────────────────────────────────────────────────────
+  {
+    id: 'macro_nasi_briyani',
+    name: 'Chicken Briyani',
+    emoji: '🍛',
+    aliases: ['nasi briyani', 'briyani', 'biryani', 'chicken briyani', 'nasi biryani'],
+    calories: 660, protein: 30, carbs: 78, fat: 25, fibre: 3, sodium: 1100,
+    servingG: 450, servingNote: '1 plate with chicken (~450g)',
+    typicalPriceSgd: 6.00,
+    source: 'hpb', verified: true, lastVerified: '2026-06-07',
+    dietTags: ['halal'],
+  },
+  {
+    id: 'macro_claypot_rice',
+    name: 'Claypot Rice',
+    emoji: '🍲',
+    aliases: ['claypot rice', 'clay pot rice', 'claypot chicken rice'],
+    calories: 650, protein: 28, carbs: 85, fat: 20, fibre: 2, sodium: 1200,
+    servingG: 450, servingNote: '1 claypot (~450g)',
+    typicalPriceSgd: 6.00,
+    source: 'hpb', verified: false, lastVerified: '2026-06-07',
+    dietTags: ['lactose_free'],
+  },
+
+  // ── Noodle / soup dishes (more) ──────────────────────────────────────────────
+  {
+    id: 'macro_beef_hor_fun',
+    name: 'Beef Hor Fun',
+    emoji: '🍜',
+    aliases: ['beef hor fun', 'beef hor fun gravy', 'hor fun', 'beef kway teow'],
+    calories: 620, protein: 26, carbs: 72, fat: 24, fibre: 2, sodium: 1400,
+    servingG: 450, servingNote: '1 plate gravy hor fun (~450g)',
+    typicalPriceSgd: 6.00,
+    source: 'hpb', verified: false, lastVerified: '2026-06-07',
+    dietTags: ['lactose_free'],
+  },
+  {
+    id: 'macro_curry_chicken_noodle',
+    name: 'Curry Chicken Noodle',
+    emoji: '🍜',
+    aliases: ['curry chicken noodle', 'curry mee', 'curry noodle', 'curry laksa'],
+    calories: 550, protein: 22, carbs: 60, fat: 24, fibre: 3, sodium: 1300,
+    servingG: 450, servingNote: '1 bowl curry noodles (~450g)',
+    typicalPriceSgd: 5.00,
+    source: 'hpb', verified: true, lastVerified: '2026-06-07',
+    dietTags: ['halal', 'lactose_free'],
+  },
+  {
+    id: 'macro_sliced_fish_soup',
+    name: 'Sliced Fish Bee Hoon Soup',
+    emoji: '🐟',
+    aliases: ['sliced fish soup', 'fish soup', 'fish bee hoon', 'fish slice beehoon'],
+    calories: 349, protein: 28, carbs: 40, fat: 8, fibre: 2, sodium: 1100,
+    servingG: 450, servingNote: '1 bowl with bee hoon (~450g)',
+    typicalPriceSgd: 5.50,
+    source: 'hpb', verified: true, lastVerified: '2026-06-07',
+    dietTags: ['lactose_free'],
+  },
+  {
+    id: 'macro_bak_kut_teh',
+    name: 'Bak Kut Teh (Pork Rib Soup)',
+    emoji: '🍲',
+    aliases: ['bak kut teh', 'bkt', 'pork rib soup', 'pork bone soup'],
+    calories: 324, protein: 28, carbs: 8, fat: 18, fibre: 1, sodium: 1400,
+    servingG: 400, servingNote: 'pork rib soup, no rice (~400g)',
+    typicalPriceSgd: 6.00,
+    source: 'hpb', verified: true, lastVerified: '2026-06-07',
+    dietTags: ['gluten_free', 'lactose_free'],
+  },
+
+  // ── Snacks / sides (more) ────────────────────────────────────────────────────
+  {
+    id: 'macro_chee_cheong_fun',
+    name: 'Chee Cheong Fun',
+    emoji: '🍥',
+    aliases: ['chee cheong fun', 'rice noodle roll', 'cheong fun', 'ccf'],
+    calories: 258, protein: 6, carbs: 44, fat: 6, fibre: 1, sodium: 600,
+    servingG: 200, servingNote: '2 rolls plain with sweet sauce',
+    typicalPriceSgd: 2.50,
+    source: 'hpb', verified: true, lastVerified: '2026-06-07',
+    dietTags: ['vegetarian', 'vegan', 'lactose_free'],
+  },
+  {
+    id: 'macro_rojak',
+    name: 'Rojak (Chinese)',
+    emoji: '🥗',
+    aliases: ['rojak', 'chinese rojak', 'fruit rojak', 'rojak with hae ko'],
+    calories: 559, protein: 12, carbs: 70, fat: 26, fibre: 6, sodium: 900,
+    servingG: 300, servingNote: '1 plate (~300g)',
+    typicalPriceSgd: 5.00,
+    source: 'hpb', verified: true, lastVerified: '2026-06-07',
+    dietTags: ['lactose_free'],
+  },
+  {
+    id: 'macro_roti_john',
+    name: 'Roti John',
+    emoji: '🥪',
+    aliases: ['roti john', 'roti jon', 'egg mutton bread'],
+    calories: 590, protein: 22, carbs: 58, fat: 30, fibre: 2, sodium: 1000,
+    servingG: 250, servingNote: '1 portion (~250g)',
+    typicalPriceSgd: 5.00,
+    source: 'usda', verified: false, lastVerified: '2026-06-07',
+    dietTags: ['halal'],
+  },
+
+  // ── Drinks (more) ────────────────────────────────────────────────────────────
+  {
+    id: 'macro_soya_bean_milk',
+    name: 'Soya Bean Milk',
+    emoji: '🥛',
+    aliases: ['soya bean milk', 'soy milk', 'tau huay zui', 'soya'],
+    calories: 140, protein: 7, carbs: 24, fat: 2, fibre: 1, sodium: 40,
+    servingG: 250, servingNote: '1 cup (~250ml)',
+    typicalPriceSgd: 1.50,
+    source: 'hpb', verified: true, lastVerified: '2026-06-07',
+    dietTags: ['halal', 'vegetarian', 'vegan', 'gluten_free', 'lactose_free'],
+  },
+
+  // ── Rice dishes (batch 3) ────────────────────────────────────────────────────
+  {
+    id: 'macro_nasi_goreng',
+    name: 'Nasi Goreng',
+    emoji: '🍚',
+    aliases: ['nasi goreng', 'malay fried rice', 'fried rice malay'],
+    calories: 620, protein: 20, carbs: 80, fat: 22, fibre: 3, sodium: 1200,
+    servingG: 400, servingNote: '1 plate (~400g)',
+    typicalPriceSgd: 5.00,
+    source: 'hpb', verified: false, lastVerified: '2026-06-07',
+    dietTags: ['halal', 'lactose_free'],
+  },
+  {
+    id: 'macro_fried_rice',
+    name: 'Fried Rice (Egg / Yang Chow)',
+    emoji: '🍚',
+    aliases: ['fried rice', 'egg fried rice', 'yang chow fried rice', 'chow fan'],
+    calories: 580, protein: 18, carbs: 82, fat: 18, fibre: 2, sodium: 1000,
+    servingG: 400, servingNote: '1 plate (~400g)',
+    typicalPriceSgd: 5.00,
+    source: 'hpb', verified: false, lastVerified: '2026-06-07',
+    dietTags: ['lactose_free'],
+  },
+  {
+    id: 'macro_ayam_penyet',
+    name: 'Ayam Penyet (Set)',
+    emoji: '🍗',
+    aliases: ['ayam penyet', 'smashed fried chicken', 'ayam penyet set'],
+    calories: 700, protein: 40, carbs: 65, fat: 30, fibre: 3, sodium: 1200,
+    servingG: 450, servingNote: '1 set with rice, tofu, sambal (~450g)',
+    typicalPriceSgd: 6.50,
+    source: 'hpb', verified: false, lastVerified: '2026-06-07',
+    dietTags: ['halal'],
+  },
+  {
+    id: 'macro_teochew_porridge',
+    name: 'Teochew Porridge (with 2 sides)',
+    emoji: '🍚',
+    aliases: ['teochew porridge', 'porridge', 'mui', 'plain porridge'],
+    calories: 400, protein: 15, carbs: 60, fat: 10, fibre: 2, sodium: 900,
+    servingG: 450, servingNote: '1 bowl porridge + 2 sides',
+    typicalPriceSgd: 4.00,
+    source: 'hpb', verified: false, lastVerified: '2026-06-07',
+    dietTags: ['lactose_free'],
+  },
+
+  // ── Soup / braised (batch 3) ─────────────────────────────────────────────────
+  {
+    id: 'macro_mutton_soup',
+    name: 'Mutton Soup (Sup Kambing)',
+    emoji: '🍲',
+    aliases: ['mutton soup', 'sup kambing', 'sup tulang', 'lamb soup'],
+    calories: 250, protein: 26, carbs: 10, fat: 12, fibre: 1, sodium: 1100,
+    servingG: 350, servingNote: 'mutton soup, no bread (~350g)',
+    typicalPriceSgd: 6.00,
+    source: 'hpb', verified: false, lastVerified: '2026-06-07',
+    dietTags: ['halal', 'gluten_free', 'lactose_free'],
+  },
+  {
+    id: 'macro_chicken_curry',
+    name: 'Curry Chicken (no rice)',
+    emoji: '🍛',
+    aliases: ['curry chicken', 'chicken curry', 'kari ayam'],
+    calories: 350, protein: 28, carbs: 12, fat: 22, fibre: 2, sodium: 1100,
+    servingG: 300, servingNote: 'curry chicken, no rice (~300g)',
+    typicalPriceSgd: 5.00,
+    source: 'hpb', verified: false, lastVerified: '2026-06-07',
+    dietTags: ['halal', 'gluten_free', 'lactose_free'],
+  },
+  {
+    id: 'macro_kway_chap',
+    name: 'Kway Chap',
+    emoji: '🍜',
+    aliases: ['kway chap', 'kueh chap', 'flat rice noodle braised'],
+    calories: 450, protein: 22, carbs: 45, fat: 20, fibre: 2, sodium: 1300,
+    servingG: 450, servingNote: 'kway + braised pork/egg (~450g)',
+    typicalPriceSgd: 5.00,
+    source: 'hpb', verified: false, lastVerified: '2026-06-07',
+    dietTags: ['lactose_free'],
+  },
+
+  // ── Snacks / desserts (batch 3) ──────────────────────────────────────────────
+  {
+    id: 'macro_otah',
+    name: 'Otah (Grilled Fish Cake)',
+    emoji: '🐟',
+    aliases: ['otah', 'otak', 'otak-otak', 'grilled fish cake'],
+    calories: 60, protein: 4, carbs: 3, fat: 4, fibre: 0, sodium: 200,
+    servingG: 40, servingNote: '1 piece (~40g)',
+    typicalPriceSgd: 1.20,
+    source: 'hpb', verified: false, lastVerified: '2026-06-07',
+    dietTags: ['halal', 'gluten_free', 'lactose_free'],
+  },
+  {
+    id: 'macro_goreng_pisang',
+    name: 'Goreng Pisang (Banana Fritter)',
+    emoji: '🍌',
+    aliases: ['goreng pisang', 'banana fritter', 'fried banana', 'pisang goreng'],
+    calories: 130, protein: 1, carbs: 20, fat: 5, fibre: 1, sodium: 80,
+    servingG: 60, servingNote: '1 piece (~60g)',
+    typicalPriceSgd: 0.80,
+    source: 'hpb', verified: false, lastVerified: '2026-06-07',
+    dietTags: ['halal', 'vegetarian', 'vegan', 'lactose_free'],
+  },
+  {
+    id: 'macro_min_jiang_kueh',
+    name: 'Min Jiang Kueh (Peanut Pancake)',
+    emoji: '🥞',
+    aliases: ['min jiang kueh', 'mee chiang kueh', 'peanut pancake', 'apam balik'],
+    calories: 130, protein: 3, carbs: 22, fat: 4, fibre: 1, sodium: 120,
+    servingG: 70, servingNote: '1 slice (~70g)',
+    typicalPriceSgd: 1.00,
+    source: 'hpb', verified: false, lastVerified: '2026-06-07',
+    dietTags: ['vegetarian', 'lactose_free'],
+  },
+  {
+    id: 'macro_chendol',
+    name: 'Chendol',
+    emoji: '🍧',
+    aliases: ['chendol', 'cendol', 'chendol dessert'],
+    calories: 280, protein: 3, carbs: 50, fat: 8, fibre: 2, sodium: 60,
+    servingG: 300, servingNote: '1 bowl (~300g)',
+    typicalPriceSgd: 2.50,
+    source: 'hpb', verified: false, lastVerified: '2026-06-07',
+    dietTags: ['vegetarian', 'vegan', 'gluten_free', 'lactose_free'],
+  },
+
+  // ── Drinks (batch 3) ─────────────────────────────────────────────────────────
+  {
+    id: 'macro_milo_dinosaur',
+    name: 'Milo Dinosaur',
+    emoji: '🥤',
+    aliases: ['milo dinosaur', 'milo dino', 'iced milo'],
+    calories: 300, protein: 8, carbs: 50, fat: 8, fibre: 2, sodium: 120,
+    servingG: 350, servingNote: '1 cup (~350ml)',
+    typicalPriceSgd: 2.50,
+    source: 'hpb', verified: false, lastVerified: '2026-06-07',
+    dietTags: ['halal', 'vegetarian'],
+  },
+  {
+    id: 'macro_bandung',
+    name: 'Bandung (Rose Milk)',
+    emoji: '🥤',
+    aliases: ['bandung', 'sirap bandung', 'rose milk'],
+    calories: 150, protein: 3, carbs: 30, fat: 3, fibre: 0, sodium: 50,
+    servingG: 250, servingNote: '1 cup (~250ml)',
+    typicalPriceSgd: 1.80,
+    source: 'hpb', verified: false, lastVerified: '2026-06-07',
+    dietTags: ['halal', 'vegetarian'],
+  },
 ];
 
 
@@ -12311,6 +12909,7 @@ const SG_HAWKER_PLACES: SGRestaurant[] = [
   // ── Maxwell Food Centre ──────────────────────────────────────────────────────
   {
     id: 'maxwell_fc',
+    outletType: 'hawker',
     name: 'Maxwell Food Centre',
     emoji: '🍗',
     cuisine: 'Local & Hawker',
@@ -12347,6 +12946,7 @@ const SG_HAWKER_PLACES: SGRestaurant[] = [
   // ── Lau Pa Sat ───────────────────────────────────────────────────────────────
   {
     id: 'lau_pa_sat',
+    outletType: 'hawker',
     name: 'Lau Pa Sat Festival Market',
     emoji: '🏛️',
     cuisine: 'Local & Hawker',
@@ -12383,6 +12983,7 @@ const SG_HAWKER_PLACES: SGRestaurant[] = [
   // ── Newton Food Centre ───────────────────────────────────────────────────────
   {
     id: 'newton_fc',
+    outletType: 'hawker',
     name: 'Newton Food Centre',
     emoji: '🌙',
     cuisine: 'Local & Hawker',
@@ -12412,13 +13013,14 @@ const SG_HAWKER_PLACES: SGRestaurant[] = [
       { id: 'newt_stingray', name: 'BBQ Stingray', emoji: '🐟', price: 12.00,
         calories: 320, protein: 38, carbs: 8, fat: 14, category: 'Seafood',
         compatibleWith: ['gluten_free', 'lactose_free'], isPopular: true,
-        macroDbRef: 'macro_fish_and_chips', confidence: 'estimated', source: 'hpb', verified: false, lastVerified: '2026-04-18' },
+        macroDbRef: 'macro_sambal_stingray', confidence: 'estimated', source: 'hpb', verified: false, lastVerified: '2026-04-18' },
     ],
   },
 
   // ── Chinatown Complex Food Centre ────────────────────────────────────────────
   {
     id: 'chinatown_complex_fc',
+    outletType: 'hawker',
     name: 'Chinatown Complex Food Centre',
     emoji: '🏮',
     cuisine: 'Chinese & Hawker',
@@ -12459,6 +13061,7 @@ const SG_HAWKER_PLACES: SGRestaurant[] = [
   // ── Tekka Market ─────────────────────────────────────────────────────────────
   {
     id: 'tekka_market',
+    outletType: 'hawker',
     name: 'Tekka Market',
     emoji: '🇮🇳',
     cuisine: 'Indian & Malay',
@@ -12499,6 +13102,7 @@ const SG_HAWKER_PLACES: SGRestaurant[] = [
   // ── Old Airport Road Food Centre ─────────────────────────────────────────────
   {
     id: 'old_airport_road_fc',
+    outletType: 'hawker',
     name: 'Old Airport Road Food Centre',
     emoji: '✈️',
     cuisine: 'Local & Hawker',
@@ -12543,6 +13147,7 @@ const SG_HAWKER_PLACES: SGRestaurant[] = [
   // ── Golden Mile Food Centre ──────────────────────────────────────────────────
   {
     id: 'golden_mile_fc',
+    outletType: 'hawker',
     name: 'Golden Mile Food Centre',
     emoji: '🏟️',
     cuisine: 'Local & Hawker',
@@ -12583,6 +13188,7 @@ const SG_HAWKER_PLACES: SGRestaurant[] = [
   // ── Geylang Serai Market ─────────────────────────────────────────────────────
   {
     id: 'geylang_serai_market',
+    outletType: 'hawker',
     name: 'Geylang Serai Market & Food Centre',
     emoji: '🌙',
     cuisine: 'Malay & Muslim',
@@ -12619,6 +13225,7 @@ const SG_HAWKER_PLACES: SGRestaurant[] = [
   // ── Whampoa Market ───────────────────────────────────────────────────────────
   {
     id: 'whampoa_market',
+    outletType: 'hawker',
     name: 'Whampoa Makan Place',
     emoji: '🏘️',
     cuisine: 'Local & Hawker',
@@ -12914,7 +13521,7 @@ export function ppdColor(value: number): string {
 /** Filter menu items to those compatible with all of the user's dietary flags. */
 export function filterItemsByDiet(items: SGMenuItem[], flags: string[]): SGMenuItem[] {
   if (!flags.length) return items;
-  return items.filter(i => flags.every(f => (i.compatibleWith ?? []).includes(f)));
+  return items.filter(i => flags.every(f => (i.compatibleWith ?? []).includes(f as DietaryFlag)));
 }
 
 /** Resolve recipe ingredients into ingredient objects (returns raw ingredient refs). */
@@ -12928,8 +13535,7 @@ export function calcCostPerServing(recipe: SGRecipe): number | null {
   const total = recipe.ingredients.reduce((sum, ing) => {
     const ingredient = SG_INGREDIENTS.find(i => i.id === ing.ingredientId);
     if (!ingredient || !ingredient.price) return sum;
-    const kgPrice = ingredient.price / (ingredient.packageSize ?? 1000);
-    return sum + kgPrice * ing.quantityG;
+    return sum + ingredient.price * ing.quantity;
   }, 0);
   return Math.round(total * 100) / 100;
 }

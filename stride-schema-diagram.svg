@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 900 720" xmlns="http://www.w3.org/2000/svg" role="img" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">
+<title>Stride food database schema</title>
+<desc>Four Firestore collections — restaurants, meals, meal_feedback, meal_community_stats — with the new macroSpecificity, setComponents and visibility fields on meals, plus two logic flows: macro specificity to display badge, and feedback to corroboration to promotion.</desc>
+<style>
+  .t   { fill: #1f2937; }
+  .mut { fill: #6b7280; }
+  .box { fill: #f9fafb; stroke: #d1d5db; stroke-width: 1.5; }
+  .core{ fill: #f3f4f6; stroke: #2563eb; stroke-width: 2; }
+  .newbox { fill: #fff7ed; stroke: #f59e0b; stroke-width: 1.5; }
+  .green { fill: #16a34a; }
+  .amber { fill: #d97706; }
+  .grey  { fill: #6b7280; }
+  .ln  { stroke: #9ca3af; stroke-width: 1.5; fill: none; }
+  .lbl { fill: #6b7280; font-size: 11px; }
+  text { font-size: 12px; }
+  .h   { font-size: 13px; font-weight: 700; }
+  .title { font-size: 16px; font-weight: 700; }
+  .new { fill: #b45309; font-weight: 600; }
+</style>
+
+<rect x="0" y="0" width="900" height="720" fill="#ffffff"/>
+<text x="30" y="34" class="title t">Stride Food Database — 4 Firestore collections</text>
+<text x="30" y="54" class="lbl">Amber = new fields added this round. One unified /meals collection; trust &amp; specificity are fields, not separate tables.</text>
+
+<defs>
+  <marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+    <path d="M0,0 L7,3 L0,6 Z" fill="#9ca3af"/>
+  </marker>
+</defs>
+
+<rect x="30" y="78" width="170" height="92" rx="8" class="box"/>
+<text x="42" y="100" class="h t">restaurants</text>
+<text x="42" y="120" class="mut">id, name, tier</text>
+<text x="42" y="138" class="mut">serviceTypes[]</text>
+<text x="42" y="156" class="mut">isHalalCertified</text>
+
+<rect x="300" y="78" width="250" height="300" rx="8" class="core"/>
+<text x="314" y="100" class="h t">meals  <tspan class="mut" font-weight="400">(core entity)</tspan></text>
+<line x1="314" y1="108" x2="536" y2="108" class="ln"/>
+<text x="314" y="128" class="mut">id · canonicalName · mealType</text>
+<text x="314" y="146" class="mut">calories · proteinG · carbsG · fatG</text>
+<text x="314" y="164" class="mut">restaurantId? (null = generic)</text>
+<text x="314" y="182" class="mut">confidenceTier · source · verified</text>
+<text x="314" y="200" class="mut">allergens? (3-state)</text>
+<line x1="314" y1="214" x2="536" y2="214" class="ln" stroke-dasharray="3 3"/>
+<text x="314" y="234" class="new">+ macroSpecificity</text>
+<text x="314" y="252" class="new">+ macroSourceMealId?</text>
+<text x="314" y="270" class="new">+ isSetMeal?</text>
+<text x="314" y="288" class="new">+ setComponents[]  {mealId, qty}</text>
+<text x="314" y="306" class="new">+ visibility (menu | component_only)</text>
+<rect x="314" y="320" width="222" height="44" rx="6" class="newbox"/>
+<text x="324" y="338" class="lbl">self-ref: macroSourceMealId →</text>
+<text x="324" y="354" class="lbl">a generic meal (never copy macros)</text>
+
+<rect x="660" y="78" width="200" height="110" rx="8" class="box"/>
+<text x="672" y="100" class="h t">meal_feedback</text>
+<text x="672" y="120" class="mut">raw user submissions</text>
+<text x="672" y="138" class="mut">feedbackType, submitted*</text>
+<text x="672" y="156" class="mut">status: pending/approved</text>
+<text x="672" y="174" class="mut">/rejected</text>
+
+<rect x="660" y="240" width="200" height="110" rx="8" class="box"/>
+<text x="672" y="262" class="h t">meal_community_stats</text>
+<text x="672" y="282" class="mut">feedbackCount</text>
+<text x="672" y="300" class="mut">avg* (approved only)</text>
+<text x="672" y="318" class="mut">stdDevCalories</text>
+<text x="672" y="336" class="mut">recomputed on approval</text>
+
+<path d="M200,124 L300,124" class="ln" marker-end="url(#ah)"/>
+<text x="218" y="116" class="lbl">1 : N</text>
+<path d="M550,150 L660,133" class="ln" marker-end="url(#ah)"/>
+<text x="566" y="132" class="lbl">1 : N</text>
+<path d="M550,250 L660,290" class="ln" marker-end="url(#ah)"/>
+<text x="566" y="262" class="lbl">1 : 1</text>
+
+<line x1="30" y1="410" x2="870" y2="410" class="ln" stroke-dasharray="4 4"/>
+
+<text x="30" y="440" class="h t">Flow A · macroSpecificity → display badge</text>
+<rect x="30" y="454" width="150" height="58" rx="8" class="newbox"/>
+<text x="44" y="478" class="new">outlet_specific</text>
+<text x="44" y="498" class="lbl">sourced for this outlet</text>
+<rect x="30" y="522" width="150" height="58" rx="8" class="newbox"/>
+<text x="44" y="546" class="new">generic_tagged</text>
+<text x="44" y="566" class="lbl">HPB avg, pinned to outlet</text>
+<rect x="30" y="590" width="150" height="58" rx="8" class="box"/>
+<text x="44" y="614" class="h t">generic</text>
+<text x="44" y="634" class="lbl">standalone dish</text>
+
+<path d="M180,483 L250,483" class="ln" marker-end="url(#ah)"/>
+<path d="M180,551 L250,551" class="ln" marker-end="url(#ah)"/>
+<path d="M180,619 L250,619" class="ln" marker-end="url(#ah)"/>
+<rect x="250" y="462" width="170" height="42" rx="8" class="box"/>
+<circle cx="268" cy="483" r="5" class="green"/>
+<text x="282" y="487" class="t">✓ Stride Approved</text>
+<rect x="250" y="530" width="170" height="42" rx="8" class="box"/>
+<circle cx="268" cy="551" r="5" class="amber"/>
+<text x="282" y="555" class="t">~ Estimated (caveat)</text>
+<rect x="250" y="598" width="170" height="42" rx="8" class="box"/>
+<circle cx="268" cy="619" r="5" class="grey"/>
+<text x="282" y="623" class="t">generic dish</text>
+
+<text x="470" y="440" class="h t">Flow B · feedback → corroboration → promote</text>
+<rect x="470" y="454" width="150" height="56" rx="8" class="box"/>
+<text x="484" y="478" class="h t">feedback</text>
+<text x="484" y="498" class="lbl">approved submissions</text>
+<path d="M620,482 L690,482" class="ln" marker-end="url(#ah)"/>
+
+<rect x="690" y="454" width="180" height="56" rx="8" class="newbox"/>
+<text x="704" y="478" class="new">evaluateCorroboration</text>
+<text x="704" y="498" class="lbl">median ±10%, ≥5 reports</text>
+
+<path d="M780,510 L780,536" class="ln" marker-end="url(#ah)"/>
+<rect x="690" y="540" width="180" height="34" rx="6" class="box"/>
+<circle cx="708" cy="557" r="5" class="green"/>
+<text x="722" y="561" class="t">agree → average (promote)</text>
+<rect x="690" y="580" width="180" height="34" rx="6" class="box"/>
+<circle cx="708" cy="597" r="5" class="amber"/>
+<text x="722" y="601" class="t">noisy → range</text>
+<rect x="690" y="620" width="180" height="34" rx="6" class="box"/>
+<circle cx="708" cy="637" r="5" class="grey"/>
+<text x="722" y="641" class="t">&lt;3 or allergen → hide</text>
+
+<text x="470" y="676" class="lbl">Allergen / halal fields are never community-promoted — staff/official only.</text>
+</svg>

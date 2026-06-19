@@ -61,7 +61,7 @@ export default function ScanPage() {
       });
 
       // Get Firebase auth token
-      const user = auth.currentUser;
+      const user = auth?.currentUser;
       const token = user ? await user.getIdToken() : '';
 
       const res  = await fetch('/api/scan-food', {

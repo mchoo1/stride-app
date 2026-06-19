@@ -107,7 +107,7 @@ export default function RegisterPage() {
 
     setEmailChecking(true);
     try {
-      const methods = await fetchSignInMethodsForEmail(auth, data.email);
+      const methods = await fetchSignInMethodsForEmail(auth!, data.email);
       if (methods.length > 0) {
         setError('This email is already registered — sign in instead.');
         return false;
@@ -150,10 +150,10 @@ export default function RegisterPage() {
       });
 
       Promise.all([
-        setDoc(doc(db, 'users', user.uid), {
+        setDoc(doc(db!, 'users', user.uid), {
           name: data.name, email: data.email.toLowerCase(), createdAt: serverTimestamp(),
         }),
-        setDoc(doc(db, 'profiles', user.uid), {
+        setDoc(doc(db!, 'profiles', user.uid), {
           age: data.age, heightCm: data.heightCm,
           weightKg: data.currentWeight, goalWeightKg: data.targetWeight,
           activityLevel: data.activityLevel, goal: data.goalType,

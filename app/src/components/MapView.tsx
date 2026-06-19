@@ -337,7 +337,7 @@ export default function MapView({ pins, centerLat, centerLng, hasGPS = false, on
           { color: BLUE,  label: 'Menu available'  },
           { color: GRAY,  label: 'Nearby (no menu)'},
         ].map(l => (
-          <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, lastChild: { marginBottom: 0 } }}>
+          <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: l.color, flexShrink: 0 }} />
             <span style={{ fontSize: 10, fontWeight: 600, color: FG2, whiteSpace: 'nowrap' }}>{l.label}</span>
           </div>

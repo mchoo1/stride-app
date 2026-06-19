@@ -90,6 +90,21 @@ meals (
   verified_by           VARCHAR?,
   last_verified         DATE?,
 
+  -- Macro specificity — guards generic-data-tagged-onto-an-outlet
+  macro_specificity     ENUM,         -- outlet_specific | generic | generic_tagged
+  macro_source_meal_id  UUID?         FK → meals.id,  -- when generic_tagged: the
+                                      --   generic meal the macros are borrowed
+                                      --   from. Keep the pointer; never copy macros.
+
+  -- Set / combo meals (only present on set items)
+  is_set_meal           BOOLEAN?,
+  set_components        JSONB?,       -- [{ mealId, qty }] — structured composition.
+                                      --   The set keeps its OWN macros as
+                                      --   authoritative; components cross-check only.
+  visibility            ENUM,         -- menu | component_only
+                                      --   component_only = set part not sold
+                                      --   standalone (Medium Fries); hidden from menu.
+
   -- Deduplication search
   search_vector         TSVECTOR,     -- full-text index: canonical_name + aliases
 
@@ -120,6 +135,12 @@ meals (
 Never show allergen claims unless source is `official_sg` or `hpb`. Add disclaimer: *"Always verify allergen information directly with the restaurant."*
 
 **Self-referencing `canonical_meal_id`.** When a duplicate entry is detected and merged, the duplicate row gets `status = 'duplicate'` and `canonical_meal_id` pointing to the winner. The row is never deleted — existing user food logs reference it and must still resolve correctly.
+
+**`macro_specificity` — the implied-precision guard.** A generic HPB average pinned to a named outlet (e.g. an "estimated_menu" hawker stall's chicken rice) *looks* measured for that outlet but isn't. `macro_specificity` makes this explicit: `outlet_specific` (sourced for this exact outlet), `generic` (a standalone generic dish, `restaurant_id` null), or `generic_tagged` (`restaurant_id` set, but macros borrowed via `macro_source_meal_id`). A `generic_tagged` meal must show *"Estimated — HPB population average, not measured at this outlet"* and must **never** be promoted to `stride_approved` on outlet specificity alone. Derive with `deriveMacroSpecificity(restaurantId, macroSourceMealId)` in `firestoreFoodDb.ts`.
+
+**Set meals: stored macros authoritative, `set_components` for cross-check.** A set always stores its own `calories/protein_g/...` so it works even when a brand only publishes a combined figure. `set_components` (`[{mealId, qty}]`) references the parts; `computeSetMacros()` sums them and **reports** any unresolved component rather than silently undercounting, so the caller falls back to the stored total. Set parts not sold standalone (Medium Fries, Regular Coke) live as `visibility = 'component_only'` meals — entered once, referenced by every set, hidden from the orderable menu. This replaces the free-text `setIncludes` on `sgFoodDb.ts` (now `@deprecated`).
+
+**Community promotion uses median ±10%, not the mean.** `evaluateCommunityCorroboration()` in `firestoreFoodDb.ts` promotes a community value only when ≥5 reports agree (≥80% within ±10% of the **median** — robust to outliers) and the spread isn't noisy; otherwise it recommends `caveat`/`range`/`hide` per the display-rules table below. Allergen/halal fields are never community-promoted.
 
 ---
 

@@ -55,7 +55,7 @@ interface NearbyPlace {
 }
 interface EnrichedPlace extends NearbyPlace {
   dbMatch: SGRestaurant | null;
-  tier: RestaurantTier;
+  tier: number;   // sort priority: 1 = DB match, 2 = generic
 }
 
 type MealType     = 'breakfast' | 'lunch' | 'snack' | 'dinner';
@@ -68,7 +68,7 @@ type DistFilter   = 0 | 0.5 | 1 | 2 | 5;
 
 interface PooledItem {
   item: SGMenuItem; restaurant: SGRestaurant;
-  distKm?: number; tier: RestaurantTier;
+  distKm?: number; tier: number;   // sort priority: 1 = DB match, 2 = generic
 }
 
 // Pending log — holds item/recipe while confirm sheet is open
@@ -878,10 +878,11 @@ export default function EatPage() {
 
   const searchTimer = useRef<ReturnType<typeof setTimeout>>();
   const userFlags: DietaryFlag[] = store.profile?.dietaryFlags ?? [];
+  const todayTotals = store.getTodayTotals();
   const remaining = {
-    protein:  (store.profile?.targetProtein  ?? 120) - store.todayProtein,
-    calories: (store.profile?.targetCalories ?? 2000) - store.todayCalories,
-    carbs:    (store.profile?.targetCarbs    ?? 200)  - store.todayCarbs,
+    protein:  (store.profile?.targetProtein  ?? 120) - todayTotals.protein,
+    calories: (store.profile?.targetCalories ?? 2000) - todayTotals.calories,
+    carbs:    (store.profile?.targetCarbs    ?? 200)  - todayTotals.carbs,
   };
   const hasLocation = locState === 'granted';
 
@@ -1101,6 +1102,7 @@ export default function EatPage() {
 
     if (type === 'item' && item && restaurant) {
       const entry = {
+        foodItemId: item.id,
         name: item.name, emoji: item.emoji, mealType,
         calories: item.calories, protein: item.protein, carbs: item.carbs, fat: item.fat,
         quantity: 1, restaurantId: restaurant.id,
@@ -1114,6 +1116,7 @@ export default function EatPage() {
     } else if (type === 'recipe' && recipe) {
       const m = recipe.macrosPerServing;
       const entry = {
+        foodItemId: recipe.id,
         name: recipe.name, emoji: recipe.emoji, mealType,
         calories: m?.calories ?? 0, protein: m?.protein ?? 0, carbs: m?.carbs ?? 0, fat: m?.fat ?? 0,
         fibre: m?.fibre, quantity: 1,
@@ -1481,7 +1484,7 @@ export default function EatPage() {
         {/* MEALS */}
         {viewType === 'meals' && (() => {
           const items = searchResults
-            ? searchResults.map(h => ({ item: h.item as SGMenuItem, restaurant: h.restaurant as SGRestaurant, distKm: (h as any).distKm as number|undefined, tier: 1 as RestaurantTier }))
+            ? searchResults.map(h => ({ item: h.item as SGMenuItem, restaurant: h.restaurant as SGRestaurant, distKm: (h as any).distKm as number|undefined, tier: 1 }))
             : filteredItems;
 
           if (items.length === 0) return (

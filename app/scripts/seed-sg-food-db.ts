@@ -25,10 +25,12 @@ import * as dotenv from 'dotenv';
 import { SG_RESTAURANTS, SG_MACRO_FOODS }   from '@/lib/sgFoodDb';
 import {
   deriveConfidenceTier,
+  deriveMacroSpecificity,
   mapDietFlags,
   buildSearchTokens,
   type FirestoreRestaurant,
   type FirestoreMeal,
+  type SetComponent,
 } from '@/lib/firestoreFoodDb';
 
 dotenv.config({ path: '.env.local' });
@@ -132,6 +134,20 @@ function buildMenuItemDoc(
   const tier     = deriveConfidenceTier(item.source, item.verified);
   const tokens   = buildSearchTokens(item.name, [r.name, ...(r.aliases ?? [])]);
 
+  // Macro specificity: an item whose macros are borrowed from SG_MACRO_FOODS
+  // (via macroDbRef) is generic data tagged onto this outlet, not measured here.
+  const macroSourceMealId = (item as any).macroDbRef ?? null;
+  const macroSpecificity  = deriveMacroSpecificity(r.id, macroSourceMealId);
+
+  // Set meal composition: convert client {itemId,qty} → Firestore {mealId,qty}
+  const rawComponents = (item as any).setComponents as
+    | { itemId: string; qty: number }[]
+    | undefined;
+  const setComponents: SetComponent[] | undefined = rawComponents?.map(c => ({
+    mealId: c.itemId,
+    qty:    c.qty ?? 1,
+  }));
+
   return {
     id:               item.id,
     mealType:         'restaurant_item',
@@ -176,6 +192,13 @@ function buildMenuItemDoc(
     category:         item.category,
     description:      (item as any).description ?? undefined,
     imageUrl:         null,
+
+    // Macro specificity + set composition
+    macroSpecificity,
+    macroSourceMealId,
+    isSetMeal:        (item as any).isSetMeal ?? undefined,
+    setComponents,
+    visibility:       (item as any).visibility ?? undefined,
 
     createdAt:        now,
     updatedAt:        now,
@@ -234,6 +257,9 @@ function buildMacroFoodDoc(f: (typeof SG_MACRO_FOODS)[number]): FirestoreMeal {
     category:         'Hawker / Local Dish',
     description:      undefined,
     imageUrl:         null,
+
+    // Generic dishes are not tied to any outlet
+    macroSpecificity: deriveMacroSpecificity(null, null),  // → 'generic'
 
     createdAt:        now,
     updatedAt:        now,

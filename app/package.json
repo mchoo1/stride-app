@@ -6,7 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "seed": "ts-node -r tsconfig-paths/register --project tsconfig.scripts.json scripts/seed-sg-food-db.ts",
+    "seed:dry": "ts-node -r tsconfig-paths/register --project tsconfig.scripts.json scripts/seed-sg-food-db.ts --dry-run",
+    "import:hawkers": "ts-node --project tsconfig.scripts.json scripts/import-hawker-centres.ts",
+    "migrate:sets": "ts-node -r tsconfig-paths/register --project tsconfig.scripts.json scripts/migrate-set-includes.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.79.0",
