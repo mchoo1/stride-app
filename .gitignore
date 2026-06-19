@@ -14,6 +14,12 @@ node_modules/
 .env*.local
 .env
 
+# OS / OneDrive junk
+desktop.ini
+Thumbs.db
+*-DESKTOP-*.*
+*conflicted copy*
+
 # debug
 npm-debug.log*
 
