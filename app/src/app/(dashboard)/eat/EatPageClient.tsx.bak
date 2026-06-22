@@ -31,7 +31,6 @@ import {
 } from '@/lib/sgFoodDb';
 import type { DietaryFlag } from '@/types';
 import MealFeedbackSheet from '@/components/MealFeedbackSheet';
-import AddMealSheet      from '@/components/AddMealSheet';
 
 /* ── Design tokens — now aligned to Stride design system ── */
 const BG     = 'var(--bg)';
@@ -465,11 +464,6 @@ function MenuItemCard({
         mealId={item.id}
         mealName={item.name}
         restaurantName={restaurant.name}
-        currentCalories={item.calories}
-        currentProtein={item.protein}
-        currentCarbs={item.carbs}
-        currentFat={item.fat}
-        currentPrice={item.price ?? undefined}
         isOpen={feedbackOpen}
         onClose={() => setFeedbackOpen(false)}
       />
@@ -852,7 +846,6 @@ export default function EatPage() {
   const [query,               setQuery]               = useState('');
   const [expandedId,          setExpandedId]          = useState<string | null>(null);
   const [showFilters,         setShowFilters]         = useState(false);
-  const [addMealOpen,         setAddMealOpen]         = useState(false);
   const [filterRestaurantId,  setFilterRestaurantId]  = useState<string | null>(null);
 
   // #9 log confirm
@@ -1501,12 +1494,6 @@ export default function EatPage() {
               {activeFilterCount > 0 && (
                 <button onClick={clearAllFilters} style={{ marginTop: 16, padding: '10px 20px', borderRadius: 20, background: GREEN, color: '#fff', fontWeight: 700, fontSize: 13, border: 'none', cursor: 'pointer' }}>Clear filters</button>
               )}
-              <button
-                onClick={() => setAddMealOpen(true)}
-                style={{ marginTop: 12, padding: '9px 20px', borderRadius: 12, background: 'none', border: `1px solid ${BORDER}`, color: FG3, fontWeight: 700, fontSize: 12, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}
-              >
-                <span>＋</span> Can\'t find it? Add a meal
-              </button>
               {/* #6 fallback suggestions when empty */}
               {pooledItems.length > 0 && (
                 <div style={{ marginTop: 24, textAlign: 'left', background: CARD, borderRadius: 18, border: `1px solid ${BORDER}`, padding: 16, boxShadow: SHADOW }}>
@@ -1588,23 +1575,6 @@ export default function EatPage() {
             </>
           );
         })()}
-
-        {/* Add meal CTA */}
-        {viewType === 'meals' && (
-          <div style={{ padding: '12px 0 8px', textAlign: 'center' }}>
-            <button
-              onClick={() => setAddMealOpen(true)}
-              style={{
-                background: 'none', border: `1px solid ${BORDER}`,
-                borderRadius: 12, padding: '9px 20px', cursor: 'pointer',
-                fontSize: 12, fontWeight: 700, color: FG3,
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-              }}
-            >
-              <span style={{ fontSize: 15 }}>＋</span> Can\'t find a meal? Add it
-            </button>
-          </div>
-        )}
 
         {/* RESTAURANTS */}
         {viewType === 'restaurants' && (() => {
@@ -1705,11 +1675,6 @@ export default function EatPage() {
           onCancel={() => setPendingLog(null)}
         />
       )}
-
-      <AddMealSheet
-        isOpen={addMealOpen}
-        onClose={() => setAddMealOpen(false)}
-      />
 
       <LogToast message={toastMsg} />
     </div>
