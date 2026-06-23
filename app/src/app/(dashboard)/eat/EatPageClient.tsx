@@ -609,7 +609,7 @@ function RecipeCard({ recipe, onLog, onUnlog, logged, isExpanded, onToggle }: {
   );
 }
 
-/* ── #8 Filter bottom sheet with swipe-dismiss + manual inputs ── */
+/* ── Filter bottom sheet — accordion style ── */
 function FilterSheet({
   open, onClose,
   diningOption, setDiningOption,
@@ -635,10 +635,19 @@ function FilterSheet({
   showDistance: boolean;
   onClear: () => void;
 }) {
-  // #8 swipe-to-dismiss
-  const sheetRef   = useRef<HTMLDivElement>(null);
+  const sheetRef    = useRef<HTMLDivElement>(null);
   const touchStartY = useRef(0);
   const [dragY, setDragY] = useState(0);
+  const [openSections, setOpenSections] = useState<Set<string>>(
+    new Set(['sort', 'data', 'price', 'dining', 'diet'])
+  );
+
+  const toggleSection = (id: string) =>
+    setOpenSections(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
@@ -659,15 +668,22 @@ function FilterSheet({
     setDietFlags(dietFlags.includes(flag) ? dietFlags.filter(f => f !== flag) : [...dietFlags, flag]);
 
   const chip = (active: boolean, accent = GREEN) => ({
-    padding: '8px 12px', borderRadius: 20, cursor: 'pointer', fontSize: 12, fontWeight: 600,
+    padding: '7px 12px', borderRadius: 20, cursor: 'pointer', fontSize: 12, fontWeight: 600,
     border: `1.5px solid ${active ? accent : BORDER}`,
-    background: active ? `${accent}14` : CARD, color: active ? accent : FG2,
-    outline: 'none', WebkitTapHighlightColor: 'transparent', transition: 'all .15s',
+    background: active ? `${accent}1a` : CARD, color: active ? accent : FG2,
+    outline: 'none', WebkitTapHighlightColor: 'transparent', transition: 'all .12s',
   } as React.CSSProperties);
 
-  const SL = ({ children }: { children: React.ReactNode }) => (
-    <div style={{ fontSize: 13, fontWeight: 700, color: FG2, marginBottom: 10, marginTop: 4 }}>{children}</div>
-  );
+  const secBtn = {
+    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    padding: '12px 20px', background: 'none', border: 'none', cursor: 'pointer',
+    WebkitTapHighlightColor: 'transparent',
+  } as React.CSSProperties;
+
+  const chevron = (id: string) => ({
+    width: 14, height: 14, flexShrink: 0, transition: 'transform .2s',
+    transform: openSections.has(id) ? 'rotate(0deg)' : 'rotate(-90deg)',
+  } as React.CSSProperties);
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.35)' }} onClick={onClose}>
@@ -680,152 +696,250 @@ function FilterSheet({
         style={{
           position: 'absolute', bottom: 0, left: 0, right: 0,
           background: CARD, borderRadius: '22px 22px 0 0',
-          padding: '8px 0 max(32px, env(safe-area-inset-bottom)) 0',
-          maxHeight: '88vh', overflowY: 'auto',
+          maxHeight: '88vh', display: 'flex', flexDirection: 'column',
           transform: `translateY(${dragY}px)`,
           transition: dragY === 0 ? 'transform .2s ease' : 'none',
         }}
       >
-        <div style={{ width: 36, height: 4, background: '#DDE0E8', borderRadius: 2, margin: '0 auto 20px' }} />
-        <div style={{ padding: '0 20px' }}>
+        {/* Drag handle */}
+        <div style={{ padding: '10px 0 0', flexShrink: 0 }}>
+          <div style={{ width: 36, height: 4, background: '#DDE0E8', borderRadius: 2, margin: '0 auto' }} />
+        </div>
 
-          {/* Sort */}
-          <SL>Sort by</SL>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
-            {([
-              { key: 'best_match'     as SortKey, label: 'Best Match'       },
-              { key: 'protein_dollar' as SortKey, label: 'Protein per $'    },
-              { key: 'price'          as SortKey, label: 'Price: Low→High'  },
-              { key: 'calories'       as SortKey, label: 'Lowest Calories'  },
-              ...(showDistance ? [{ key: 'distance' as SortKey, label: 'Nearest' }] : []),
-            ]).map(o => (
-              <button key={o.key} onClick={() => setSortKey(o.key)} style={chip(sortKey === o.key)}>{o.label}</button>
-            ))}
-          </div>
-          <div style={{ height: 1, background: BORDER, marginBottom: 20 }} />
+        {/* Header */}
+        <div style={{
+          flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '12px 20px', borderBottom: `1px solid ${BORDER}`,
+        }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: FG1 }}>Filter &amp; sort</span>
+          <button onClick={onClear} style={{
+            fontSize: 12, fontWeight: 700, color: GREEN, background: 'none', border: 'none',
+            cursor: 'pointer', padding: 0,
+          }}>Clear all</button>
+        </div>
 
-          {/* #10 Stride Approved */}
-          <div style={{ marginBottom: 20 }}>
-            <button onClick={() => setFilterStrideApproved(!filterStrideApproved)} style={{
-              ...chip(filterStrideApproved, GREEN),
-              display: 'flex', alignItems: 'center', gap: 6,
-            }}>
-              Stride Approved data only
+        {/* Scrollable sections */}
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+
+          {/* Sort by */}
+          <div style={{ borderBottom: `1px solid ${BORDER}` }}>
+            <button style={secBtn} onClick={() => toggleSection('sort')}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: FG1 }}>Sort by</span>
+              <svg style={chevron('sort')} viewBox="0 0 14 14" fill="none">
+                <path d="M3 5l4 4 4-4" stroke={FG3} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </button>
-            {filterStrideApproved && (
-              <div style={{ fontSize: 11, color: FG3, marginTop: 6, lineHeight: 1.5 }}>
-                Shows only items with macros from the brand's official SG nutrition data or HPB-verified sources.
+            {openSections.has('sort') && (
+              <div style={{ padding: '0 20px 14px', display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+                {([
+                  { key: 'best_match'     as SortKey, label: 'Best match'      },
+                  { key: 'protein_dollar' as SortKey, label: 'Protein per $'   },
+                  { key: 'price'          as SortKey, label: 'Price: low→high' },
+                  { key: 'calories'       as SortKey, label: 'Lowest calories' },
+                  ...(showDistance ? [{ key: 'distance' as SortKey, label: 'Nearest' }] : []),
+                ]).map(o => (
+                  <button key={o.key} onClick={() => setSortKey(o.key)} style={chip(sortKey === o.key)}>{o.label}</button>
+                ))}
               </div>
             )}
           </div>
-          <div style={{ height: 1, background: BORDER, marginBottom: 20 }} />
 
-          {/* Price */}
-          <SL>Price range</SL>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-            {(['all', '$', '$$', '$$$'] as PriceFilter[]).map(p => (
-              <button key={p} onClick={() => setPriceFilter(p)} style={chip(priceFilter === p, AMBER)}>
-                {p === 'all' ? 'Any' : p}
-              </button>
-            ))}
-          </div>
-          <div style={{ height: 1, background: BORDER, marginBottom: 20 }} />
-
-          {/* Dining option */}
-          <SL>Dining option</SL>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
-            {([
-              { val: 'all'      as DiningOption, label: 'All'         },
-              { val: 'dine_in'  as DiningOption, label: 'Dine-in'  },
-              { val: 'grab_go'  as DiningOption, label: 'Takeaway' },
-              { val: 'delivery' as DiningOption, label: 'Delivery' },
-            ]).map(o => (
-              <button key={o.val} onClick={() => setDiningOption(o.val)} style={chip(diningOption === o.val)}>{o.label}</button>
-            ))}
-          </div>
-          <div style={{ height: 1, background: BORDER, marginBottom: 20 }} />
-
-          {/* #1 Diet type with icons */}
-          <SL>Diet type</SL>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
-            {(['halal','vegetarian','vegan','gluten_free','no_pork','high_protein','keto','low_carb','pescatarian'] as DietaryFlag[]).map(f => (
-              <button key={f} onClick={() => toggleDiet(f)} style={chip(dietFlags.includes(f))}>
-                {DIET_LABEL[f]}
-              </button>
-            ))}
-          </div>
-          <div style={{ height: 1, background: BORDER, marginBottom: 20 }} />
-
-          {/* Macros with #8 manual inputs */}
-          <SL>Macros</SL>
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <span style={{ fontSize: 12, color: FG2 }}>Min Protein</span>
-              {/* #8 manual input */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <input
-                  type="number" min={0} max={100} value={filterMinProtein || ''}
-                  onChange={e => setFilterMinProtein(Math.min(100, Math.max(0, Number(e.target.value) || 0)))}
-                  placeholder="0"
-                  style={{ width: 52, padding: '4px 8px', borderRadius: 8, border: `1px solid ${BORDER}`, fontSize: 12, fontWeight: 700, color: filterMinProtein > 0 ? BLUE : FG2, textAlign: 'center', outline: 'none' }}
-                />
-                <span style={{ fontSize: 11, color: FG3 }}>g</span>
+          {/* Data quality */}
+          <div style={{ borderBottom: `1px solid ${BORDER}` }}>
+            <button style={secBtn} onClick={() => toggleSection('data')}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: FG1 }}>Data quality</span>
+              <svg style={chevron('data')} viewBox="0 0 14 14" fill="none">
+                <path d="M3 5l4 4 4-4" stroke={FG3} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            {openSections.has('data') && (
+              <div style={{ padding: '0 20px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: FG1 }}>Stride Approved only</div>
+                  <div style={{ fontSize: 11, color: FG3, marginTop: 2 }}>Verified nutrition data</div>
+                </div>
+                <div
+                  onClick={() => setFilterStrideApproved(!filterStrideApproved)}
+                  style={{
+                    width: 42, height: 24, borderRadius: 12, cursor: 'pointer', flexShrink: 0,
+                    background: filterStrideApproved ? GREEN : '#DDE0E8',
+                    position: 'relative', transition: 'background .2s',
+                  }}
+                >
+                  <div style={{
+                    position: 'absolute', top: 3, width: 18, height: 18,
+                    borderRadius: '50%', background: '#fff',
+                    boxShadow: '0 1px 3px rgba(0,0,0,.15)',
+                    left: filterStrideApproved ? 21 : 3, transition: 'left .2s',
+                  }} />
+                </div>
               </div>
-            </div>
-            <input type="range" min={0} max={100} step={5} value={filterMinProtein}
-              onChange={e => setFilterMinProtein(Number(e.target.value))}
-              style={{ width: '100%', accentColor: BLUE, cursor: 'pointer' }}
-            />
-          </div>
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <span style={{ fontSize: 12, color: FG2 }}>Max Calories</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <input
-                  type="number" min={0} max={2000} value={filterMaxCalories || ''}
-                  onChange={e => setFilterMaxCalories(Math.min(2000, Math.max(0, Number(e.target.value) || 0)))}
-                  placeholder="Any"
-                  style={{ width: 64, padding: '4px 8px', borderRadius: 8, border: `1px solid ${BORDER}`, fontSize: 12, fontWeight: 700, color: filterMaxCalories > 0 ? RED : FG2, textAlign: 'center', outline: 'none' }}
-                />
-                <span style={{ fontSize: 11, color: FG3 }}>kcal</span>
-              </div>
-            </div>
-            <input type="range" min={0} max={1200} step={50} value={filterMaxCalories}
-              onChange={e => setFilterMaxCalories(Number(e.target.value))}
-              style={{ width: '100%', accentColor: RED, cursor: 'pointer' }}
-            />
+            )}
           </div>
 
-          {showDistance && (
-            <>
-              <div style={{ height: 1, background: BORDER, marginBottom: 20 }} />
-              <SL>Max distance</SL>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 20, alignItems: 'center' }}>
-                {([0, 0.5, 1, 2, 5] as DistFilter[]).map(d => (
-                  <button key={d} onClick={() => setDistFilter(d)} style={chip(distFilter === d)}>
-                    {d === 0 ? 'Any' : d < 1 ? `${d*1000}m` : `${d}km`}
+          {/* Price range */}
+          <div style={{ borderBottom: `1px solid ${BORDER}` }}>
+            <button style={secBtn} onClick={() => toggleSection('price')}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: FG1 }}>Price range</span>
+              <svg style={chevron('price')} viewBox="0 0 14 14" fill="none">
+                <path d="M3 5l4 4 4-4" stroke={FG3} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            {openSections.has('price') && (
+              <div style={{ padding: '0 20px 14px', display: 'flex', gap: 7 }}>
+                {(['all', '$', '$$', '$$$'] as PriceFilter[]).map(p => (
+                  <button key={p} onClick={() => setPriceFilter(p)} style={chip(priceFilter === p)}>
+                    {p === 'all' ? 'Any' : p}
                   </button>
                 ))}
               </div>
-            </>
+            )}
+          </div>
+
+          {/* Dining option */}
+          <div style={{ borderBottom: `1px solid ${BORDER}` }}>
+            <button style={secBtn} onClick={() => toggleSection('dining')}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: FG1 }}>Dining option</span>
+              <svg style={chevron('dining')} viewBox="0 0 14 14" fill="none">
+                <path d="M3 5l4 4 4-4" stroke={FG3} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            {openSections.has('dining') && (
+              <div style={{ padding: '0 20px 14px', display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+                {([
+                  { val: 'all'      as DiningOption, label: 'All'      },
+                  { val: 'dine_in'  as DiningOption, label: 'Dine-in'  },
+                  { val: 'grab_go'  as DiningOption, label: 'Takeaway' },
+                  { val: 'delivery' as DiningOption, label: 'Delivery' },
+                ]).map(o => (
+                  <button key={o.val} onClick={() => setDiningOption(o.val)} style={chip(diningOption === o.val)}>{o.label}</button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Diet type — badge shows count of active flags */}
+          <div style={{ borderBottom: `1px solid ${BORDER}` }}>
+            <button style={secBtn} onClick={() => toggleSection('diet')}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: FG1 }}>Diet type</span>
+                {dietFlags.length > 0 && (
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, color: '#fff', background: GREEN,
+                    borderRadius: 999, padding: '1px 6px', lineHeight: 1.7,
+                  }}>{dietFlags.length}</span>
+                )}
+              </span>
+              <svg style={chevron('diet')} viewBox="0 0 14 14" fill="none">
+                <path d="M3 5l4 4 4-4" stroke={FG3} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            {openSections.has('diet') && (
+              <div style={{ padding: '0 20px 14px', display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+                {(['halal','vegetarian','vegan','gluten_free','no_pork','high_protein','keto','low_carb','pescatarian'] as DietaryFlag[]).map(f => (
+                  <button key={f} onClick={() => toggleDiet(f)} style={chip(dietFlags.includes(f))}>
+                    {DIET_LABEL[f]}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Macros — number inputs only, no sliders */}
+          <div style={{ borderBottom: `1px solid ${BORDER}` }}>
+            <button style={secBtn} onClick={() => toggleSection('macros')}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: FG1 }}>Macros</span>
+                {(filterMinProtein > 0 || filterMaxCalories > 0) && (
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, color: GREEN, background: `${GREEN}1a`,
+                    borderRadius: 999, padding: '1px 7px', lineHeight: 1.7,
+                  }}>set</span>
+                )}
+              </span>
+              <svg style={chevron('macros')} viewBox="0 0 14 14" fill="none">
+                <path d="M3 5l4 4 4-4" stroke={FG3} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            {openSections.has('macros') && (
+              <div style={{ padding: '0 20px 14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 12, color: FG2, width: 96 }}>Min protein</span>
+                  <input
+                    type="number" min={0} max={100} value={filterMinProtein || ''} placeholder="0"
+                    onChange={e => setFilterMinProtein(Math.min(100, Math.max(0, Number(e.target.value) || 0)))}
+                    style={{
+                      width: 68, padding: '7px 10px', borderRadius: 10,
+                      border: `1.5px solid ${filterMinProtein > 0 ? BLUE : BORDER}`,
+                      fontSize: 13, fontWeight: 700,
+                      color: filterMinProtein > 0 ? BLUE : FG2,
+                      textAlign: 'center', outline: 'none', background: CARD,
+                    }}
+                  />
+                  <span style={{ fontSize: 11, color: FG3 }}>g</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 12, color: FG2, width: 96 }}>Max calories</span>
+                  <input
+                    type="number" min={0} max={2000} value={filterMaxCalories || ''} placeholder="Any"
+                    onChange={e => setFilterMaxCalories(Math.min(2000, Math.max(0, Number(e.target.value) || 0)))}
+                    style={{
+                      width: 68, padding: '7px 10px', borderRadius: 10,
+                      border: `1.5px solid ${filterMaxCalories > 0 ? RED : BORDER}`,
+                      fontSize: 13, fontWeight: 700,
+                      color: filterMaxCalories > 0 ? RED : FG2,
+                      textAlign: 'center', outline: 'none', background: CARD,
+                    }}
+                  />
+                  <span style={{ fontSize: 11, color: FG3 }}>kcal</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Max distance — only shown when GPS is available */}
+          {showDistance && (
+            <div>
+              <button style={secBtn} onClick={() => toggleSection('dist')}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: FG1 }}>Max distance</span>
+                <svg style={chevron('dist')} viewBox="0 0 14 14" fill="none">
+                  <path d="M3 5l4 4 4-4" stroke={FG3} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+              {openSections.has('dist') && (
+                <div style={{ padding: '0 20px 14px', display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+                  {([0, 0.5, 1, 2, 5] as DistFilter[]).map(d => (
+                    <button key={d} onClick={() => setDistFilter(d)} style={chip(distFilter === d)}>
+                      {d === 0 ? 'Any' : d < 1 ? `${d*1000}m` : `${d}km`}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
-          {/* Action buttons */}
-          <div style={{ display: 'flex', gap: 10, paddingBottom: 8 }}>
-            <button onClick={onClear} style={{
-              flex: 1, padding: '13px', borderRadius: 14, border: `1.5px solid ${BORDER}`,
-              background: CARD, color: FG2, fontSize: 14, fontWeight: 700, cursor: 'pointer',
-            }}>Clear all</button>
-            <button onClick={onClose} style={{
-              flex: 2, padding: '13px', borderRadius: 14, border: 'none',
-              background: GREEN, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer',
-            }}>Show results</button>
-          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{
+          flexShrink: 0, display: 'flex', gap: 10,
+          padding: '12px 20px', paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
+          borderTop: `1px solid ${BORDER}`,
+        }}>
+          <button onClick={onClear} style={{
+            flex: 1, padding: '13px', borderRadius: 14, border: `1.5px solid ${BORDER}`,
+            background: CARD, color: FG2, fontSize: 14, fontWeight: 700, cursor: 'pointer',
+          }}>Clear all</button>
+          <button onClick={onClose} style={{
+            flex: 2, padding: '13px', borderRadius: 14, border: 'none',
+            background: GREEN, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer',
+          }}>Show results</button>
         </div>
       </div>
     </div>
   );
 }
+
 
 /* ══════════════════════════════ Main page ════════════════════════════════ */
 export default function EatPage() {
