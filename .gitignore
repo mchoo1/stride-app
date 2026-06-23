@@ -20,6 +20,11 @@ Thumbs.db
 *-DESKTOP-*.*
 *conflicted copy*
 
+# Cloud Functions build output / logs
+app/functions/lib/
+firebase-debug.log
+firestore-debug.log
+
 # debug
 npm-debug.log*
 
