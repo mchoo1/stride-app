@@ -207,13 +207,15 @@ export default function FoodLogPage() {
 
   const addManual = () => {
     if (!mName.trim() || !mCal) { showToast('⚠️ Name and calories are required'); return; }
+    const name = mName.trim();
     store.addFoodEntry({
-      name: mName.trim(), calories: Number(mCal),
+      name, calories: Number(mCal),
       protein: Number(mPro) || 0, carbs: Number(mCarb) || 0, fat: Number(mFat) || 0,
       emoji: '🍽️', foodItemId: '', quantity: Number(mQty) || 100, mealType,
     });
-    showToast(`✅ ${mName.trim()} added!`);
     closeModal();
+    // Show toast after modal closes so it's clearly visible on the main page
+    setTimeout(() => showToast(`✅ ${name} added!`), 50);
   };
 
   const calPct = Math.min((totals.calories / Math.max(profile.targetCalories, 1)) * 100, 100);

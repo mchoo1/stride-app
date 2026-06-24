@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useStrideStore } from '@/lib/store';
 import { calculateBMR, calculateTargetCalories, calculateMacros } from '@/lib/utils';
 import { useAuth } from '@/lib/auth-context';
@@ -74,6 +75,7 @@ function WeightChart({ entries }: { entries: { date: string; weight: number }[] 
 
 export default function MePage() {
   const { user, loading } = useAuth();
+  const router  = useRouter();
   const store   = useStrideStore();
   const profile = store.profile;
   const trend   = store.getWeightTrend(30);
@@ -90,6 +92,7 @@ export default function MePage() {
   const [form,        setForm       ] = useState({ ...profile });
   const [dietFlags,   setDietFlags  ] = useState<DietaryFlag[]>(profile.dietaryFlags ?? []);
   const [dietSaved,   setDietSaved  ] = useState(false);
+  const [signingOut,  setSigningOut ] = useState(false);
 
   // Sync profile from Firestore on mount
   useEffect(() => {
@@ -694,16 +697,19 @@ export default function MePage() {
               <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 12 }}>Account</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <button onClick={async () => {
-                  try { await signOut(auth!); } catch { /* ignore */ }
-                  window.location.href = '/login';
-                }} style={{
+                  setSigningOut(true);
+                  try { if (auth) await signOut(auth); } catch { /* ignore */ }
+                  router.push('/login');
+                }} disabled={signingOut} style={{
                   width: '100%', borderRadius: 14, padding: '12px 0',
                   fontSize: 14, fontWeight: 700,
-                  background: 'var(--green-tint)', color: 'var(--green-deep)',
-                  border: '1px solid var(--green-tint-2)', cursor: 'pointer',
+                  background: signingOut ? 'var(--surface-3)' : 'var(--green-tint)',
+                  color: signingOut ? 'var(--muted)' : 'var(--green-deep)',
+                  border: '1px solid var(--green-tint-2)', cursor: signingOut ? 'default' : 'pointer',
                   fontFamily: '"Hanken Grotesk", system-ui, sans-serif',
+                  transition: 'all .15s',
                 }}>
-                  🚪 Sign Out
+                  {signingOut ? 'Signing out…' : '🚪 Sign Out'}
                 </button>
                 <button onClick={async () => {
                   if (confirm('Reset all app data and start over? This will clear all logs.')) {

@@ -247,13 +247,22 @@ export default function ActivityLogPage() {
                 <div style={{ fontSize: 11, color: FG3, marginBottom: 12 }}>
                   * Estimated for {profile.currentWeight}kg body weight.
                 </div>
-                <button onClick={logAiResult} style={{
-                  width: '100%', padding: '12px 0', borderRadius: 12, border: 'none',
-                  background: GREEN, color: '#fff', fontSize: 14, fontWeight: 700,
-                  cursor: 'pointer', boxShadow: '0 4px 14px rgba(30,127,92,0.25)',
-                }}>
-                  ✅ Log This Activity
-                </button>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={() => { setAiResult(null); setAiDesc(''); }} style={{
+                    flex: 1, padding: '12px 0', borderRadius: 12, border: `1px solid ${BORDER}`,
+                    background: CARD, color: FG2, fontSize: 14, fontWeight: 600,
+                    cursor: 'pointer',
+                  }}>
+                    ✕ Dismiss
+                  </button>
+                  <button onClick={logAiResult} style={{
+                    flex: 2, padding: '12px 0', borderRadius: 12, border: 'none',
+                    background: GREEN, color: '#fff', fontSize: 14, fontWeight: 700,
+                    cursor: 'pointer', boxShadow: '0 4px 14px rgba(30,127,92,0.25)',
+                  }}>
+                    ✅ Log This Activity
+                  </button>
+                </div>
               </div>
             )}
           </div>
