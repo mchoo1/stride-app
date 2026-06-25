@@ -237,6 +237,13 @@ export default function RegisterPage() {
               Already have an account?{' '}
               <Link href="/login" style={{ color: '#1E7F5C', fontWeight: 600 }}>Sign in</Link>
             </p>
+
+            <p style={{ textAlign: 'center', color: '#C8D0DC', fontSize: 11, marginTop: 12, lineHeight: 1.6 }}>
+              By continuing, you agree to our{' '}
+              <Link href="/terms" style={{ color: '#8B95A7', textDecoration: 'underline' }}>Terms of Service</Link>
+              {' '}and{' '}
+              <Link href="/privacy" style={{ color: '#8B95A7', textDecoration: 'underline' }}>Privacy Policy</Link>
+            </p>
           </>
         )}
 
