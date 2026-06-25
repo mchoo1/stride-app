@@ -149,6 +149,9 @@ export default function DashboardClient() {
   const frac      = targetCal > 0 ? Math.min(1, totals.calories / (targetCal + burned)) : 0;
   const streak    = store.streak ?? 0;
   const onTrack   = totals.calories <= (targetCal + burned);
+  const waterMl   = store.getTodayWater();
+  const targetWaterMl = profile.targetWater ?? 2500;
+  const waterFrac = Math.min(1, waterMl / targetWaterMl);
 
   const bestMeals = getBestValueMeals();
   const popular   = getPopularMeals();
@@ -231,6 +234,65 @@ export default function DashboardClient() {
           </Link>
         )}
       </div>
+
+      {/* ── Water tracker ── */}
+      {user && (
+        <div style={{ padding: '0 20px', marginBottom: 22 }}>
+          <div style={{
+            background: 'var(--surface)', borderRadius: 'var(--r-card)',
+            boxShadow: 'var(--shadow-md)', padding: '14px 16px',
+          }}>
+            {/* Header row */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                background: '#e8f4fd', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2196f3" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+                </svg>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                  <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.02em' }}>
+                    {waterMl}
+                  </span>
+                  <span style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 500 }}>/ {targetWaterMl} ml</span>
+                </div>
+                <div style={{ fontSize: 12, color: waterFrac >= 1 ? '#2196f3' : 'var(--muted)', fontWeight: 500, marginTop: 1 }}>
+                  {waterFrac >= 1 ? '💧 Goal reached!' : `${targetWaterMl - waterMl} ml to go`}
+                </div>
+              </div>
+            </div>
+
+            {/* Progress bar */}
+            <div style={{ height: 6, borderRadius: 999, background: '#e8f4fd', overflow: 'hidden', marginBottom: 12 }}>
+              <div style={{
+                width: `${waterFrac * 100}%`, height: '100%', borderRadius: 999,
+                background: 'linear-gradient(90deg, #64b5f6, #2196f3)',
+                transition: 'width 0.6s cubic-bezier(.22,.61,.36,1)',
+              }} />
+            </div>
+
+            {/* Quick-add buttons */}
+            <div style={{ display: 'flex', gap: 8 }}>
+              {[250, 500, 750].map(ml => (
+                <button
+                  key={ml}
+                  onClick={() => store.addWater(ml)}
+                  style={{
+                    flex: 1, height: 36, borderRadius: 10, border: '1.5px solid #bbdefb',
+                    background: '#e8f4fd', color: '#1565c0', fontSize: 13, fontWeight: 700,
+                    cursor: 'pointer', letterSpacing: '-0.01em',
+                  }}
+                >
+                  +{ml}ml
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Search hero ── */}
       <div style={{ padding: '0 20px', marginBottom: 14 }}>
