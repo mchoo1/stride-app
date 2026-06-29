@@ -3,6 +3,7 @@
 // real-time data; attempting a static build causes a Turbopack TDZ crash.
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import loadable from 'next/dynamic';
 import { useStrideStore } from '@/lib/store';
 import { track, Events } from '@/lib/analytics';
@@ -90,7 +91,65 @@ const DIET_LABEL: Record<DietaryFlag, string> = {
   no_pork:     'No Pork',
 };
 
-// ── Avatar — ONE consistent style, no rainbow ────────────────────────────
+// ── Restaurant domain map for Clearbit logo CDN ──────────────────────────
+const RESTAURANT_DOMAINS: Record<string, string> = {
+  mcd:           'mcdonalds.com.sg',
+  kfc:           'kfc.com.sg',
+  bk:            'burgerking.com.sg',
+  subway:        'subway.com',
+  jollibee:      'jollibee.com.sg',
+  starbucks:     'starbucks.com.sg',
+  old_chang_kee: 'oldchangkee.com',
+  stuffd:        'stuffd.com.sg',
+  grain:         'grain.com.sg',
+  popeyes:       'popeyes.com.sg',
+  wingstop:      'wingstop.com.sg',
+  nandos:        'nandos.com.sg',
+  shake_shack:   'shakeshack.com',
+  daily_cut:     'thedailycut.com.sg',
+  salad_stop:    'saladstop.com',
+  saladbox:      'saladbox.sg',
+  toast_box:     'toastbox.com.sg',
+  ya_kun:        'yakun.com',
+  super_snacks:  'supersnacks.sg',
+  bengawan_solo: 'bengawansolo.com.sg',
+};
+
+// ── RestaurantLogo — Clearbit CDN + initial fallback ─────────────────────
+function RestaurantLogo({
+  restaurantId, name, size = 46, radius = 14,
+}: { restaurantId?: string; name: string; size?: number; radius?: number }) {
+  const [failed, setFailed] = useState(false);
+  const domain = restaurantId ? RESTAURANT_DOMAINS[restaurantId] : undefined;
+
+  if (!failed && domain) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={`https://logo.clearbit.com/${domain}`}
+        alt={name}
+        onError={() => setFailed(true)}
+        style={{ width: size, height: size, borderRadius: radius, flexShrink: 0, objectFit: 'contain', background: 'var(--surface-2)' }}
+      />
+    );
+  }
+  // Fallback: initial letter
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: radius, flexShrink: 0,
+      background: 'var(--surface-2)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: Math.round(size * 0.42), fontWeight: 700,
+      fontFamily: '"Space Grotesk", system-ui, sans-serif',
+      color: 'var(--green-deep)',
+      userSelect: 'none',
+    }}>
+      {name.trim().charAt(0).toUpperCase()}
+    </div>
+  );
+}
+
+// Keep Initial for non-restaurant usage
 function Initial({ name, size = 46, radius = 14 }: { name: string; size?: number; radius?: number }) {
   return (
     <div style={{
@@ -349,15 +408,19 @@ function MenuItemCard({
 }) {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const ppd     = item.price ? proteinPerDollar(item.protein, item.price) : 0;
-  const dietFit = getDietFit(item.compatibleWith ?? [], userFlags);
-  const grabUrl  = `https://food.grab.com/sg/en/search?query=${encodeURIComponent(restaurant.name)}`;
+  // Compute min price across restaurant ala carte menu (for "from $X" display)
+  const minPrice = useMemo(() => {
+    const prices = restaurant.menu.filter(i => !i.isSetMeal && i.price != null).map(i => i.price!);
+    return prices.length ? Math.min(...prices) : null;
+  }, [restaurant]);
+  const grabUrl  = `https://food.grab.com/sg/en/search?query=${encodeURIComponent(restaurant.name + ' Singapore')}`;
   const pandaUrl = `https://www.foodpanda.sg/search?q=${encodeURIComponent(restaurant.name)}`;
   const mapsUrl  = `https://www.google.com/maps/search/${encodeURIComponent(restaurant.name + ' Singapore')}`;
 
   return (
     <div style={{ background: CARD, borderRadius: 16, border: `1px solid ${BORDER}`, marginBottom: 10, boxShadow: SHADOW, overflow: 'hidden' }}>
       <div onClick={onToggle} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', cursor: 'pointer' }}>
-        <Initial name={item.name} size={46} radius={12} />
+        <RestaurantLogo restaurantId={restaurant.id} name={restaurant.name} size={46} radius={12} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: FG1, display: 'flex', alignItems: 'center', gap: 5 }}>
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
@@ -374,19 +437,26 @@ function MenuItemCard({
             {restaurant.name}
             {onRestaurantFilter && <span style={{ fontSize: 10, opacity: 0.6 }}>›</span>}
           </button>
+          {/* Collapsed macro row — show all macros + price */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-            {item.price != null && <span style={{ fontSize: 13, fontWeight: 700, color: FG1 }}>${item.price.toFixed(2)}</span>}
-            <span style={{ fontSize: 11, color: FG3 }}>{item.calories} cal</span>
-            <span style={{ fontSize: 11, color: FG3 }}>
-              {distKm !== undefined
-                ? `📍 ${distKm < 1 ? `${(distKm * 1000).toFixed(0)}m away` : `${distKm.toFixed(1)}km away`}`
-                : '📍 Singapore'}
-            </span>
+            {item.price != null
+              ? <span style={{ fontSize: 13, fontWeight: 700, color: FG1 }}>${item.price.toFixed(2)}</span>
+              : minPrice != null && <span style={{ fontSize: 11, color: FG3 }}>from ${minPrice.toFixed(2)}</span>
+            }
+            <span style={{ fontSize: 11, color: RED, fontWeight: 600 }}>{item.calories} cal</span>
+            <span style={{ fontSize: 11, color: BLUE, fontWeight: 600 }}>P {item.protein}g</span>
+            <span style={{ fontSize: 11, color: AMBER, fontWeight: 600 }}>C {item.carbs}g</span>
+            <span style={{ fontSize: 11, color: GREEN, fontWeight: 600 }}>F {item.fat}g</span>
             {item.price && ppd > 0 && <PpdBadge protein={item.protein} price={item.price} />}
           </div>
+          {distKm !== undefined && (
+            <div style={{ fontSize: 10, color: FG3, marginTop: 2 }}>
+              📍 {distKm < 1 ? `${(distKm * 1000).toFixed(0)}m away` : `${distKm.toFixed(1)}km away`}
+            </div>
+          )}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-          {/* #9 — + logs (open confirm), ✓ un-logs */}
+          {/* + navigates to log/food with pre-filled data */}
           <button
             onClick={e => { e.stopPropagation(); logged ? onUnlog() : onLog(); }}
             title={logged ? 'Tap to remove from log' : 'Log this meal'}
@@ -412,7 +482,7 @@ function MenuItemCard({
               { label: 'Protein', val: `${item.protein}g`, color: BLUE  },
               { label: 'Carbs',   val: `${item.carbs}g`,   color: AMBER },
               { label: 'Fat',     val: `${item.fat}g`,     color: GREEN },
-              { label: 'Calories',val: `${item.calories}`, color: FG2   },
+              { label: 'Calories',val: `${item.calories}`, color: RED   },
             ].map(m => (
               <div key={m.label} style={{ textAlign: 'center', background: BG, borderRadius: 10, padding: '8px 4px' }}>
                 <div style={{ fontSize: 13, fontWeight: 800, color: m.color }}>{m.val}</div>
@@ -422,11 +492,8 @@ function MenuItemCard({
           </div>
           {/* Badges row: confidence + diet + set meal */}
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
-            {/* #2 confidence */}
             <ConfidenceBadge source={item.source} verified={item.verified} confidence={item.confidence} />
-            {/* #7 set meal */}
             {item.isSetMeal && <SetMealChip includes={item.setIncludes} />}
-            {/* diet fit */}
             <DietBadge fit={getDietFit(item.compatibleWith ?? [], userFlags)} />
           </div>
           {/* CTAs */}
@@ -484,7 +551,7 @@ function RestaurantBrowseCard({ restaurant, distKm, onSelect }: {
   const serviceIcons: Record<ServiceType, string> = { dine_in: '🍽️', grab_go: '🥡', delivery: '🛵' };
   return (
     <div onClick={onSelect} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 0', borderBottom: `1px solid ${BORDER}`, cursor: 'pointer' }}>
-      <Initial name={restaurant.name} size={52} radius={14} />
+      <RestaurantLogo restaurantId={restaurant.id} name={restaurant.name} size={52} radius={14} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: FG1, marginBottom: 2 }}>{restaurant.name}</div>
         <div style={{ fontSize: 12, color: FG2, marginBottom: 5 }}>
@@ -620,6 +687,7 @@ function FilterSheet({
   distFilter, setDistFilter,
   sortKey, setSortKey,
   filterStrideApproved, setFilterStrideApproved,
+  filterIncludeSetMeals, setFilterIncludeSetMeals,
   showDistance,
   onClear,
 }: {
@@ -632,6 +700,7 @@ function FilterSheet({
   distFilter: DistFilter; setDistFilter: (v: DistFilter) => void;
   sortKey: SortKey; setSortKey: (v: SortKey) => void;
   filterStrideApproved: boolean; setFilterStrideApproved: (v: boolean) => void;
+  filterIncludeSetMeals: boolean; setFilterIncludeSetMeals: (v: boolean) => void;
   showDistance: boolean;
   onClear: () => void;
 }) {
@@ -753,25 +822,50 @@ function FilterSheet({
               </svg>
             </button>
             {openSections.has('data') && (
-              <div style={{ padding: '0 20px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: FG1 }}>Stride Approved only</div>
-                  <div style={{ fontSize: 11, color: FG3, marginTop: 2 }}>Verified nutrition data</div>
+              <div style={{ padding: '0 20px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {/* Stride Approved toggle */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: FG1 }}>Stride Approved only</div>
+                    <div style={{ fontSize: 11, color: FG3, marginTop: 2 }}>Verified nutrition data</div>
+                  </div>
+                  <div
+                    onClick={() => setFilterStrideApproved(!filterStrideApproved)}
+                    style={{
+                      width: 42, height: 24, borderRadius: 12, cursor: 'pointer', flexShrink: 0,
+                      background: filterStrideApproved ? GREEN : '#DDE0E8',
+                      position: 'relative', transition: 'background .2s',
+                    }}
+                  >
+                    <div style={{
+                      position: 'absolute', top: 3, width: 18, height: 18,
+                      borderRadius: '50%', background: '#fff',
+                      boxShadow: '0 1px 3px rgba(0,0,0,.15)',
+                      left: filterStrideApproved ? 21 : 3, transition: 'left .2s',
+                    }} />
+                  </div>
                 </div>
-                <div
-                  onClick={() => setFilterStrideApproved(!filterStrideApproved)}
-                  style={{
-                    width: 42, height: 24, borderRadius: 12, cursor: 'pointer', flexShrink: 0,
-                    background: filterStrideApproved ? GREEN : '#DDE0E8',
-                    position: 'relative', transition: 'background .2s',
-                  }}
-                >
-                  <div style={{
-                    position: 'absolute', top: 3, width: 18, height: 18,
-                    borderRadius: '50%', background: '#fff',
-                    boxShadow: '0 1px 3px rgba(0,0,0,.15)',
-                    left: filterStrideApproved ? 21 : 3, transition: 'left .2s',
-                  }} />
+                {/* Include set meals toggle */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: FG1 }}>Include set meals</div>
+                    <div style={{ fontSize: 11, color: FG3, marginTop: 2 }}>Show combo / bundled meals</div>
+                  </div>
+                  <div
+                    onClick={() => setFilterIncludeSetMeals(!filterIncludeSetMeals)}
+                    style={{
+                      width: 42, height: 24, borderRadius: 12, cursor: 'pointer', flexShrink: 0,
+                      background: filterIncludeSetMeals ? GREEN : '#DDE0E8',
+                      position: 'relative', transition: 'background .2s',
+                    }}
+                  >
+                    <div style={{
+                      position: 'absolute', top: 3, width: 18, height: 18,
+                      borderRadius: '50%', background: '#fff',
+                      boxShadow: '0 1px 3px rgba(0,0,0,.15)',
+                      left: filterIncludeSetMeals ? 21 : 3, transition: 'left .2s',
+                    }} />
+                  </div>
                 </div>
               </div>
             )}
@@ -941,9 +1035,26 @@ function FilterSheet({
 }
 
 
+/* ── Build log URL for pre-filling the food log page ── */
+function buildLogUrl(item: SGMenuItem, restaurant: SGRestaurant): string {
+  const params = new URLSearchParams({
+    name:   item.name,
+    cal:    String(item.calories),
+    p:      String(item.protein),
+    c:      String(item.carbs),
+    f:      String(item.fat),
+    emoji:  item.emoji,
+    rid:    restaurant.id,
+    rname:  restaurant.name,
+  });
+  if (item.price != null) params.set('price', String(item.price));
+  return `/log/food?${params.toString()}`;
+}
+
 /* ══════════════════════════════ Main page ════════════════════════════════ */
 export default function EatPage() {
   const store   = useStrideStore();
+  const router  = useRouter();
   const mealCtx = getMealContext();
 
   // ── URL params ─────────────────────────────────────────────────────────
@@ -956,8 +1067,13 @@ export default function EatPage() {
     const r = p.get('r');   if (r)   { setFilterRestaurantId(r); setViewType('meals'); }
     const sort = p.get('sort');
     if (sort === 'ppd' || sort === 'protein') setSortKey('protein_dollar');
+    else if (sort === 'price')    setSortKey('price');
+    else if (sort === 'calories') setSortKey('calories');
+    else if (sort === 'distance') setSortKey('distance');
     const diet = p.get('diet');
     if (diet) setFilterDietFlags([diet as DietaryFlag]);
+    // Auto-open filter sheet when open_filter=1 is set (from Dashboard chips)
+    if (p.get('open_filter') === '1') setShowFilters(true);
   }, []);
 
   // ── Core state ──────────────────────────────────────────────────────────
@@ -984,6 +1100,7 @@ export default function EatPage() {
   const [filterMaxCalories,   setFilterMaxCalories]   = useState(0);
   const [distFilter,          setDistFilter]          = useState<DistFilter>(0);
   const [filterStrideApproved,setFilterStrideApproved]= useState(false); // #10
+  const [filterIncludeSetMeals,setFilterIncludeSetMeals]= useState(false); // ala carte only by default
 
   // ── Location state ──────────────────────────────────────────────────────
   const [locState,            setLocState]            = useState<'idle'|'loading'|'granted'|'denied'|'no_key'>('idle');
@@ -1151,6 +1268,8 @@ export default function EatPage() {
   // ── Filtered + sorted items ─────────────────────────────────────────────
   const filteredItems = useMemo((): PooledItem[] => {
     let f = pooledItems;
+    // By default show only ala carte items; set meals hidden unless user enables them
+    if (!filterIncludeSetMeals) f = f.filter(p => !p.item.isSetMeal);
     if (filterRestaurantId) f = f.filter(p => p.restaurant.id === filterRestaurantId);
     if (diningOption !== 'all') {
       const svcMap: Record<DiningOption, ServiceType> = { dine_in:'dine_in', grab_go:'grab_go', delivery:'delivery', all:'dine_in' };
@@ -1180,12 +1299,30 @@ export default function EatPage() {
       return proteinPerDollar(b.item.protein, b.item.price ?? 0) - proteinPerDollar(a.item.protein, a.item.price ?? 0);
     });
     return f;
-  }, [pooledItems, filterRestaurantId, diningOption, priceFilter, filterDietFlags, filterMinProtein, filterMaxCalories, distFilter, sortKey, filterStrideApproved]);
+  }, [pooledItems, filterRestaurantId, diningOption, priceFilter, filterDietFlags, filterMinProtein, filterMaxCalories, distFilter, sortKey, filterStrideApproved, filterIncludeSetMeals]);
 
-  // ── Search results ──────────────────────────────────────────────────────
+  // ── Search results (item names + restaurant names) ──────────────────────
   const searchResults = useMemo(() => {
     if (!query.trim()) return null;
-    return searchAll(query).items.map(h => ({ ...h, distKm: distLookup.get(h.restaurant.id) }));
+    const q = query.toLowerCase();
+    // 1. Match by item name
+    const byItemName = searchAll(query).items.map(h => ({ ...h, distKm: distLookup.get(h.restaurant.id) }));
+    const seen = new Set(byItemName.map(h => h.item.id));
+    // 2. Match by restaurant name — show all ala carte items of matching restaurants
+    const byRestaurantName: typeof byItemName = [];
+    for (const rest of SG_RESTAURANTS) {
+      const matchesName = rest.name.toLowerCase().includes(q) ||
+        (rest.aliases || []).some((a: string) => a.toLowerCase().includes(q));
+      if (matchesName) {
+        for (const item of rest.menu.filter(i => !i.isSetMeal)) {
+          if (!seen.has(item.id)) {
+            seen.add(item.id);
+            byRestaurantName.push({ item, restaurant: rest, distKm: distLookup.get(rest.id) });
+          }
+        }
+      }
+    }
+    return [...byItemName, ...byRestaurantName];
   }, [query, distLookup]);
 
   const recipeSearchResults = useMemo(() => {
@@ -1269,6 +1406,7 @@ export default function EatPage() {
     setDiningOption('all'); setPriceFilter('all'); setFilterDietFlags([]);
     setFilterMinProtein(0); setFilterMaxCalories(0); setDistFilter(0);
     setSortKey('best_match'); setFilterRestaurantId(null); setFilterStrideApproved(false);
+    setFilterIncludeSetMeals(false);
   }, []);
 
   const handleQueryChange = (v: string) => {
@@ -1627,7 +1765,7 @@ export default function EatPage() {
                   <div style={{ fontSize: 14, fontWeight: 700, color: FG1, marginBottom: 12 }}>Other options nearby</div>
                   {pooledItems.slice(0,5).map(({ item, restaurant, distKm }) => (
                     <MenuItemCard key={`${restaurant.id}__${item.id}`} item={item} restaurant={restaurant} distKm={distKm}
-                      userFlags={userFlags} onLog={() => setPendingLog({ type:'item', item, restaurant })}
+                      userFlags={userFlags} onLog={() => router.push(buildLogUrl(item, restaurant))}
                       onUnlog={() => unlog(item.id, item.name, item.emoji)}
                       logged={loggedIds.has(item.id)}
                       isExpanded={expandedId === item.id}
@@ -1673,7 +1811,7 @@ export default function EatPage() {
               )}
               {items.map(({ item, restaurant, distKm }) => (
                 <MenuItemCard key={`${restaurant.id}__${item.id}`} item={item} restaurant={restaurant} distKm={distKm}
-                  userFlags={userFlags} onLog={() => setPendingLog({ type:'item', item, restaurant })}
+                  userFlags={userFlags} onLog={() => router.push(buildLogUrl(item, restaurant))}
                   onUnlog={() => unlog(item.id, item.name, item.emoji)}
                   logged={loggedIds.has(item.id)}
                   isExpanded={expandedId === item.id}
@@ -1689,7 +1827,7 @@ export default function EatPage() {
                   <div style={{ fontSize: 11, color: FG3, marginBottom: 10 }}>These don't match all your criteria but may be worth a look</div>
                   {pooledItems.filter(p => !items.find(i => i.item.id === p.item.id)).slice(0, 4).map(({ item, restaurant, distKm }) => (
                     <MenuItemCard key={`fallback__${restaurant.id}__${item.id}`} item={item} restaurant={restaurant} distKm={distKm}
-                      userFlags={userFlags} onLog={() => setPendingLog({ type:'item', item, restaurant })}
+                      userFlags={userFlags} onLog={() => router.push(buildLogUrl(item, restaurant))}
                       onUnlog={() => unlog(item.id, item.name, item.emoji)}
                       logged={loggedIds.has(item.id)}
                       isExpanded={expandedId === item.id}
@@ -1808,6 +1946,7 @@ export default function EatPage() {
         distFilter={distFilter} setDistFilter={setDistFilter}
         sortKey={sortKey} setSortKey={setSortKey}
         filterStrideApproved={filterStrideApproved} setFilterStrideApproved={setFilterStrideApproved}
+        filterIncludeSetMeals={filterIncludeSetMeals} setFilterIncludeSetMeals={setFilterIncludeSetMeals}
         showDistance={hasLocation}
         onClear={clearAllFilters}
       />

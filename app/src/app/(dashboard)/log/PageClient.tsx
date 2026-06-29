@@ -1,5 +1,5 @@
 'use client';
-import { Suspense, useState, useRef, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useStrideStore } from '@/lib/store';
@@ -96,7 +96,7 @@ function LogInner() {
   const store   = useStrideStore();
 
   const initialTab = params.get('tab') === 'activity' ? 'activity' : 'food';
-  const [tab, setTab] = useState<'food' | 'scan' | 'activity'>(initialTab);
+  const [tab, setTab] = useState<'food' | 'activity'>(initialTab);
 
   // ── Food tab state ──────────────────────────────────────────────────────────
   const [query,         setQuery]         = useState('');
@@ -107,14 +107,6 @@ function LogInner() {
   const [manualMode,    setManualMode]    = useState(false);
   const [manual,        setManual]        = useState({ name: '', cal: '', p: '', c: '', f: '' });
   const [foodLogged,    setFoodLogged]    = useState(false);
-
-  // ── Scan tab state ──────────────────────────────────────────────────────────
-  const fileRef     = useRef<HTMLInputElement>(null);
-  const [scanImg,   setScanImg]   = useState<string | null>(null);
-  const [scanResult,setScanResult]= useState<null | { name: string; calories: number; protein: number; carbs: number; fat: number; emoji: string }>(null);
-  const [scanning,  setScanning]  = useState(false);
-  const [scanError, setScanError] = useState('');
-  const [scanLogged,setScanLogged]= useState(false);
 
   // ── Activity tab state ──────────────────────────────────────────────────────
   const [actSearch,     setActSearch]     = useState('');
@@ -216,48 +208,6 @@ function LogInner() {
     });
     setFoodLogged(true);
     setTimeout(() => { setFoodLogged(false); setManual({ name: '', cal: '', p: '', c: '', f: '' }); }, 1600);
-  };
-
-  const handleScanUpload = async (file: File) => {
-    setScanError(''); setScanResult(null); setScanLogged(false);
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const base64 = (e.target?.result as string).split(',')[1];
-      setScanImg(e.target?.result as string);
-      setScanning(true);
-      try {
-        const res  = await fetch('/api/scan-food', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: base64, mimeType: file.type }),
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        setScanResult(data);
-      } catch (err: unknown) {
-        setScanError(err instanceof Error ? err.message : 'Scan failed');
-      } finally {
-        setScanning(false);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const logScanResult = () => {
-    if (!scanResult) return;
-    store.addFoodEntry({
-      foodItemId: `scan_${Date.now()}`,
-      name:       scanResult.name,
-      emoji:      scanResult.emoji || '📷',
-      mealType,
-      quantity:   100,
-      calories:   scanResult.calories,
-      protein:    scanResult.protein,
-      carbs:      scanResult.carbs,
-      fat:        scanResult.fat,
-    });
-    setScanLogged(true);
-    setTimeout(() => { setScanLogged(false); setScanResult(null); setScanImg(null); }, 1600);
   };
 
   const logActivity = () => {
@@ -407,7 +357,6 @@ function LogInner() {
           display: 'flex', gap: 3,
         }}>
           <button style={tabBtnStyle(tab === 'food')}     onClick={() => setTab('food')}>🍽 Food</button>
-          <button style={tabBtnStyle(tab === 'scan')}     onClick={() => setTab('scan')}>📷 Scan</button>
           <button style={tabBtnStyle(tab === 'activity')} onClick={() => setTab('activity')}>⚡ Activity</button>
         </div>
       </div>
@@ -582,99 +531,6 @@ function LogInner() {
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
               </div>
             </Link>
-          </div>
-        )}
-
-        {/* ══════════════════════ SCAN TAB ══════════════════════ */}
-        {tab === 'scan' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <input ref={fileRef} type="file" accept="image/*" capture="environment"
-              style={{ display: 'none' }}
-              onChange={e => { const f = e.target.files?.[0]; if (f) handleScanUpload(f); }}
-            />
-
-            {!scanImg ? (
-              <button onClick={() => fileRef.current?.click()} style={{
-                background: CARD, border: `2px dashed ${BORDER}`,
-                borderRadius: 24, minHeight: 200, cursor: 'pointer',
-                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                justifyContent: 'center', gap: 12, color: FG3, transition: 'all .2s',
-              }}
-              onMouseOver={e => (e.currentTarget.style.borderColor = GREEN)}
-              onMouseOut={e  => (e.currentTarget.style.borderColor = BORDER)}
-              >
-                <span style={{ fontSize: 44 }}>📷</span>
-                <div style={{ fontSize: 15, fontWeight: 700, color: FG2 }}>Take a photo or upload</div>
-                <div style={{ fontSize: 12, color: FG3 }}>AI will identify the food &amp; macros</div>
-              </button>
-            ) : (
-              <div style={{ position: 'relative', borderRadius: 20, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.06)' }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={scanImg} alt="Scanned food" style={{ width: '100%', maxHeight: 240, objectFit: 'cover', display: 'block' }} />
-                <button onClick={() => { setScanImg(null); setScanResult(null); setScanError(''); setScanLogged(false); }} style={{
-                  position: 'absolute', top: 10, right: 10,
-                  background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: '50%',
-                  width: 30, height: 30, color: '#fff', cursor: 'pointer', fontSize: 14,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>✕</button>
-              </div>
-            )}
-
-            {scanning && (
-              <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                <div style={{ width: 32, height: 32, borderRadius: '50%', border: `3px solid ${BORDER}`, borderTopColor: GREEN, animation: 'spin 1s linear infinite', margin: '0 auto 12px' }} />
-                <div style={{ fontSize: 13, color: FG3 }}>Analysing with AI…</div>
-              </div>
-            )}
-
-            {scanError && (
-              <div style={{ background: 'rgba(208,78,54,0.06)', border: '1px solid rgba(208,78,54,0.18)', borderRadius: 14, padding: '12px 14px' }}>
-                <div style={{ fontSize: 13, color: '#D04E36' }}>⚠️ {scanError}</div>
-              </div>
-            )}
-
-            {scanResult && (
-              <>
-                <div style={{ ...cardStyle, background: 'rgba(30,127,92,0.04)', border: '1px solid rgba(30,127,92,0.15)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                    <span style={{ fontSize: 28 }}>{scanResult.emoji || '🍽️'}</span>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: FG1 }}>{scanResult.name}</div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    {[
-                      { label: 'CAL',  val: scanResult.calories, color: '#D04E36', bg: 'rgba(208,78,54,0.08)'  },
-                      { label: 'PRO',  val: scanResult.protein,  color: '#2E6FB8', bg: 'rgba(46,111,184,0.08)' },
-                      { label: 'CARB', val: scanResult.carbs,    color: '#C98A2E', bg: 'rgba(201,138,46,0.08)' },
-                      { label: 'FAT',  val: scanResult.fat,      color: GREEN,     bg: 'rgba(30,127,92,0.08)'  },
-                    ].map(m => (
-                      <div key={m.label} style={{ flex: 1, borderRadius: 12, padding: '8px 4px', textAlign: 'center', background: m.bg }}>
-                        <div style={{ fontSize: 16, fontWeight: 800, color: m.color }}>{m.val}</div>
-                        <div style={{ fontSize: 9, fontWeight: 700, color: FG3, marginTop: 2 }}>{m.label}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <button onClick={logScanResult} style={{
-                  background: scanLogged ? 'rgba(30,127,92,0.10)' : GREEN,
-                  color: scanLogged ? GREEN : '#fff',
-                  border: 'none', borderRadius: 16, padding: '15px 0',
-                  fontSize: 15, fontWeight: 800, cursor: 'pointer', width: '100%',
-                  transition: 'all .2s', boxShadow: scanLogged ? 'none' : '0 4px 16px rgba(30,127,92,0.28)',
-                }}>
-                  {scanLogged ? '✓ Logged!' : 'Log This Food'}
-                </button>
-              </>
-            )}
-
-            <div style={{
-              background: 'rgba(46,111,184,0.06)', borderRadius: 14, padding: '12px 14px',
-              display: 'flex', gap: 8, border: '1px solid rgba(46,111,184,0.14)',
-            }}>
-              <span style={{ fontSize: 14 }}>💡</span>
-              <span style={{ fontSize: 12, color: '#2E6FB8', lineHeight: 1.6 }}>
-                AI scan uses <strong>Claude Haiku</strong> vision. Add <code style={{ background: BORDER, borderRadius: 4, padding: '1px 4px', color: FG1 }}>ANTHROPIC_API_KEY</code> to enable.
-              </span>
-            </div>
           </div>
         )}
 

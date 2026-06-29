@@ -123,7 +123,7 @@ function PopularMealRow({ item, restaurant }: { item: SGMenuItem; restaurant: SG
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 9, flexShrink: 0 }}>
         {ppd > 0 && <ValueBadge value={ppd} />}
-        <Link href="/log/food" style={{
+        <Link href={`/log/food?name=${encodeURIComponent(item.name)}&cal=${item.calories}&p=${item.protein}&c=${item.carbs}&f=${item.fat}&emoji=${encodeURIComponent(item.emoji)}&rid=${restaurant.id}&rname=${encodeURIComponent(restaurant.name)}${item.price != null ? `&price=${item.price}` : ''}`} style={{
           width: 34, height: 34, borderRadius: 10, background: 'var(--green-tint)', color: 'var(--green-deep)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none',
           fontSize: 20, lineHeight: 1,
@@ -157,11 +157,11 @@ export default function DashboardClient() {
   const popular   = getPopularMeals();
 
   const FILTERS = [
-    { label: 'Best Value', bolt: true,  href: '/eat?sort=ppd'              },
-    { label: 'High Protein', bolt: false, href: '/eat?q=High+Protein'      },
-    { label: 'Halal',        bolt: false, href: '/eat?diet=halal'           },
-    { label: 'Under $5',     bolt: false, href: '/eat?q=Under+%245'        },
-    { label: 'Recipes',      bolt: false, href: '/eat?view=recipes'         },
+    { label: 'Best Value',   bolt: true,  href: '/eat?open_filter=1&sort=ppd'   },
+    { label: 'High Protein', bolt: false, href: '/eat?open_filter=1&sort=protein' },
+    { label: 'Halal',        bolt: false, href: '/eat?open_filter=1&diet=halal'  },
+    { label: 'Under $5',     bolt: false, href: '/eat?open_filter=1'             },
+    { label: 'Recipes',      bolt: false, href: '/eat?view=recipes'              },
   ];
 
   return (
