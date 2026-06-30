@@ -1,160 +1,204 @@
 'use client';
-import { useState } from 'react';
-import { useStrideStore } from '@/lib/store';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useAuth } from '@/lib/auth-context';
+import { useStrideStore } from '@/lib/store';
+import { calculateTargetCalories, calculateMacros } from '@/lib/utils';
 
-/* ── Design tokens ── */
-const BG     = '#F7F8FB';
-const CARD   = '#FFFFFF';
-const BORDER = '#E5E9F2';
-const FG1    = '#0F1B2D';
-const FG2    = '#5B6576';
-const FG3    = '#8B95A7';
-const GREEN  = '#1E7F5C';
-const SHADOW = '0 1px 2px rgba(15,27,45,0.04), 0 2px 6px rgba(15,27,45,0.05)';
+/* ── Design tokens (CSS variables aligned with design system) ── */
+const BG     = 'var(--bg)';
+const CARD   = 'var(--surface)';
+const BORDER = 'var(--line)';
+const FG1    = 'var(--ink)';
+const FG2    = 'var(--ink-2)';
+const FG3    = 'var(--muted)';
+const GREEN  = 'var(--green)';
+const SHADOW = 'var(--shadow-md)';
 
-const TABS = ['All', 'Restaurants', 'Delivery', 'Grocery'];
+/* ── Types ── */
+type RecType = 'food' | 'activity' | 'hydration' | 'habit';
+type Priority = 'high' | 'medium' | 'low';
 
-const MEALS = [
-  {
-    id: 'm1', type: 'restaurant', emoji: '🥗',
-    name: 'Grilled Chicken Salad', restaurant: 'SaladStop!',
-    distance: '0.8 km', deliveryTime: null, price: 14.90,
-    cal: 420, p: 42, c: 24, f: 16,
-    match: 94, tags: ['High Protein', 'Low Carb'],
-    open: true, deliveryApp: null,
-    valueScore: '$0.36/g protein',
-  },
-  {
-    id: 'm2', type: 'delivery', emoji: '🍱',
-    name: 'Salmon Rice Bowl', restaurant: 'The Grain Traders',
-    distance: '1.4 km', deliveryTime: '25-35 min', price: 18.50,
-    cal: 510, p: 38, c: 52, f: 14,
-    match: 88, tags: ['Balanced', 'Omega-3'],
-    open: true, deliveryApp: 'GrabFood',
-    valueScore: '$0.49/g protein',
-  },
-  {
-    id: 'm3', type: 'grocery', emoji: '🥩',
-    name: 'Quest Protein Bar (Chocolate Chip)', restaurant: 'FairPrice',
-    distance: '0.3 km', deliveryTime: null, price: 4.20,
-    cal: 190, p: 21, c: 22, f: 7,
-    match: 91, tags: ['High Protein', 'Convenient', 'Low Cal'],
-    open: true, deliveryApp: null,
-    valueScore: '$0.20/g protein',
-  },
-  {
-    id: 'm4', type: 'delivery', emoji: '🍗',
-    name: 'Grilled Chicken Wrap', restaurant: 'SaladBox',
-    distance: '2.1 km', deliveryTime: '30-45 min', price: 12.90,
-    cal: 385, p: 35, c: 38, f: 9,
-    match: 85, tags: ['High Protein', 'Wrap'],
-    open: true, deliveryApp: 'Deliveroo',
-    valueScore: '$0.37/g protein',
-  },
-  {
-    id: 'm5', type: 'restaurant', emoji: '🍜',
-    name: 'Tom Yum Soup with Prawns', restaurant: 'Bangkok Street',
-    distance: '1.1 km', deliveryTime: null, price: 10.50,
-    cal: 295, p: 28, c: 22, f: 8,
-    match: 80, tags: ['Low Cal', 'Seafood'],
-    open: true, deliveryApp: null,
-    valueScore: '$0.38/g protein',
-  },
-  {
-    id: 'm6', type: 'grocery', emoji: '🧀',
-    name: 'Chobani Greek Yogurt Plain 0%', restaurant: 'Cold Storage',
-    distance: '0.6 km', deliveryTime: null, price: 3.80,
-    cal: 90, p: 17, c: 6, f: 0,
-    match: 76, tags: ['Low Fat', 'High Protein', 'Budget'],
-    open: true, deliveryApp: null,
-    valueScore: '$0.22/g protein',
-  },
-];
+interface Rec {
+  id:       string;
+  type:     RecType;
+  emoji:    string;
+  title:    string;
+  body:     string;
+  priority: Priority;
+  action?:  { label: string; href: string };
+}
 
-const DELIVERY_APPS: Record<string, { color: string }> = {
-  GrabFood:    { color: '#00875A' },
-  Deliveroo:   { color: '#00CCBC' },
-  'Uber Eats': { color: '#333333' },
+/* ── Priority styling ── */
+const PRIORITY_STYLE: Record<Priority, { bg: string; color: string; label: string }> = {
+  high:   { bg: 'var(--coral-tint)',    color: 'var(--coral)',    label: 'Priority' },
+  medium: { bg: 'var(--gold-tint)',     color: 'var(--gold)',     label: 'Heads up'  },
+  low:    { bg: 'var(--green-tint)',    color: 'var(--green)',    label: 'Tip'       },
 };
 
-function MacroChip({ label, val, bg, color }: { label: string; val: number; bg: string; color: string }) {
+/* ── Skeleton card ── */
+function SkeletonCard() {
   return (
-    <div style={{
-      background: bg, borderRadius: 8, padding: '4px 8px',
-      display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 44,
-    }}>
-      <span style={{ fontSize: 11, fontWeight: 800, color }}>{val}g</span>
-      <span style={{ fontSize: 9, color: FG3 }}>{label}</span>
+    <div style={{ background: CARD, borderRadius: 18, padding: '18px 16px', boxShadow: SHADOW }}>
+      <style>{`@keyframes shimmer{0%{opacity:.6}50%{opacity:1}100%{opacity:.6}}`}</style>
+      <div style={{ display:'flex', gap:12, alignItems:'flex-start' }}>
+        <div style={{ width:44,height:44,borderRadius:12,background:'var(--surface-2)',animation:'shimmer 1.4s ease infinite',flexShrink:0 }} />
+        <div style={{ flex:1 }}>
+          <div style={{ height:14,borderRadius:6,background:'var(--surface-2)',width:'65%',animation:'shimmer 1.4s ease infinite',marginBottom:8 }} />
+          <div style={{ height:11,borderRadius:6,background:'var(--surface-2)',width:'90%',animation:'shimmer 1.4s ease infinite',marginBottom:4 }} />
+          <div style={{ height:11,borderRadius:6,background:'var(--surface-2)',width:'75%',animation:'shimmer 1.4s ease infinite' }} />
+        </div>
+      </div>
     </div>
   );
 }
 
-export default function RecommendationsPage() {
-  const store   = useStrideStore();
-  const router  = useRouter();
-  const profile = store.profile;
-  const totals  = store.getTodayTotals();
-  const [activeTab, setActiveTab] = useState('All');
-  const [budget, setBudget] = useState(false);
-  const [loggedId, setLoggedId] = useState<string | null>(null);
+/* ── Recommendation card ── */
+function RecCard({ rec }: { rec: Rec }) {
+  const p = PRIORITY_STYLE[rec.priority];
+  return (
+    <div style={{
+      background: CARD, borderRadius: 18, padding: '18px 16px',
+      boxShadow: SHADOW, display: 'flex', flexDirection: 'column', gap: 12,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+        {/* Emoji icon */}
+        <div style={{
+          width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+          background: p.bg, display: 'flex', alignItems: 'center',
+          justifyContent: 'center', fontSize: 22,
+        }}>
+          {rec.emoji}
+        </div>
 
-  const logMeal = (meal: typeof MEALS[0]) => {
-    store.addFoodEntry({
-      name: meal.name, calories: meal.cal,
-      protein: meal.p, carbs: meal.c, fat: meal.f,
-      emoji: meal.emoji, mealType: 'lunch', foodItemId: '', quantity: 100,
-    });
-    setLoggedId(meal.id);
-    setTimeout(() => { setLoggedId(null); router.push('/dashboard'); }, 1200);
-  };
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {/* Priority badge + title */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+            <span style={{
+              fontSize: 9, fontWeight: 700, textTransform: 'uppercase',
+              letterSpacing: '0.06em', color: p.color, background: p.bg,
+              borderRadius: 6, padding: '2px 6px',
+            }}>{p.label}</span>
+          </div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: FG1, lineHeight: 1.3 }}>
+            {rec.title}
+          </div>
+        </div>
+      </div>
+
+      {/* Body */}
+      <p style={{ margin: 0, fontSize: 13, color: FG2, lineHeight: 1.6 }}>{rec.body}</p>
+
+      {/* Action */}
+      {rec.action && (
+        <Link href={rec.action.href} style={{
+          display: 'block', textAlign: 'center',
+          padding: '11px 0', borderRadius: 12,
+          background: GREEN, color: '#fff',
+          fontSize: 13, fontWeight: 700, textDecoration: 'none',
+          boxShadow: 'var(--shadow-green)',
+        }}>
+          {rec.action.label} →
+        </Link>
+      )}
+    </div>
+  );
+}
+
+/* ════════════════════ Main ════════════════════ */
+export default function RecommendationsPage() {
+  const { user } = useAuth();
+  const store    = useStrideStore();
+  const router   = useRouter();
+  const profile  = store.profile;
+  const totals   = store.getTodayTotals();
+
+  const [recs,    setRecs   ] = useState<Rec[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error,   setError  ] = useState('');
+
+  // Targets with fallbacks
+  const targetCal = profile.targetCalories > 0
+    ? profile.targetCalories
+    : calculateTargetCalories(profile);
+  const macros = calculateMacros(targetCal, profile.goalType ?? 'maintenance');
+  const targetProtein = profile.targetProtein  > 0 ? profile.targetProtein  : macros.protein;
+  const targetCarbs   = profile.targetCarbs    > 0 ? profile.targetCarbs    : macros.carbs;
+  const targetFat     = profile.targetFat      > 0 ? profile.targetFat      : macros.fat;
 
   const remaining = {
-    cal: Math.max(0, profile.targetCalories - totals.calories),
-    p:   Math.max(0, profile.targetProtein  - totals.protein),
-    c:   Math.max(0, profile.targetCarbs    - totals.carbs),
-    f:   Math.max(0, profile.targetFat      - totals.fat),
+    cal:     Math.max(0, targetCal     - totals.calories),
+    protein: Math.max(0, targetProtein - totals.protein),
+    carbs:   Math.max(0, targetCarbs   - totals.carbs),
+    fat:     Math.max(0, targetFat     - totals.fat),
   };
 
-  const filtered = MEALS.filter(m => {
-    if (activeTab === 'Restaurants') return m.type === 'restaurant';
-    if (activeTab === 'Delivery')    return m.type === 'delivery';
-    if (activeTab === 'Grocery')     return m.type === 'grocery';
-    return true;
-  }).filter(m => !budget || m.price <= 10);
+  useEffect(() => {
+    if (!user) { setLoading(false); return; }
+
+    const fetchRecs = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const { getAuth } = await import('firebase/auth');
+        const token = await getAuth().currentUser?.getIdToken();
+        if (!token) throw new Error('Not signed in');
+        const res = await fetch('/api/recommendations', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error('Failed to load recommendations');
+        const data: Rec[] = await res.json();
+        setRecs(data);
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : 'Could not load recommendations');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecs();
+  }, [user]);
+
+  /* ── Guest state ── */
+  if (!user) {
+    return (
+      <div style={{ minHeight: '100vh', background: BG, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', gap: 16 }}>
+        <span style={{ fontSize: 48 }}>🎯</span>
+        <h2 style={{ fontSize: 20, fontWeight: 800, color: FG1, margin: 0 }}>Sign in to see your recommendations</h2>
+        <p style={{ fontSize: 14, color: FG2, textAlign: 'center', margin: 0 }}>Personalised tips based on today&apos;s macros, water, and activity.</p>
+        <Link href="/login" style={{ background: GREEN, color: '#fff', fontWeight: 700, borderRadius: 14, padding: '13px 32px', textDecoration: 'none', fontSize: 15 }}>Sign in</Link>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: BG }}>
 
       {/* ── Header ── */}
       <div style={{ padding: '52px 20px 16px' }}>
-        <h1 style={{ color: FG1, fontSize: 24, fontWeight: 900, margin: '0 0 4px', fontFamily: "'Anton', Impact, sans-serif", letterSpacing: '-0.3px' }}>
-          MEAL IDEAS
+        <h1 style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 24, fontWeight: 800, color: FG1, margin: '0 0 4px', letterSpacing: '-0.03em' }}>
+          For you
         </h1>
-        <p style={{ color: FG3, fontSize: 14, margin: 0 }}>Matched to your remaining macros</p>
+        <p style={{ color: FG3, fontSize: 14, margin: 0 }}>Personalised to today&apos;s progress</p>
       </div>
 
       <div style={{ flex: 1, padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 100 }}>
 
-        {/* Remaining macros banner */}
-        <div style={{
-          background: CARD, borderRadius: 18, padding: '14px 16px',
-          border: `1px solid ${BORDER}`, boxShadow: SHADOW,
-        }}>
+        {/* ── Remaining macros banner ── */}
+        <div style={{ background: CARD, borderRadius: 18, padding: '14px 16px', border: `1px solid ${BORDER}`, boxShadow: SHADOW }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: FG3, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            Your Remaining Macros
+            Remaining today
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
             {[
-              { l: 'Calories', v: remaining.cal, unit: 'kcal', color: '#D04E36', bg: 'rgba(208,78,54,0.08)' },
-              { l: 'Protein',  v: remaining.p,   unit: 'g',    color: '#2E6FB8', bg: 'rgba(46,111,184,0.08)' },
-              { l: 'Carbs',    v: remaining.c,   unit: 'g',    color: '#C98A2E', bg: 'rgba(201,138,46,0.08)' },
-              { l: 'Fat',      v: remaining.f,   unit: 'g',    color: GREEN,     bg: 'rgba(30,127,92,0.08)'  },
+              { l: 'Calories', v: remaining.cal,     unit: 'kcal', color: 'var(--coral)', bg: 'var(--coral-tint)' },
+              { l: 'Protein',  v: remaining.protein, unit: 'g',    color: 'var(--green)', bg: 'var(--green-tint)' },
+              { l: 'Carbs',    v: remaining.carbs,   unit: 'g',    color: 'var(--gold)',  bg: 'var(--gold-tint)'  },
+              { l: 'Fat',      v: remaining.fat,     unit: 'g',    color: FG2,            bg: 'var(--surface-2)'  },
             ].map(r => (
               <div key={r.l} style={{ background: r.bg, borderRadius: 10, padding: '8px 4px', textAlign: 'center' }}>
-                <div style={{ fontSize: 16, fontWeight: 900, color: r.color, lineHeight: 1, fontFamily: "'Anton', Impact, sans-serif" }}>
-                  {r.v}
-                </div>
+                <div style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 16, fontWeight: 800, color: r.color, lineHeight: 1 }}>{r.v}</div>
                 <div style={{ fontSize: 9, color: r.color, fontWeight: 600, marginTop: 1 }}>{r.unit}</div>
                 <div style={{ fontSize: 9, color: FG3, marginTop: 2 }}>{r.l}</div>
               </div>
@@ -162,165 +206,37 @@ export default function RecommendationsPage() {
           </div>
         </div>
 
-        {/* Tabs + budget filter */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none' }}>
-            {TABS.map(t => (
-              <button key={t} onClick={() => setActiveTab(t)} style={{
-                padding: '7px 14px', borderRadius: 20, border: 'none',
-                fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
-                background: activeTab === t ? GREEN : CARD,
-                color:      activeTab === t ? '#fff' : FG2,
-                boxShadow:  activeTab === t ? '0 2px 8px rgba(30,127,92,0.25)' : SHADOW,
-                transition: 'all .15s',
-              }}>{t}</button>
-            ))}
-          </div>
-          <button onClick={() => setBudget(!budget)} style={{
-            padding: '7px 12px', borderRadius: 20, border: `1px solid ${budget ? '#C98A2E' : BORDER}`,
-            fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
-            background: budget ? 'rgba(201,138,46,0.1)' : CARD,
-            color: budget ? '#C98A2E' : FG2,
-            transition: 'all .15s',
-          }}>
-            💰 Under $10
-          </button>
-        </div>
+        {/* ── Content ── */}
+        {loading && (
+          <>
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+          </>
+        )}
 
-        {/* Location bar */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 8,
-          background: CARD, borderRadius: 14, padding: '10px 14px',
-          border: `1px solid ${BORDER}`, boxShadow: SHADOW,
-        }}>
-          <span style={{ fontSize: 14 }}>📍</span>
-          <span style={{ flex: 1, fontSize: 12, color: FG3 }}>Orchard Road, Singapore · Within 2km</span>
-          <button style={{
-            fontSize: 12, fontWeight: 700, color: GREEN,
-            background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-          }}>Change</button>
-        </div>
-
-        {/* Meal cards */}
-        {filtered.map(meal => {
-          const matchColor = meal.match >= 90 ? GREEN : meal.match >= 80 ? '#C98A2E' : '#D04E36';
-          return (
-            <div key={meal.id} style={{
-              background: CARD, borderRadius: 20, padding: 16,
-              border: `1px solid ${BORDER}`, boxShadow: SHADOW,
-              overflow: 'hidden',
-            }}>
-              <div style={{ display: 'flex', gap: 12 }}>
-                {/* Emoji */}
-                <div style={{
-                  width: 72, height: 72, flexShrink: 0,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: BG, borderRadius: 16, fontSize: 36,
-                  border: `1px solid ${BORDER}`,
-                }}>{meal.emoji}</div>
-
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  {/* Name + price */}
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 6 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: FG1, lineHeight: 1.3, flex: 1 }}>{meal.name}</div>
-                    <div style={{ fontSize: 15, fontWeight: 900, color: FG1, flexShrink: 0, fontFamily: "'Anton', Impact, sans-serif" }}>
-                      ${meal.price.toFixed(2)}
-                    </div>
-                  </div>
-
-                  {/* Restaurant + distance */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
-                    <span style={{ fontSize: 11, color: FG2 }}>{meal.restaurant}</span>
-                    <span style={{ fontSize: 9, color: FG3 }}>·</span>
-                    <span style={{ fontSize: 11, color: FG3 }}>📍 {meal.distance}</span>
-                    {meal.deliveryTime && (
-                      <>
-                        <span style={{ fontSize: 9, color: FG3 }}>·</span>
-                        <span style={{ fontSize: 11, color: FG3 }}>⏱ {meal.deliveryTime}</span>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Match bar */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
-                    <div style={{ flex: 1, height: 5, background: BORDER, borderRadius: 99, overflow: 'hidden' }}>
-                      <div style={{ height: '100%', borderRadius: 99, width: `${meal.match}%`, background: matchColor }} />
-                    </div>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: matchColor, whiteSpace: 'nowrap' }}>
-                      {meal.match}% match
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Macros row */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
-                <span style={{ fontSize: 13, fontWeight: 800, color: '#D04E36' }}>{meal.cal} kcal</span>
-                <div style={{ flex: 1 }} />
-                <MacroChip label="P" val={meal.p} bg="rgba(46,111,184,0.08)"  color="#2E6FB8" />
-                <MacroChip label="C" val={meal.c} bg="rgba(201,138,46,0.08)" color="#C98A2E" />
-                <MacroChip label="F" val={meal.f} bg="rgba(30,127,92,0.08)"  color={GREEN}   />
-              </div>
-
-              {/* Tags row */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
-                <span style={{
-                  background: 'rgba(201,138,46,0.1)', color: '#C98A2E',
-                  borderRadius: 20, padding: '3px 8px', fontSize: 10, fontWeight: 700,
-                }}>
-                  💰 {meal.valueScore}
-                </span>
-                {meal.tags.map(t => (
-                  <span key={t} style={{
-                    background: BG, color: FG2, border: `1px solid ${BORDER}`,
-                    borderRadius: 20, padding: '3px 8px', fontSize: 10, fontWeight: 600,
-                  }}>{t}</span>
-                ))}
-              </div>
-
-              {/* CTA buttons */}
-              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                <button onClick={() => logMeal(meal)} style={{
-                  flex: 1, padding: '10px 0', borderRadius: 12, border: 'none',
-                  background: loggedId === meal.id ? 'rgba(30,127,92,0.15)' : GREEN,
-                  color: loggedId === meal.id ? GREEN : '#fff',
-                  fontSize: 13, fontWeight: 700,
-                  cursor: 'pointer',
-                  boxShadow: loggedId === meal.id ? 'none' : '0 4px 14px rgba(30,127,92,0.25)',
-                  transition: 'all .2s',
-                }}>
-                  {loggedId === meal.id ? '✅ Logged!' : '📋 Log This'}
-                </button>
-                {meal.deliveryApp ? (
-                  <button style={{
-                    flex: 1, padding: '10px 0', borderRadius: 12,
-                    background: CARD, border: `1.5px solid ${BORDER}`,
-                    fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                    color: DELIVERY_APPS[meal.deliveryApp]?.color ?? FG2,
-                  }}>
-                    Order via {meal.deliveryApp}
-                  </button>
-                ) : (
-                  <button style={{
-                    flex: 1, padding: '10px 0', borderRadius: 12,
-                    background: CARD, border: `1.5px solid ${BORDER}`,
-                    color: FG2, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                  }}>
-                    🗺 Directions
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
-
-        {filtered.length === 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 0', color: FG3 }}>
-            <span style={{ fontSize: 48, marginBottom: 12 }}>🔍</span>
-            <div style={{ fontSize: 15, fontWeight: 700, color: FG2 }}>No meals found</div>
-            <div style={{ fontSize: 13, color: FG3, marginTop: 4 }}>Try removing filters or expanding your budget</div>
+        {!loading && error && (
+          <div style={{ textAlign: 'center', padding: '48px 0', color: FG3 }}>
+            <span style={{ fontSize: 40 }}>⚠️</span>
+            <p style={{ fontSize: 14, color: FG2, marginTop: 12 }}>{error}</p>
+            <button onClick={() => router.refresh()} style={{
+              marginTop: 12, padding: '10px 24px', borderRadius: 12, border: 'none',
+              background: GREEN, color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: 13,
+            }}>Retry</button>
           </div>
         )}
+
+        {!loading && !error && recs.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '60px 0' }}>
+            <span style={{ fontSize: 48 }}>🎉</span>
+            <p style={{ fontSize: 15, fontWeight: 700, color: FG1, marginTop: 12 }}>You&apos;re on track!</p>
+            <p style={{ fontSize: 13, color: FG3 }}>No recommendations right now — check back after your next meal.</p>
+          </div>
+        )}
+
+        {!loading && !error && recs.map(rec => (
+          <RecCard key={rec.id} rec={rec} />
+        ))}
 
       </div>
     </div>

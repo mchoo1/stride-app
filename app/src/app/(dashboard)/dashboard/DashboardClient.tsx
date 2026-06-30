@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { useStrideStore } from '@/lib/store';
 import { calculateTargetCalories } from '@/lib/utils';
@@ -133,6 +133,19 @@ function PopularMealRow({ item, restaurant }: { item: SGMenuItem; restaurant: SG
   );
 }
 
+
+/* ── Skeleton shimmer ── */
+function SkeletonBlock({ w = '100%', h = 16, r = 8 }: { w?: string | number; h?: number; r?: number }) {
+  return (
+    <div style={{
+      width: w, height: h, borderRadius: r,
+      background: 'var(--surface-2)',
+      animation: 'skshimmer 1.4s ease infinite',
+      flexShrink: 0,
+    }} />
+  );
+}
+
 /* ════════════════════════════════════ Main ══════════════════════════════ */
 export default function DashboardClient() {
   const { user }  = useAuth();
@@ -140,11 +153,16 @@ export default function DashboardClient() {
   const profile   = store.profile;
   const firstName = user?.displayName?.split(' ')[0] ?? profile.name?.split(' ')[0] ?? 'there';
 
-  useEffect(() => { store.loadTodayFromServer?.(); }, []); // eslint-disable-line
+  const [serverLoaded, setServerLoaded] = useState(false);
+  useEffect(() => {
+    store.loadTodayFromServer?.()
+      .catch(() => {/* offline */})
+      .finally(() => setServerLoaded(true));
+  }, []); // eslint-disable-line
 
   const totals    = store.getTodayTotals();
-  const targetCal = calculateTargetCalories(profile);
-  const burned    = (store as unknown as { todayBurned?: number }).todayBurned ?? 0;
+  const targetCal = profile.targetCalories > 0 ? profile.targetCalories : calculateTargetCalories(profile);
+  const burned    = store.getTodayCaloriesBurned();
   const remaining = Math.max(0, targetCal + burned - totals.calories);
   const frac      = targetCal > 0 ? Math.min(1, totals.calories / (targetCal + burned)) : 0;
   const streak    = store.streak ?? 0;
@@ -153,8 +171,9 @@ export default function DashboardClient() {
   const targetWaterMl = profile.targetWater ?? 2500;
   const waterFrac = Math.min(1, waterMl / targetWaterMl);
 
-  const bestMeals = getBestValueMeals();
-  const popular   = getPopularMeals();
+  // Memoised — these iterate all 30+ restaurants on every call
+  const bestMeals = useMemo(() => getBestValueMeals(), []);
+  const popular   = useMemo(() => getPopularMeals(), []);
 
   const FILTERS = [
     { label: 'Best Value',   bolt: true,  href: '/eat?open_filter=1&sort=ppd'   },
@@ -163,6 +182,48 @@ export default function DashboardClient() {
     { label: 'Under $5',     bolt: false, href: '/eat?open_filter=1'             },
     { label: 'Recipes',      bolt: false, href: '/eat?view=recipes'              },
   ];
+
+  // Show skeleton until server data arrives (only on first load, no data yet)
+  const showSkeleton = !serverLoaded && totals.calories === 0 && totals.protein === 0;
+
+  if (showSkeleton) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--bg)', paddingBottom: 88 }}>
+        <style>{`@keyframes skshimmer{0%{opacity:.5}50%{opacity:1}100%{opacity:.5}}`}</style>
+        {/* Header skeleton */}
+        <div style={{ padding: '52px 20px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <SkeletonBlock w={140} h={14} />
+            <SkeletonBlock w={100} h={20} />
+          </div>
+          <SkeletonBlock w={44} h={44} r={14} />
+        </div>
+        {/* Calorie ring card skeleton */}
+        <div style={{ margin: '0 16px 20px', background: 'var(--surface)', borderRadius: 24, padding: '24px 20px', boxShadow: 'var(--shadow-md)' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+            <SkeletonBlock w={140} h={140} r={70} />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
+            {[1,2,3].map(i => (
+              <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center' }}>
+                <SkeletonBlock w={48} h={22} />
+                <SkeletonBlock w={36} h={11} />
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Section header skeleton */}
+        <div style={{ padding: '0 20px', marginBottom: 12, display: 'flex', justifyContent: 'space-between' }}>
+          <SkeletonBlock w={160} h={18} />
+          <SkeletonBlock w={50} h={14} />
+        </div>
+        {/* Horizontal cards skeleton */}
+        <div style={{ display: 'flex', gap: 12, padding: '2px 20px', overflowX: 'hidden' }}>
+          {[1,2,3].map(i => <SkeletonBlock key={i} w={190} h={160} r={16} />)}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', paddingBottom: 88 }}>
