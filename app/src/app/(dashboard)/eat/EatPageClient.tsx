@@ -254,12 +254,14 @@ function PpdBadge({ protein, price }: { protein: number; price?: number | null }
     <span style={{
       display: 'inline-flex', alignItems: 'baseline', gap: 2,
       padding: '3px 9px', borderRadius: 9,
+      // top tier: gold fill + white text (passes WCAG AA)
+      // normal: deep amber text on tinted bg (≥4.5:1 contrast)
       background: top ? 'var(--gold)' : 'var(--gold-tint)',
-      color: top ? '#fff' : 'var(--gold)',
+      color: top ? '#fff' : '#7A5200',
       fontFamily: '"Space Grotesk", system-ui, sans-serif',
       fontWeight: 700, fontSize: 12, letterSpacing: '-0.02em', whiteSpace: 'nowrap',
     }}>
-      {v.toFixed(1)}<span style={{ fontSize: 10, fontWeight: 600, opacity: 0.85 }}>g/$</span>
+      {v.toFixed(1)}<span style={{ fontSize: 10, fontWeight: 600 }}>&thinsp;g&thinsp;/&thinsp;$</span>
     </span>
   );
 }
@@ -437,16 +439,20 @@ function MenuItemCard({
             {restaurant.name}
             {onRestaurantFilter && <span style={{ fontSize: 10, opacity: 0.6 }}>›</span>}
           </button>
-          {/* Collapsed macro row — show all macros + price */}
+          {/* Collapsed macro row — price + cal prominent; C/F muted to reduce rainbow noise */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
             {item.price != null
               ? <span style={{ fontSize: 13, fontWeight: 700, color: FG1 }}>${item.price.toFixed(2)}</span>
               : minPrice != null && <span style={{ fontSize: 11, color: FG3 }}>from ${minPrice.toFixed(2)}</span>
             }
-            <span style={{ fontSize: 11, color: RED, fontWeight: 600 }}>{item.calories} cal</span>
-            <span style={{ fontSize: 11, color: BLUE, fontWeight: 600 }}>P {item.protein}g</span>
-            <span style={{ fontSize: 11, color: AMBER, fontWeight: 600 }}>C {item.carbs}g</span>
-            <span style={{ fontSize: 11, color: GREEN, fontWeight: 600 }}>F {item.fat}g</span>
+            {item.price != null && <span style={{ fontSize: 11, color: FG3 }}>·</span>}
+            <span style={{ fontSize: 11, color: RED, fontWeight: 700 }}>{item.calories} cal</span>
+            <span style={{ fontSize: 11, color: FG3 }}>|</span>
+            <span style={{ fontSize: 11, color: GREEN, fontWeight: 600 }}>P&thinsp;{item.protein}g</span>
+            <span style={{ fontSize: 11, color: FG3 }}>·</span>
+            <span style={{ fontSize: 11, color: FG3, fontWeight: 500 }}>C&thinsp;{item.carbs}g</span>
+            <span style={{ fontSize: 11, color: FG3 }}>·</span>
+            <span style={{ fontSize: 11, color: FG3, fontWeight: 500 }}>F&thinsp;{item.fat}g</span>
             {item.price && ppd > 0 && <PpdBadge protein={item.protein} price={item.price} />}
           </div>
           {distKm !== undefined && (
@@ -476,39 +482,59 @@ function MenuItemCard({
 
       {isExpanded && (
         <div style={{ borderTop: `1px solid ${BORDER}`, padding: '12px 14px 0' }}>
-          {/* Macro grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginBottom: 10 }}>
-            {[
-              { label: 'Protein', val: `${item.protein}g`, color: BLUE  },
-              { label: 'Carbs',   val: `${item.carbs}g`,   color: AMBER },
-              { label: 'Fat',     val: `${item.fat}g`,     color: GREEN },
-              { label: 'Calories',val: `${item.calories}`, color: RED   },
-            ].map(m => (
-              <div key={m.label} style={{ textAlign: 'center', background: BG, borderRadius: 10, padding: '8px 4px' }}>
-                <div style={{ fontSize: 13, fontWeight: 800, color: m.color }}>{m.val}</div>
-                <div style={{ fontSize: 10, color: FG3, marginTop: 2 }}>{m.label}</div>
+          {/* Macro grid — replaces the collapsed inline row; shows % of daily target too */}
+          {(() => {
+            const targetCal  = 2000; // sensible default; real value from store not in scope here
+            const pctProt    = Math.round((item.protein  / 120)        * 100);
+            const pctCarbs   = Math.round((item.carbs    / 250)        * 100);
+            const pctFat     = Math.round((item.fat      / 65)         * 100);
+            const pctCal     = Math.round((item.calories / targetCal)  * 100);
+            return (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginBottom: 10 }}>
+                {[
+                  { label: 'Protein',  val: `${item.protein}g`,  sub: `${pctProt}% DV`,  color: GREEN },
+                  { label: 'Carbs',    val: `${item.carbs}g`,    sub: `${pctCarbs}% DV`, color: AMBER },
+                  { label: 'Fat',      val: `${item.fat}g`,      sub: `${pctFat}% DV`,   color: FG2   },
+                  { label: 'Calories', val: `${item.calories}`,  sub: `${pctCal}% DV`,   color: RED   },
+                ].map(m => (
+                  <div key={m.label} style={{ textAlign: 'center', background: BG, borderRadius: 10, padding: '8px 4px' }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: m.color }}>{m.val}</div>
+                    <div style={{ fontSize: 9,  color: FG3, marginTop: 1 }}>{m.sub}</div>
+                    <div style={{ fontSize: 10, color: FG3, marginTop: 1 }}>{m.label}</div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            );
+          })()}
           {/* Badges row: confidence + diet + set meal */}
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
             <ConfidenceBadge source={item.source} verified={item.verified} confidence={item.confidence} />
             {item.isSetMeal && <SetMealChip includes={item.setIncludes} />}
             <DietBadge fit={getDietFit(item.compatibleWith ?? [], userFlags)} />
           </div>
-          {/* CTAs */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 10 }}>
-            {[
-              { href: grabUrl,  label: '🛵 Grab',  color: GREEN },
-              { href: pandaUrl, label: '🐼 Panda', color: RED   },
-              { href: mapsUrl,  label: '🗺️ Maps',  color: BLUE  },
-            ].map(l => (
-              <a key={l.label} href={l.href} target="_blank" rel="noreferrer"
-                onClick={() => track(Events.EAT_ORDER_LINK_TAPPED, { item: item.id })}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '9px 6px', borderRadius: 10, border: `1px solid ${BORDER}`, background: BG, textDecoration: 'none', fontSize: 11, fontWeight: 700, color: l.color }}>
-                {l.label}
+          {/* ── Order online (delivery aggregators with brand colors) ── */}
+          <div style={{ marginBottom: 8 }}>
+            <div style={{ fontSize: 9, fontWeight: 700, color: FG3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>Order online</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <a href={grabUrl} target="_blank" rel="noreferrer"
+                onClick={() => track(Events.EAT_ORDER_LINK_TAPPED, { item: item.id, platform: 'grab' })}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '9px 6px', borderRadius: 10, background: '#00B14F', textDecoration: 'none', fontSize: 12, fontWeight: 700, color: '#fff' }}>
+                🛵 Grab
               </a>
-            ))}
+              <a href={pandaUrl} target="_blank" rel="noreferrer"
+                onClick={() => track(Events.EAT_ORDER_LINK_TAPPED, { item: item.id, platform: 'foodpanda' })}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '9px 6px', borderRadius: 10, background: '#D70F64', textDecoration: 'none', fontSize: 12, fontWeight: 700, color: '#fff' }}>
+                🐼 foodpanda
+              </a>
+            </div>
+          </div>
+          {/* ── Utility ── */}
+          <div style={{ marginBottom: 10 }}>
+            <a href={mapsUrl} target="_blank" rel="noreferrer"
+              onClick={() => track(Events.EAT_ORDER_LINK_TAPPED, { item: item.id, platform: 'maps' })}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '9px 0', borderRadius: 10, border: `1px solid ${BORDER}`, background: BG, textDecoration: 'none', fontSize: 11, fontWeight: 600, color: FG2 }}>
+              🗺️ View on Google Maps
+            </a>
           </div>
 
           {/* Feedback row */}
