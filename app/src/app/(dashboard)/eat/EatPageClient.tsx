@@ -204,43 +204,56 @@ function DietBadge({ fit }: { fit: DietFit }) {
 }
 
 // ── #2 Confidence badge — 3 tiers, dot + text ─────────────────────────────
+const CONFIDENCE_TIPS: Record<string, string> = {
+  approved:  'Sourced directly from the brand\'s official Singapore nutrition info. Highest accuracy.',
+  community: 'User-submitted data, not independently verified. Values may vary slightly.',
+  estimate:  'Estimated from reference data — reasonable accuracy for most tracking purposes.',
+};
+
 function ConfidenceBadge({ source, verified, confidence }: {
   source?: string; verified?: boolean; confidence?: string;
 }) {
+  const [tip, setTip] = useState(false);
   if (!source && !confidence) return null;
 
-  if (source === 'official_sg' && verified) {
-    return (
-      <span title="Sourced from the brand's official SG nutrition data" style={{
-        display: 'inline-flex', alignItems: 'center', gap: 4,
-        fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 6,
-        background: 'rgba(30,127,92,0.07)', border: '1px solid rgba(30,127,92,0.18)', color: GREEN,
-      }}>
-        <span style={{ width: 5, height: 5, borderRadius: '50%', background: GREEN, flexShrink: 0 }} />
-        Stride Approved
-      </span>
-    );
-  }
-  if (source === 'community' || confidence === 'community') {
-    return (
-      <span title="User-submitted data, not independently verified" style={{
-        display: 'inline-flex', alignItems: 'center', gap: 4,
-        fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 6,
-        background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(124,58,237,0.15)', color: PURPLE,
-      }}>
-        <span style={{ width: 5, height: 5, borderRadius: '50%', background: PURPLE, flexShrink: 0 }} />
-        Community
-      </span>
-    );
-  }
+  const isApproved  = source === 'official_sg' && !!verified;
+  const isCommunity = source === 'community' || confidence === 'community';
+  const tipText     = isApproved ? CONFIDENCE_TIPS.approved : isCommunity ? CONFIDENCE_TIPS.community : CONFIDENCE_TIPS.estimate;
+
+  const badgeStyle: React.CSSProperties = isApproved
+    ? { background: 'rgba(30,127,92,0.07)', border: '1px solid rgba(30,127,92,0.18)', color: GREEN }
+    : isCommunity
+    ? { background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(124,58,237,0.15)', color: PURPLE }
+    : { background: 'rgba(139,149,167,0.08)', border: `1px solid ${BORDER}`, color: FG3 };
+
+  const dotBg = isApproved ? GREEN : isCommunity ? PURPLE : FG3;
+  const label = isApproved ? 'Stride Approved' : isCommunity ? 'Community' : 'Estimated';
+
   return (
-    <span title="Derived from reference data, may vary slightly" style={{
-      display: 'inline-flex', alignItems: 'center', gap: 4,
-      fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 6,
-      background: 'rgba(139,149,167,0.08)', border: `1px solid ${BORDER}`, color: FG3,
-    }}>
-      <span style={{ width: 5, height: 5, borderRadius: '50%', background: FG3, flexShrink: 0 }} />
-      Estimated
+    <span style={{ position: 'relative', display: 'inline-block' }}>
+      <span
+        onClick={e => { e.stopPropagation(); setTip(t => !t); }}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 4,
+          fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 6,
+          cursor: 'pointer', ...badgeStyle }}
+      >
+        <span style={{ width: 5, height: 5, borderRadius: '50%', background: dotBg, flexShrink: 0 }} />
+        {label}
+        <span style={{ fontSize: 9, opacity: 0.55 }}>ⓘ</span>
+      </span>
+      {tip && (
+        <>
+          <span style={{ position: 'fixed', inset: 0, zIndex: 500 }} onClick={e => { e.stopPropagation(); setTip(false); }} />
+          <span style={{
+            position: 'absolute', bottom: 'calc(100% + 6px)', left: 0, zIndex: 501,
+            width: 220, background: '#1a1a2e', color: '#fff',
+            fontSize: 11, lineHeight: 1.5, padding: '8px 12px', borderRadius: 10,
+            boxShadow: '0 4px 16px rgba(0,0,0,.3)', display: 'block', pointerEvents: 'none',
+          }}>
+            {tipText}
+          </span>
+        </>
+      )}
     </span>
   );
 }
@@ -298,13 +311,14 @@ function LogConfirmSheet({
   pending, onConfirm, onCancel,
 }: {
   pending: PendingLog;
-  onConfirm: (mealType: MealType, date: string, time: string) => void;
+  onConfirm: (mealType: MealType, date: string, time: string, servings: number) => void;
   onCancel: () => void;
 }) {
   const ctx = getMealContext();
   const [mealType, setMealType] = useState<MealType>(ctx.mealType);
   const [date, setDate]         = useState(todayStr());
   const [time, setTime]         = useState(nowTimeStr());
+  const [servings, setServings] = useState(1);
 
   const name    = pending.item?.name ?? pending.recipe?.name ?? '';
   const emoji   = pending.item?.emoji ?? pending.recipe?.emoji ?? '🍽️';
@@ -333,10 +347,30 @@ function LogConfirmSheet({
             <div>
               <div style={{ fontSize: 16, fontWeight: 700, color: FG1 }}>{name}</div>
               <div style={{ fontSize: 12, color: FG3, marginTop: 2 }}>
-                {cal} cal · {protein}g protein{price ? ` · $${price.toFixed(2)}` : ''}
+                {Math.round(cal * servings)} cal · {Math.round(protein * servings)}g protein{price ? ` · $${(price * servings).toFixed(2)}` : ''}
               </div>
             </div>
           </div>
+
+          {/* Servings picker */}
+          {pending.type === 'item' && (
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: FG2, marginBottom: 10 }}>Servings</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {[1, 2, 3].map(s => (
+                  <button key={s} onClick={() => setServings(s)} style={{
+                    flex: 1, padding: '10px 4px', borderRadius: 12, cursor: 'pointer',
+                    border: `1.5px solid ${servings === s ? GREEN : BORDER}`,
+                    background: servings === s ? 'rgba(30,127,92,0.08)' : CARD,
+                    color: servings === s ? GREEN : FG2,
+                    fontSize: 13, fontWeight: 700, textAlign: 'center',
+                  }}>
+                    {s}×
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Meal type */}
           <div style={{ marginBottom: 18 }}>
@@ -387,7 +421,7 @@ function LogConfirmSheet({
               flex: 1, padding: '14px', borderRadius: 14, border: `1.5px solid ${BORDER}`,
               background: CARD, color: FG2, fontSize: 15, fontWeight: 700, cursor: 'pointer',
             }}>Cancel</button>
-            <button onClick={() => onConfirm(mealType, date, time)} style={{
+            <button onClick={() => onConfirm(mealType, date, time, servings)} style={{
               flex: 2, padding: '14px', borderRadius: 14, border: 'none',
               background: GREEN, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer',
             }}>Log meal ✓</button>
@@ -714,6 +748,7 @@ function FilterSheet({
   sortKey, setSortKey,
   filterStrideApproved, setFilterStrideApproved,
   filterIncludeSetMeals, setFilterIncludeSetMeals,
+  maxPriceNum, setMaxPriceNum,
   showDistance,
   onClear,
 }: {
@@ -727,6 +762,7 @@ function FilterSheet({
   sortKey: SortKey; setSortKey: (v: SortKey) => void;
   filterStrideApproved: boolean; setFilterStrideApproved: (v: boolean) => void;
   filterIncludeSetMeals: boolean; setFilterIncludeSetMeals: (v: boolean) => void;
+  maxPriceNum: number | null; setMaxPriceNum: (v: number | null) => void;
   showDistance: boolean;
   onClear: () => void;
 }) {
@@ -906,12 +942,35 @@ function FilterSheet({
               </svg>
             </button>
             {openSections.has('price') && (
-              <div style={{ padding: '0 20px 14px', display: 'flex', gap: 7 }}>
-                {(['all', '$', '$$', '$$$'] as PriceFilter[]).map(p => (
-                  <button key={p} onClick={() => setPriceFilter(p)} style={chip(priceFilter === p)}>
-                    {p === 'all' ? 'Any' : p}
-                  </button>
-                ))}
+              <div style={{ padding: '0 20px 14px' }}>
+                <div style={{ display: 'flex', gap: 7, marginBottom: 10 }}>
+                  {(['all', '$', '$$', '$$$'] as PriceFilter[]).map(p => (
+                    <button key={p} onClick={() => setPriceFilter(p)} style={chip(priceFilter === p)}>
+                      {p === 'all' ? 'Any' : p}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: FG2, flexShrink: 0 }}>Max price</span>
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <span style={{ position: 'absolute', left: 9, fontSize: 12, color: FG2, pointerEvents: 'none' }}>$</span>
+                    <input
+                      type='number' min='0' step='0.5'
+                      value={maxPriceNum ?? ''}
+                      onChange={e => setMaxPriceNum(e.target.value ? Number(e.target.value) : null)}
+                      placeholder='e.g. 8'
+                      style={{
+                        width: 90, paddingLeft: 20, paddingRight: 10, paddingTop: 7, paddingBottom: 7,
+                        borderRadius: 10, border: `1.5px solid ${maxPriceNum !== null ? GREEN : BORDER}`,
+                        fontSize: 13, color: FG1, background: BG, outline: 'none',
+                        fontFamily: '"Hanken Grotesk",system-ui,sans-serif',
+                      }}
+                    />
+                  </div>
+                  {maxPriceNum !== null && (
+                    <button onClick={() => setMaxPriceNum(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: FG3, padding: 0 }}>✕</button>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -1118,9 +1177,10 @@ export default function EatPage() {
   const loggedIds = useMemo(() => new Set(loggedEntryIds.keys()), [loggedEntryIds]);
 
   // ── Filter state ────────────────────────────────────────────────────────
-  const [sortKey,             setSortKey]             = useState<SortKey>('best_match');
+  const [sortKey,             setSortKey]             = useState<SortKey>('protein_dollar');
   const [diningOption,        setDiningOption]        = useState<DiningOption>('all');
   const [priceFilter,         setPriceFilter]         = useState<PriceFilter>('all');
+  const [maxPriceNum,         setMaxPriceNum]         = useState<number | null>(null);
   const [filterDietFlags,     setFilterDietFlags]     = useState<DietaryFlag[]>([]);
   const [filterMinProtein,    setFilterMinProtein]    = useState(0);
   const [filterMaxCalories,   setFilterMaxCalories]   = useState(0);
@@ -1302,6 +1362,7 @@ export default function EatPage() {
       f = f.filter(p => (p.restaurant.serviceTypes ?? []).includes(svcMap[diningOption]));
     }
     if (priceFilter !== 'all') f = f.filter(p => p.restaurant.priceRange === priceFilter);
+    if (maxPriceNum !== null) f = f.filter(p => (p.item.price ?? Infinity) <= maxPriceNum!);
     if (filterDietFlags.length) f = f.filter(p => filterDietFlags.every(flag => (p.item.compatibleWith ?? []).includes(flag)));
     if (filterMinProtein > 0)   f = f.filter(p => p.item.protein >= filterMinProtein);
     if (filterMaxCalories > 0)  f = f.filter(p => p.item.calories <= filterMaxCalories);
@@ -1380,7 +1441,7 @@ export default function EatPage() {
   // showToast declared above (before searchByLocation) to avoid TDZ in deps array
 
   // ── #9 Log confirm handler ──────────────────────────────────────────────
-  const commitLog = useCallback((mealType: MealType, _date: string, _time: string) => {
+  const commitLog = useCallback((mealType: MealType, _date: string, _time: string, servings: number = 1) => {
     if (!pendingLog) return;
     const { type, item, recipe, restaurant } = pendingLog;
 
@@ -1388,8 +1449,9 @@ export default function EatPage() {
       const entry = {
         foodItemId: item.id,
         name: item.name, emoji: item.emoji, mealType,
-        calories: item.calories, protein: item.protein, carbs: item.carbs, fat: item.fat,
-        quantity: 1, restaurantId: restaurant.id,
+        calories: Math.round(item.calories * servings), protein: Math.round(item.protein * servings),
+        carbs: Math.round(item.carbs * servings), fat: Math.round(item.fat * servings),
+        quantity: servings, restaurantId: restaurant.id,
       };
       store.addFoodEntry(entry);
       // Capture the newest entry id right after (Zustand set is synchronous)
@@ -1424,12 +1486,12 @@ export default function EatPage() {
 
   // ── Active filter count ─────────────────────────────────────────────────
   const activeFilterCount = [
-    diningOption !== 'all', priceFilter !== 'all', filterDietFlags.length > 0,
+    diningOption !== 'all', priceFilter !== 'all', maxPriceNum !== null, filterDietFlags.length > 0,
     filterMinProtein > 0, filterMaxCalories > 0, distFilter > 0, filterStrideApproved,
   ].filter(Boolean).length;
 
   const clearAllFilters = useCallback(() => {
-    setDiningOption('all'); setPriceFilter('all'); setFilterDietFlags([]);
+    setDiningOption('all'); setPriceFilter('all'); setMaxPriceNum(null); setFilterDietFlags([]);
     setFilterMinProtein(0); setFilterMaxCalories(0); setDistFilter(0);
     setSortKey('best_match'); setFilterRestaurantId(null); setFilterStrideApproved(false);
     setFilterIncludeSetMeals(false);
@@ -1524,6 +1586,24 @@ export default function EatPage() {
             <button onClick={() => setQuery('')} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 18, lineHeight: 1, padding: 4 }}>✕</button>
           )}
         </div>
+
+        {/* Remaining budget strip */}
+        {(remaining.calories > 0 || remaining.protein > 0) && (
+          <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
+            <span style={{
+              fontSize: 11, fontWeight: 600, color: 'var(--ink-2)',
+              background: 'rgba(0,0,0,0.04)', padding: '4px 10px', borderRadius: 999,
+            }}>
+              {Math.max(0, Math.round(remaining.calories))} kcal left
+            </span>
+            <span style={{
+              fontSize: 11, fontWeight: 600, color: GREEN,
+              background: 'rgba(30,127,92,0.07)', padding: '4px 10px', borderRadius: 999,
+            }}>
+              {Math.max(0, Math.round(remaining.protein))}g protein left
+            </span>
+          </div>
+        )}
 
         {/* View tabs + List/Map toggle */}
         <div style={{ display: 'flex', alignItems: 'stretch' }}>
@@ -1791,7 +1871,7 @@ export default function EatPage() {
                   <div style={{ fontSize: 14, fontWeight: 700, color: FG1, marginBottom: 12 }}>Other options nearby</div>
                   {pooledItems.slice(0,5).map(({ item, restaurant, distKm }) => (
                     <MenuItemCard key={`${restaurant.id}__${item.id}`} item={item} restaurant={restaurant} distKm={distKm}
-                      userFlags={userFlags} onLog={() => router.push(buildLogUrl(item, restaurant))}
+                      userFlags={userFlags} onLog={() => setPendingLog({ type: 'item', item, restaurant })}
                       onUnlog={() => unlog(item.id, item.name, item.emoji)}
                       logged={loggedIds.has(item.id)}
                       isExpanded={expandedId === item.id}
@@ -1837,7 +1917,7 @@ export default function EatPage() {
               )}
               {items.map(({ item, restaurant, distKm }) => (
                 <MenuItemCard key={`${restaurant.id}__${item.id}`} item={item} restaurant={restaurant} distKm={distKm}
-                  userFlags={userFlags} onLog={() => router.push(buildLogUrl(item, restaurant))}
+                  userFlags={userFlags} onLog={() => setPendingLog({ type: 'item', item, restaurant })}
                   onUnlog={() => unlog(item.id, item.name, item.emoji)}
                   logged={loggedIds.has(item.id)}
                   isExpanded={expandedId === item.id}
@@ -1853,7 +1933,7 @@ export default function EatPage() {
                   <div style={{ fontSize: 11, color: FG3, marginBottom: 10 }}>These don't match all your criteria but may be worth a look</div>
                   {pooledItems.filter(p => !items.find(i => i.item.id === p.item.id)).slice(0, 4).map(({ item, restaurant, distKm }) => (
                     <MenuItemCard key={`fallback__${restaurant.id}__${item.id}`} item={item} restaurant={restaurant} distKm={distKm}
-                      userFlags={userFlags} onLog={() => router.push(buildLogUrl(item, restaurant))}
+                      userFlags={userFlags} onLog={() => setPendingLog({ type: 'item', item, restaurant })}
                       onUnlog={() => unlog(item.id, item.name, item.emoji)}
                       logged={loggedIds.has(item.id)}
                       isExpanded={expandedId === item.id}
@@ -1973,6 +2053,7 @@ export default function EatPage() {
         sortKey={sortKey} setSortKey={setSortKey}
         filterStrideApproved={filterStrideApproved} setFilterStrideApproved={setFilterStrideApproved}
         filterIncludeSetMeals={filterIncludeSetMeals} setFilterIncludeSetMeals={setFilterIncludeSetMeals}
+        maxPriceNum={maxPriceNum} setMaxPriceNum={setMaxPriceNum}
         showDistance={hasLocation}
         onClear={clearAllFilters}
       />
