@@ -1,9 +1,10 @@
 'use client';
-import { Suspense, useState, useRef, useEffect } from 'react';
+import { Suspense, useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useStrideStore } from '@/lib/store';
 import { api } from '@/lib/apiClient';
+import { SG_RESTAURANTS } from '@/lib/sgFoodDb';
 
 // ── Food database ─────────────────────────────────────────────────────────────
 const FOOD_DB = [
@@ -38,6 +39,9 @@ const FOOD_DB = [
   { id: 'db29', name: 'Orange Juice (240ml)',     emoji: '🍊', cal: 112, p: 2,  c: 26, f: 0  },
   { id: 'db30', name: 'Mixed Salad (200g)',       emoji: '🥗', cal: 60,  p: 3,  c: 10, f: 2  },
 ];
+
+// Unified food item type (covers both FOOD_DB and SG_RESTAURANTS meals)
+type FoodItem = { id: string; name: string; emoji: string; cal: number; p: number; c: number; f: number; _restaurant?: string; _price?: number; _perServing?: boolean };
 
 // ── Activity list ─────────────────────────────────────────────────────────────
 const ACTIVITY_LIST = [
@@ -96,25 +100,17 @@ function LogInner() {
   const store   = useStrideStore();
 
   const initialTab = params.get('tab') === 'activity' ? 'activity' : 'food';
-  const [tab, setTab] = useState<'food' | 'scan' | 'activity'>(initialTab);
+  const [tab, setTab] = useState<'food' | 'activity'>(initialTab);
 
   // ── Food tab state ──────────────────────────────────────────────────────────
   const [query,         setQuery]         = useState('');
-  const [selectedFood,  setSelectedFood]  = useState<typeof FOOD_DB[0] | null>(null);
+  const [selectedFood,  setSelectedFood]  = useState<FoodItem | null>(null);
   const [portion,       setPortion]       = useState(100);
   const [customPortion, setCustomPortion] = useState('');
   const [mealType,      setMealType]      = useState<typeof MEAL_TYPES[number]>('lunch');
   const [manualMode,    setManualMode]    = useState(false);
   const [manual,        setManual]        = useState({ name: '', cal: '', p: '', c: '', f: '' });
   const [foodLogged,    setFoodLogged]    = useState(false);
-
-  // ── Scan tab state ──────────────────────────────────────────────────────────
-  const fileRef     = useRef<HTMLInputElement>(null);
-  const [scanImg,   setScanImg]   = useState<string | null>(null);
-  const [scanResult,setScanResult]= useState<null | { name: string; calories: number; protein: number; carbs: number; fat: number; emoji: string }>(null);
-  const [scanning,  setScanning]  = useState(false);
-  const [scanError, setScanError] = useState('');
-  const [scanLogged,setScanLogged]= useState(false);
 
   // ── Activity tab state ──────────────────────────────────────────────────────
   const [actSearch,     setActSearch]     = useState('');
@@ -127,6 +123,15 @@ function LogInner() {
   const [activityType,  setActivityType]  = useState('');   // free-text, for "Other"
   const [customCalories,setCustomCalories]= useState('');
   const [actLogged,     setActLogged]     = useState(false);
+  const [actManualMode, setActManualMode] = useState(false);
+  const [actManual,     setActManual]     = useState({ name: '', cal: '', duration: '' });
+
+  // Time/date picker for activity — default to now
+  const [activityDate,  setActivityDate]  = useState(() => new Date().toISOString().slice(0, 10));
+  const [activityTime,  setActivityTime]  = useState(() => {
+    const d = new Date();
+    return \`\${String(d.getHours()).padStart(2,'0')}:\${String(d.getMinutes()).padStart(2,'0')}\`;
+  });
 
   // ── 7-day history ──────────────────────────────────────────────────────────
   const [history,     setHistory]     = useState<{ date: string; calories: number; burned: number; target: number | null }[]>([]);
@@ -179,9 +184,33 @@ function LogInner() {
   // Use manual override if provided, otherwise use auto estimate
   const burnEstimate = customCalories ? Number(customCalories) : autoBurnEstimate;
 
-  const filtered = FOOD_DB.filter(f =>
-    f.name.toLowerCase().includes(query.toLowerCase())
-  );
+  // Combined food search: SG restaurant meals first, then generic FOOD_DB
+  const sgMeals = useMemo<FoodItem[]>(() =>
+    SG_RESTAURANTS.flatMap(r => r.menu.map(item => ({
+      id:           item.id,
+      name:         item.name,
+      emoji:        item.emoji ?? '🍽️',
+      cal:          item.calories,
+      p:            item.protein,
+      c:            item.carbs ?? 0,
+      f:            item.fat ?? 0,
+      _restaurant:  r.name,
+      _price:       item.price ?? undefined,
+      _perServing:  true,
+    })))
+  , []);
+
+  const filtered = useMemo<FoodItem[]>(() => {
+    if (!query.trim()) return [];
+    const q = query.toLowerCase();
+    const sgHits = sgMeals.filter(f =>
+      f.name.toLowerCase().includes(q) || (f._restaurant?.toLowerCase().includes(q) ?? false)
+    ).slice(0, 15);
+    const genericHits = FOOD_DB.filter(f =>
+      f.name.toLowerCase().includes(q)
+    ).slice(0, 10);
+    return [...sgHits, ...genericHits];
+  }, [query, sgMeals]);
 
   // ── Handlers ────────────────────────────────────────────────────────────────
   const logFood = () => {
@@ -218,53 +247,14 @@ function LogInner() {
     setTimeout(() => { setFoodLogged(false); setManual({ name: '', cal: '', p: '', c: '', f: '' }); }, 1600);
   };
 
-  const handleScanUpload = async (file: File) => {
-    setScanError(''); setScanResult(null); setScanLogged(false);
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const base64 = (e.target?.result as string).split(',')[1];
-      setScanImg(e.target?.result as string);
-      setScanning(true);
-      try {
-        const res  = await fetch('/api/scan-food', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: base64, mimeType: file.type }),
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        setScanResult(data);
-      } catch (err: unknown) {
-        setScanError(err instanceof Error ? err.message : 'Scan failed');
-      } finally {
-        setScanning(false);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const logScanResult = () => {
-    if (!scanResult) return;
-    store.addFoodEntry({
-      foodItemId: `scan_${Date.now()}`,
-      name:       scanResult.name,
-      emoji:      scanResult.emoji || '📷',
-      mealType,
-      quantity:   100,
-      calories:   scanResult.calories,
-      protein:    scanResult.protein,
-      carbs:      scanResult.carbs,
-      fat:        scanResult.fat,
-    });
-    setScanLogged(true);
-    setTimeout(() => { setScanLogged(false); setScanResult(null); setScanImg(null); }, 1600);
-  };
-
   const logActivity = () => {
     if (!effectiveAct) return;
     const distNote    = distance ? ` · ${distance} km` : '';
     const speedNote   = speed   ? ` · ${speed} km/h`   : '';
     const inclineNote = incline ? ` · ${incline}% incline` : '';
+    const loggedAt    = activityDate && activityTime
+      ? new Date(`${activityDate}T${activityTime}:00`).toISOString()
+      : new Date().toISOString();
     store.addActivityEntry({
       name:           effectiveAct.name + distNote + speedNote + inclineNote,
       emoji:          effectiveAct.emoji,
@@ -272,6 +262,7 @@ function LogInner() {
       caloriesBurned: burnEstimate,
       intensity:      burnEstimate > 300 ? 'high' : burnEstimate > 150 ? 'medium' : 'low',
       source:         'manual',
+      loggedAt,
     });
     setActLogged(true);
     setTimeout(() => {
@@ -279,6 +270,26 @@ function LogInner() {
       setCustomCalories(''); setCustomDuration(''); setDistance('');
       setSpeed(''); setIncline(''); setActivityType('');
     }, 1600);
+  };
+
+  const logManualActivity = () => {
+    if (!actManual.name || !actManual.cal) return;
+    const loggedAt = activityDate && activityTime
+      ? new Date(`${activityDate}T${activityTime}:00`).toISOString()
+      : new Date().toISOString();
+    const dur = Number(actManual.duration) || 30;
+    const cal = Number(actManual.cal);
+    store.addActivityEntry({
+      name:           actManual.name,
+      emoji:          '🔥',
+      durationMins:   dur,
+      caloriesBurned: cal,
+      intensity:      cal > 300 ? 'high' : cal > 150 ? 'medium' : 'low',
+      source:         'manual',
+      loggedAt,
+    });
+    setActLogged(true);
+    setTimeout(() => { setActLogged(false); setActManual({ name: '', cal: '', duration: '' }); setActManualMode(false); }, 1600);
   };
 
   // ── Design tokens — now using Stride CSS variables ──
@@ -407,7 +418,6 @@ function LogInner() {
           display: 'flex', gap: 3,
         }}>
           <button style={tabBtnStyle(tab === 'food')}     onClick={() => setTab('food')}>🍽 Food</button>
-          <button style={tabBtnStyle(tab === 'scan')}     onClick={() => setTab('scan')}>📷 Scan</button>
           <button style={tabBtnStyle(tab === 'activity')} onClick={() => setTab('activity')}>⚡ Activity</button>
         </div>
       </div>
@@ -496,33 +506,55 @@ function LogInner() {
                           <span style={{ fontSize: 20 }}>{f.emoji}</span>
                           <div style={{ flex: 1 }}>
                             <div style={{ fontSize: 13, fontWeight: 700, color: FG1 }}>{f.name}</div>
-                            <div style={{ fontSize: 11, color: FG3, marginTop: 1 }}>{f.cal} kcal · P{f.p}g · C{f.c}g · F{f.f}g</div>
+                            <div style={{ fontSize: 11, color: FG3, marginTop: 1 }}>
+                              {f._restaurant && <><span style={{ color: GREEN, fontWeight: 600 }}>{f._restaurant}</span>{' · '}</>}
+                              {f._price != null && <><span style={{ fontWeight: 600, color: FG2 }}>${f._price.toFixed(2)}</span>{' · '}</>}
+                              {f.cal} cal · P{f.p}g · C{f.c}g · F{f.f}g
+                            </div>
                           </div>
                         </button>
                       ))}
                     </div>
                   )}
 
-                  {/* Portion picker — shown inline once a food is selected */}
+                  {/* Portion picker — grams for generic, servings for restaurant items */}
                   {selectedFood && (
                     <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${BORDER}` }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: FG3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>
-                        Portion (g)
-                      </div>
-                      <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
-                        {PORTION_PRESETS.map(p => (
-                          <button key={p} onClick={() => { setPortion(p); setCustomPortion(''); }} style={{
-                            flex: 1, padding: '5px 0', borderRadius: 20,
-                            fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                            background: portion === p && !customPortion ? 'rgba(30,127,92,0.10)' : BG,
-                            color:      portion === p && !customPortion ? GREEN : FG3,
-                            border: `1px solid ${portion === p && !customPortion ? 'rgba(30,127,92,0.25)' : BORDER}`,
-                            transition: 'all .15s',
-                          }}>{p}</button>
-                        ))}
-                      </div>
-                      <input style={{ ...inputStyle, padding: '8px 12px', fontSize: 13 }} type="number" placeholder="Custom grams…"
-                        value={customPortion} onChange={e => setCustomPortion(e.target.value)}/>
+                      {selectedFood._perServing ? (
+                        <>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: FG3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Servings</div>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            {[100, 200, 300].map((v, i) => (
+                              <button key={v} onClick={() => { setPortion(v); setCustomPortion(''); }} style={{
+                                flex: 1, padding: '5px 0', borderRadius: 20,
+                                fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                                background: portion === v && !customPortion ? 'rgba(30,127,92,0.10)' : BG,
+                                color:      portion === v && !customPortion ? GREEN : FG3,
+                                border: `1px solid ${portion === v && !customPortion ? 'rgba(30,127,92,0.25)' : BORDER}`,
+                                transition: 'all .15s',
+                              }}>{i + 1}×</button>
+                            ))}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: FG3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Portion (g)</div>
+                          <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                            {PORTION_PRESETS.map(p => (
+                              <button key={p} onClick={() => { setPortion(p); setCustomPortion(''); }} style={{
+                                flex: 1, padding: '5px 0', borderRadius: 20,
+                                fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                                background: portion === p && !customPortion ? 'rgba(30,127,92,0.10)' : BG,
+                                color:      portion === p && !customPortion ? GREEN : FG3,
+                                border: `1px solid ${portion === p && !customPortion ? 'rgba(30,127,92,0.25)' : BORDER}`,
+                                transition: 'all .15s',
+                              }}>{p}</button>
+                            ))}
+                          </div>
+                          <input style={{ ...inputStyle, padding: '8px 12px', fontSize: 13 }} type="number" placeholder="Custom grams…"
+                            value={customPortion} onChange={e => setCustomPortion(e.target.value)}/>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
@@ -555,7 +587,9 @@ function LogInner() {
                       fontSize: 15, fontWeight: 800, cursor: 'pointer', width: '100%',
                       transition: 'all .2s', boxShadow: foodLogged ? 'none' : '0 4px 16px rgba(30,127,92,0.28)',
                     }}>
-                      {foodLogged ? '✓ Logged!' : `Log ${effectivePortion}g of ${selectedFood.name}`}
+                      {foodLogged ? '✓ Logged!' : selectedFood._perServing
+                        ? `Log ${effectivePortion / 100 === 1 ? '1 serving' : `${effectivePortion / 100}× serving`} of ${selectedFood.name}`
+                        : `Log ${effectivePortion}g of ${selectedFood.name}`}
                     </button>
                   </>
                 )}
@@ -585,110 +619,70 @@ function LogInner() {
           </div>
         )}
 
-        {/* ══════════════════════ SCAN TAB ══════════════════════ */}
-        {tab === 'scan' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <input ref={fileRef} type="file" accept="image/*" capture="environment"
-              style={{ display: 'none' }}
-              onChange={e => { const f = e.target.files?.[0]; if (f) handleScanUpload(f); }}
-            />
-
-            {!scanImg ? (
-              <button onClick={() => fileRef.current?.click()} style={{
-                background: CARD, border: `2px dashed ${BORDER}`,
-                borderRadius: 24, minHeight: 200, cursor: 'pointer',
-                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                justifyContent: 'center', gap: 12, color: FG3, transition: 'all .2s',
-              }}
-              onMouseOver={e => (e.currentTarget.style.borderColor = GREEN)}
-              onMouseOut={e  => (e.currentTarget.style.borderColor = BORDER)}
-              >
-                <span style={{ fontSize: 44 }}>📷</span>
-                <div style={{ fontSize: 15, fontWeight: 700, color: FG2 }}>Take a photo or upload</div>
-                <div style={{ fontSize: 12, color: FG3 }}>AI will identify the food &amp; macros</div>
-              </button>
-            ) : (
-              <div style={{ position: 'relative', borderRadius: 20, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.06)' }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={scanImg} alt="Scanned food" style={{ width: '100%', maxHeight: 240, objectFit: 'cover', display: 'block' }} />
-                <button onClick={() => { setScanImg(null); setScanResult(null); setScanError(''); setScanLogged(false); }} style={{
-                  position: 'absolute', top: 10, right: 10,
-                  background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: '50%',
-                  width: 30, height: 30, color: '#fff', cursor: 'pointer', fontSize: 14,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>✕</button>
-              </div>
-            )}
-
-            {scanning && (
-              <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                <div style={{ width: 32, height: 32, borderRadius: '50%', border: `3px solid ${BORDER}`, borderTopColor: GREEN, animation: 'spin 1s linear infinite', margin: '0 auto 12px' }} />
-                <div style={{ fontSize: 13, color: FG3 }}>Analysing with AI…</div>
-              </div>
-            )}
-
-            {scanError && (
-              <div style={{ background: 'rgba(208,78,54,0.06)', border: '1px solid rgba(208,78,54,0.18)', borderRadius: 14, padding: '12px 14px' }}>
-                <div style={{ fontSize: 13, color: '#D04E36' }}>⚠️ {scanError}</div>
-              </div>
-            )}
-
-            {scanResult && (
-              <>
-                <div style={{ ...cardStyle, background: 'rgba(30,127,92,0.04)', border: '1px solid rgba(30,127,92,0.15)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                    <span style={{ fontSize: 28 }}>{scanResult.emoji || '🍽️'}</span>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: FG1 }}>{scanResult.name}</div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    {[
-                      { label: 'CAL',  val: scanResult.calories, color: '#D04E36', bg: 'rgba(208,78,54,0.08)'  },
-                      { label: 'PRO',  val: scanResult.protein,  color: '#2E6FB8', bg: 'rgba(46,111,184,0.08)' },
-                      { label: 'CARB', val: scanResult.carbs,    color: '#C98A2E', bg: 'rgba(201,138,46,0.08)' },
-                      { label: 'FAT',  val: scanResult.fat,      color: GREEN,     bg: 'rgba(30,127,92,0.08)'  },
-                    ].map(m => (
-                      <div key={m.label} style={{ flex: 1, borderRadius: 12, padding: '8px 4px', textAlign: 'center', background: m.bg }}>
-                        <div style={{ fontSize: 16, fontWeight: 800, color: m.color }}>{m.val}</div>
-                        <div style={{ fontSize: 9, fontWeight: 700, color: FG3, marginTop: 2 }}>{m.label}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <button onClick={logScanResult} style={{
-                  background: scanLogged ? 'rgba(30,127,92,0.10)' : GREEN,
-                  color: scanLogged ? GREEN : '#fff',
-                  border: 'none', borderRadius: 16, padding: '15px 0',
-                  fontSize: 15, fontWeight: 800, cursor: 'pointer', width: '100%',
-                  transition: 'all .2s', boxShadow: scanLogged ? 'none' : '0 4px 16px rgba(30,127,92,0.28)',
-                }}>
-                  {scanLogged ? '✓ Logged!' : 'Log This Food'}
-                </button>
-              </>
-            )}
-
-            <div style={{
-              background: 'rgba(46,111,184,0.06)', borderRadius: 14, padding: '12px 14px',
-              display: 'flex', gap: 8, border: '1px solid rgba(46,111,184,0.14)',
-            }}>
-              <span style={{ fontSize: 14 }}>💡</span>
-              <span style={{ fontSize: 12, color: '#2E6FB8', lineHeight: 1.6 }}>
-                AI scan uses <strong>Claude Haiku</strong> vision. Add <code style={{ background: BORDER, borderRadius: 4, padding: '1px 4px', color: FG1 }}>ANTHROPIC_API_KEY</code> to enable.
-              </span>
-            </div>
-          </div>
-        )}
-
         {/* ══════════════════════ ACTIVITY TAB ══════════════════════ */}
         {tab === 'activity' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {/* Activity search */}
-            <input
+
+            {/* Manual entry toggle */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button onClick={() => setActManualMode(m => !m)} style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                fontSize: 13, fontWeight: 700,
+                color: actManualMode ? GREEN : FG3,
+                display: 'flex', alignItems: 'center', gap: 5, padding: '2px 0',
+              }}>
+                <span style={{ fontSize: 15 }}>✏️</span>
+                {actManualMode ? '← Back to activities' : 'Manual entry'}
+              </button>
+            </div>
+
+            {/* Manual activity entry form */}
+            {actManualMode && (
+              <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <input style={inputStyle} placeholder="Activity name (e.g. Muay Thai, Basketball…)"
+                  value={actManual.name} onChange={e => setActManual(v => ({ ...v, name: e.target.value }))}/>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: FG3, marginBottom: 6 }}>DURATION (min)</div>
+                    <input style={inputStyle} type="number" min="1" placeholder="e.g. 45"
+                      value={actManual.duration} onChange={e => setActManual(v => ({ ...v, duration: e.target.value }))}/>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: FG3, marginBottom: 6 }}>CALORIES BURNED</div>
+                    <input style={inputStyle} type="number" min="0" placeholder="e.g. 300"
+                      value={actManual.cal} onChange={e => setActManual(v => ({ ...v, cal: e.target.value }))}/>
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: FG3, marginBottom: 6 }}>WHEN?</div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input type="date" value={activityDate} onChange={e => setActivityDate(e.target.value)}
+                      style={{ ...inputStyle, flex: 1, fontSize: 13 }}/>
+                    <input type="time" value={activityTime} onChange={e => setActivityTime(e.target.value)}
+                      style={{ ...inputStyle, width: 110, fontSize: 13 }}/>
+                  </div>
+                </div>
+                <button onClick={logManualActivity} disabled={!actManual.name || !actManual.cal} style={{
+                  background: actLogged ? 'rgba(30,127,92,0.10)' : GREEN,
+                  color: actLogged ? GREEN : '#fff',
+                  border: 'none', borderRadius: 14, padding: '13px 0',
+                  fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                  opacity: (!actManual.name || !actManual.cal) ? 0.4 : 1,
+                  boxShadow: actLogged ? 'none' : 'var(--shadow-green)',
+                }}>
+                  {actLogged ? '✓ Activity Logged!' : 'Log Activity'}
+                </button>
+              </div>
+            )}
+
+            {/* Activity search — hidden in manual mode */}
+            {!actManualMode && <input
               style={{ ...inputStyle, marginBottom: 4 }}
               placeholder="Search activities…"
               value={actSearch}
               onChange={e => setActSearch(e.target.value)}
-            />
-            {ACTIVITY_LIST.filter(a =>
+            />}
+            {!actManualMode && ACTIVITY_LIST.filter(a =>
               a.name.toLowerCase().includes(actSearch.toLowerCase())
             ).map(a => {
               const isSel     = selectedAct?.id === a.id;
@@ -872,6 +866,23 @@ function LogInner() {
                           ↩ Reset to auto-estimate ({autoBurnEstimate} kcal)
                         </button>
                       )}
+
+                      {/* When did you do this? */}
+                      <div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: FG2, marginBottom: 7 }}>When did you do this?</div>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <input
+                            type="date" value={activityDate}
+                            onChange={e => setActivityDate(e.target.value)}
+                            style={{ ...inputStyle, flex: 1, fontSize: 13, padding: '9px 12px' }}
+                          />
+                          <input
+                            type="time" value={activityTime}
+                            onChange={e => setActivityTime(e.target.value)}
+                            style={{ ...inputStyle, width: 110, fontSize: 13, padding: '9px 12px' }}
+                          />
+                        </div>
+                      </div>
 
                       {/* Log button */}
                       <button onClick={logActivity} style={{

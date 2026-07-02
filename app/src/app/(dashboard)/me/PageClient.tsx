@@ -1,6 +1,7 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useStrideStore } from '@/lib/store';
 import { calculateBMR, calculateTargetCalories, calculateMacros } from '@/lib/utils';
 import { useAuth } from '@/lib/auth-context';
@@ -74,6 +75,7 @@ function WeightChart({ entries }: { entries: { date: string; weight: number }[] 
 
 export default function MePage() {
   const { user, loading } = useAuth();
+  const router  = useRouter();
   const store   = useStrideStore();
   const profile = store.profile;
   const trend   = store.getWeightTrend(30);
@@ -90,10 +92,26 @@ export default function MePage() {
   const [form,        setForm       ] = useState({ ...profile });
   const [dietFlags,   setDietFlags  ] = useState<DietaryFlag[]>(profile.dietaryFlags ?? []);
   const [dietSaved,   setDietSaved  ] = useState(false);
+  const [signingOut,  setSigningOut ] = useState(false);
 
-  // Sync profile from Firestore on mount
+  // Track whether we've done the initial server sync so we don't overwrite
+  // in-progress user edits after the first sync completes.
+  const hasSyncedRef = useRef(false);
+
+  // Sync profile from Firestore on mount, then update form with fresh data.
   useEffect(() => {
-    store.syncProfileFromServer().catch(() => {/* offline — local state serves fine */});
+    store.syncProfileFromServer()
+      .then(() => {
+        if (!hasSyncedRef.current) {
+          hasSyncedRef.current = true;
+          // Read the freshly-synced state directly from the store (avoids
+          // stale closure — profile in this closure is the pre-sync snapshot)
+          const fresh = useStrideStore.getState().profile;
+          setForm({ ...fresh });
+          setDietFlags(fresh.dietaryFlags ?? []);
+        }
+      })
+      .catch(() => {/* offline — local state serves fine */});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -438,8 +456,8 @@ export default function MePage() {
                       {new Date(e.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                     </span>
                     <div style={{ display: 'flex', gap: 12 }}>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: '#2E6FB8' }}>{e.weight} kg</span>
-                      {e.bodyFat && <span style={{ fontSize: 13, color: '#D04E36' }}>{e.bodyFat}% bf</span>}
+                      <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--green)' }}>{e.weight} kg</span>
+                      {e.bodyFat && <span style={{ fontSize: 13, color: 'var(--coral)' }}>{e.bodyFat}% bf</span>}
                     </div>
                   </div>
                 ))}
@@ -593,13 +611,13 @@ export default function MePage() {
                       flex: 1,
                       padding: '9px 0',
                       borderRadius: 12,
-                      border: `1px solid ${(form as unknown as Record<string, unknown>).gender === g ? 'var(--green)' : 'var(--line)'}`,
+                      border: `1px solid ${form.gender === g ? 'var(--green)' : 'var(--line)'}`,
                       fontSize: 12,
                       fontWeight: 700,
                       cursor: 'pointer',
                       textTransform: 'capitalize',
-                      background: (form as unknown as Record<string, unknown>).gender === g ? 'rgba(30,127,92,0.10)' : '#F2F4F8',
-                      color:      (form as unknown as Record<string, unknown>).gender === g ? 'var(--green)' : 'var(--muted)',
+                      background: form.gender === g ? 'rgba(30,127,92,0.10)' : '#F2F4F8',
+                      color:      form.gender === g ? 'var(--green)' : 'var(--muted)',
                       transition: 'all .2s',
                       fontFamily: '"Hanken Grotesk", system-ui, sans-serif',
                     }}>{g}</button>
@@ -694,16 +712,19 @@ export default function MePage() {
               <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 12 }}>Account</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <button onClick={async () => {
-                  try { await signOut(auth!); } catch { /* ignore */ }
-                  window.location.href = '/login';
-                }} style={{
+                  setSigningOut(true);
+                  try { if (auth) await signOut(auth); } catch { /* ignore */ }
+                  router.push('/login');
+                }} disabled={signingOut} style={{
                   width: '100%', borderRadius: 14, padding: '12px 0',
                   fontSize: 14, fontWeight: 700,
-                  background: 'var(--green-tint)', color: 'var(--green-deep)',
-                  border: '1px solid var(--green-tint-2)', cursor: 'pointer',
+                  background: signingOut ? 'var(--surface-3)' : 'var(--green-tint)',
+                  color: signingOut ? 'var(--muted)' : 'var(--green-deep)',
+                  border: '1px solid var(--green-tint-2)', cursor: signingOut ? 'default' : 'pointer',
                   fontFamily: '"Hanken Grotesk", system-ui, sans-serif',
+                  transition: 'all .15s',
                 }}>
-                  🚪 Sign Out
+                  {signingOut ? 'Signing out…' : '🚪 Sign Out'}
                 </button>
                 <button onClick={async () => {
                   if (confirm('Reset all app data and start over? This will clear all logs.')) {

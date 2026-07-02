@@ -1,11 +1,3 @@
-'use client';
-import loadable from 'next/dynamic';
+import { notFound } from 'next/navigation';
+export default function Page() { notFound(); }
 
-const PageClient = loadable(
-  () => import('./PageClient'),
-  { ssr: false }
-);
-
-export default function Page() {
-  return <PageClient />;
-}

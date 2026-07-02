@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { useStrideStore } from '@/lib/store';
 import { calculateTargetCalories } from '@/lib/utils';
@@ -11,6 +11,7 @@ import {
 } from '@/lib/sgFoodDb';
 import Avatar from '@/components/ui/Avatar';
 import ValueBadge from '@/components/ui/ValueBadge';
+import type { FoodLogEntry } from '@/types';
 
 /* ── helpers ── */
 function todayLabel() {
@@ -85,7 +86,7 @@ function BestValueCard({ item, restaurant, ppd, index }: {
       <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--green)', marginBottom: 14 }}>{restaurant.name}</div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 3, marginBottom: 8 }}>
         <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 26, fontWeight: 700, color: 'var(--gold)', letterSpacing: '-0.03em' }}>{ppd.toFixed(1)}</span>
-        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--gold)' }}>g protein / $</span>
+        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--gold)' }}>g protein / $ <span style={{ fontSize: 9, fontWeight: 500, opacity: 0.7 }}>(↑ better)</span></span>
       </div>
       <ValueMeter value={ppd} />
       <div style={{ display: 'flex', gap: 6, marginTop: 10, fontSize: 12 }}>
@@ -101,7 +102,7 @@ function BestValueCard({ item, restaurant, ppd, index }: {
 function PopularMealRow({ item, restaurant }: { item: SGMenuItem; restaurant: SGRestaurant }) {
   const ppd = item.price ? proteinPerDollar(item.protein, item.price) : 0;
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '13px 0' }}>
+    <Link href={`/eat?r=${restaurant.id}`} style={{ textDecoration: 'none', display: 'flex', alignItems: 'flex-start', gap: 12, padding: '13px 0' }}>
       <Avatar name={item.name} size={44} radius={13} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink)', marginBottom: 3, lineHeight: 1.2 }}>{item.name}</div>
@@ -123,13 +124,58 @@ function PopularMealRow({ item, restaurant }: { item: SGMenuItem; restaurant: SG
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 9, flexShrink: 0 }}>
         {ppd > 0 && <ValueBadge value={ppd} />}
-        <Link href="/log/food" style={{
+        <div style={{
           width: 34, height: 34, borderRadius: 10, background: 'var(--green-tint)', color: 'var(--green-deep)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 20, lineHeight: 1,
-        }}>+</Link>
+        }}>›</div>
       </div>
+    </Link>
+  );
+}
+
+
+
+/* ── Recently logged row (quick re-log) ── */
+function RecentlyLoggedRow({ entry, onLog }: { entry: FoodLogEntry; onLog: () => void }) {
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', flexShrink: 0, width: 130,
+      background: 'var(--surface)', borderRadius: 16,
+      boxShadow: 'var(--shadow-md)', padding: '12px 12px 10px',
+    }}>
+      <div style={{ fontSize: 26, marginBottom: 8, lineHeight: 1 }}>{entry.emoji}</div>
+      <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.25, marginBottom: 2,
+        overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box',
+        WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const }}>
+        {entry.name}
+      </div>
+      <div style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 500, marginBottom: 10 }}>
+        {entry.calories} cal · {entry.protein}g P
+      </div>
+      <button
+        onClick={onLog}
+        style={{
+          marginTop: 'auto', height: 28, borderRadius: 8, border: '1.5px solid var(--green-tint-2)',
+          background: 'var(--green-tint)', color: 'var(--green-deep)',
+          fontSize: 12, fontWeight: 700, cursor: 'pointer',
+        }}
+      >
+        + Log
+      </button>
     </div>
+  );
+}
+
+/* ── Skeleton shimmer ── */
+function SkeletonBlock({ w = '100%', h = 16, r = 8 }: { w?: string | number; h?: number; r?: number }) {
+  return (
+    <div style={{
+      width: w, height: h, borderRadius: r,
+      background: 'var(--surface-2)',
+      animation: 'skshimmer 1.4s ease infinite',
+      flexShrink: 0,
+    }} />
   );
 }
 
@@ -140,26 +186,90 @@ export default function DashboardClient() {
   const profile   = store.profile;
   const firstName = user?.displayName?.split(' ')[0] ?? profile.name?.split(' ')[0] ?? 'there';
 
-  useEffect(() => { store.loadTodayFromServer?.(); }, []); // eslint-disable-line
+  const [serverLoaded, setServerLoaded] = useState(false);
+  useEffect(() => {
+    store.loadTodayFromServer?.()
+      .catch(() => {/* offline */})
+      .finally(() => setServerLoaded(true));
+  }, []); // eslint-disable-line
 
   const totals    = store.getTodayTotals();
-  const targetCal = calculateTargetCalories(profile);
-  const burned    = (store as unknown as { todayBurned?: number }).todayBurned ?? 0;
+  const targetCal = profile.targetCalories > 0 ? profile.targetCalories : calculateTargetCalories(profile);
+  const burned    = store.getTodayCaloriesBurned();
   const remaining = Math.max(0, targetCal + burned - totals.calories);
   const frac      = targetCal > 0 ? Math.min(1, totals.calories / (targetCal + burned)) : 0;
   const streak    = store.streak ?? 0;
   const onTrack   = totals.calories <= (targetCal + burned);
+  const waterMl   = store.getTodayWater();
+  const targetWaterMl = profile.targetWater ?? 2500;
+  const waterFrac = Math.min(1, waterMl / targetWaterMl);
 
-  const bestMeals = getBestValueMeals();
-  const popular   = getPopularMeals();
+  // Memoised — these iterate all 30+ restaurants on every call
+  const bestMeals = useMemo(() => getBestValueMeals(), []);
+  const popular   = useMemo(() => getPopularMeals(), []);
+
+  // Last 5 unique food items logged (for quick re-log)
+  const recentMeals = useMemo<FoodLogEntry[]>(() => {
+    const seen = new Set<string>();
+    const out: FoodLogEntry[] = [];
+    for (const e of [...store.foodLog].reverse()) {
+      if (!seen.has(e.foodItemId) && out.length < 5) {
+        seen.add(e.foodItemId);
+        out.push(e);
+      }
+    }
+    return out;
+  }, [store.foodLog]);
 
   const FILTERS = [
-    { label: 'Best Value', bolt: true,  href: '/eat?sort=ppd'              },
-    { label: 'High Protein', bolt: false, href: '/eat?q=High+Protein'      },
-    { label: 'Halal',        bolt: false, href: '/eat?diet=halal'           },
-    { label: 'Under $5',     bolt: false, href: '/eat?q=Under+%245'        },
-    { label: 'Recipes',      bolt: false, href: '/eat?view=recipes'         },
+    { label: 'Best Value',   bolt: true,  href: '/eat?open_filter=1&sort=ppd'   },
+    { label: 'High Protein', bolt: false, href: '/eat?open_filter=1&sort=protein' },
+    { label: 'Halal',        bolt: false, href: '/eat?open_filter=1&diet=halal'  },
+    { label: 'Under $5',     bolt: false, href: '/eat?open_filter=1'             },
+    { label: 'Recipes',      bolt: false, href: '/eat?view=recipes'              },
   ];
+
+  // Show skeleton until server data arrives (only on first load, no data yet)
+  const showSkeleton = !serverLoaded && totals.calories === 0 && totals.protein === 0;
+
+  if (showSkeleton) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--bg)', paddingBottom: 88 }}>
+        <style>{`@keyframes skshimmer{0%{opacity:.5}50%{opacity:1}100%{opacity:.5}}`}</style>
+        {/* Header skeleton */}
+        <div style={{ padding: '52px 20px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <SkeletonBlock w={140} h={14} />
+            <SkeletonBlock w={100} h={20} />
+          </div>
+          <SkeletonBlock w={44} h={44} r={14} />
+        </div>
+        {/* Calorie ring card skeleton */}
+        <div style={{ margin: '0 16px 20px', background: 'var(--surface)', borderRadius: 24, padding: '24px 20px', boxShadow: 'var(--shadow-md)' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+            <SkeletonBlock w={140} h={140} r={70} />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
+            {[1,2,3].map(i => (
+              <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center' }}>
+                <SkeletonBlock w={48} h={22} />
+                <SkeletonBlock w={36} h={11} />
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Section header skeleton */}
+        <div style={{ padding: '0 20px', marginBottom: 12, display: 'flex', justifyContent: 'space-between' }}>
+          <SkeletonBlock w={160} h={18} />
+          <SkeletonBlock w={50} h={14} />
+        </div>
+        {/* Horizontal cards skeleton */}
+        <div style={{ display: 'flex', gap: 12, padding: '2px 20px', overflowX: 'hidden' }}>
+          {[1,2,3].map(i => <SkeletonBlock key={i} w={190} h={160} r={16} />)}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', paddingBottom: 88 }}>
@@ -232,6 +342,31 @@ export default function DashboardClient() {
         )}
       </div>
 
+
+      {/* ── Recently logged (quick re-log) ── */}
+      {user && recentMeals.length > 0 && (
+        <div style={{ marginBottom: 22 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 20px', marginBottom: 10 }}>
+            <h2 style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 16, fontWeight: 600, color: 'var(--ink)', margin: 0, letterSpacing: '-0.02em' }}>Log again</h2>
+          </div>
+          <div style={{ display: 'flex', gap: 10, overflowX: 'auto', padding: '2px 20px', scrollbarWidth: 'none' }}>
+            {recentMeals.map(entry => (
+              <RecentlyLoggedRow
+                key={entry.foodItemId}
+                entry={entry}
+                onLog={() => store.addFoodEntry({
+                  foodItemId: entry.foodItemId,
+                  name: entry.name, emoji: entry.emoji,
+                  mealType: entry.mealType,
+                  calories: entry.calories, protein: entry.protein,
+                  carbs: entry.carbs, fat: entry.fat, quantity: 1,
+                })}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ── Search hero ── */}
       <div style={{ padding: '0 20px', marginBottom: 14 }}>
         <div style={{ marginBottom: 6 }}>
@@ -284,7 +419,7 @@ export default function DashboardClient() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', padding: '0 20px', marginBottom: 12 }}>
         <div>
           <h2 style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 18, fontWeight: 600, color: 'var(--ink)', margin: 0, letterSpacing: '-0.02em' }}>Best value right now</h2>
-          <p style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 500, margin: '2px 0 0' }}>Most protein per dollar near you</p>
+          <p style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 500, margin: '2px 0 0' }}>g&thinsp;protein / $ — higher score = better value</p>
         </div>
         <Link href="/eat?sort=ppd" style={{ display: 'flex', alignItems: 'center', gap: 3, color: 'var(--green)', fontWeight: 600, fontSize: 13.5, textDecoration: 'none', whiteSpace: 'nowrap' }}>
           See all <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
@@ -318,6 +453,59 @@ export default function DashboardClient() {
           ))}
         </div>
       </div>
+
+      {/* ── Water tracker (moved below content) ── */}
+      {user && (
+        <div style={{ padding: '28px 20px 0' }}>
+          <div style={{ marginBottom: 10 }}>
+            <h2 style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 16, fontWeight: 600, color: 'var(--ink)', margin: 0, letterSpacing: '-0.02em' }}>Hydration</h2>
+          </div>
+          <div style={{
+            background: 'var(--surface)', borderRadius: 'var(--r-card)',
+            boxShadow: 'var(--shadow-md)', padding: '14px 16px',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                background: '#e8f4fd', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2196f3" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+                </svg>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                  <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.02em' }}>
+                    {waterMl}
+                  </span>
+                  <span style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 500 }}>/ {targetWaterMl} ml</span>
+                </div>
+                <div style={{ fontSize: 12, color: waterFrac >= 1 ? '#2196f3' : 'var(--muted)', fontWeight: 500, marginTop: 1 }}>
+                  {waterFrac >= 1 ? '💧 Goal reached!' : `${targetWaterMl - waterMl} ml to go`}
+                </div>
+              </div>
+            </div>
+            <div style={{ height: 6, borderRadius: 999, background: '#e8f4fd', overflow: 'hidden', marginBottom: 12 }}>
+              <div style={{
+                width: `${waterFrac * 100}%`, height: '100%', borderRadius: 999,
+                background: 'linear-gradient(90deg, #64b5f6, #2196f3)',
+                transition: 'width 0.6s cubic-bezier(.22,.61,.36,1)',
+              }} />
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {[250, 500, 750].map(ml => (
+                <button key={ml} onClick={() => store.addWater(ml)} style={{
+                  flex: 1, height: 36, borderRadius: 10, border: '1.5px solid #bbdefb',
+                  background: '#e8f4fd', color: '#1565c0', fontSize: 13, fontWeight: 700,
+                  cursor: 'pointer', letterSpacing: '-0.01em',
+                }}>
+                  +{ml}ml
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Extra breathing room at bottom for guests */}
       {!user && <div style={{ height: 8 }} />}

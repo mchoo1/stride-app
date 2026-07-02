@@ -3,6 +3,7 @@
 // real-time data; attempting a static build causes a Turbopack TDZ crash.
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import loadable from 'next/dynamic';
 import { useStrideStore } from '@/lib/store';
 import { track, Events } from '@/lib/analytics';
@@ -90,7 +91,65 @@ const DIET_LABEL: Record<DietaryFlag, string> = {
   no_pork:     'No Pork',
 };
 
-// ── Avatar — ONE consistent style, no rainbow ────────────────────────────
+// ── Restaurant domain map for Clearbit logo CDN ──────────────────────────
+const RESTAURANT_DOMAINS: Record<string, string> = {
+  mcd:           'mcdonalds.com.sg',
+  kfc:           'kfc.com.sg',
+  bk:            'burgerking.com.sg',
+  subway:        'subway.com',
+  jollibee:      'jollibee.com.sg',
+  starbucks:     'starbucks.com.sg',
+  old_chang_kee: 'oldchangkee.com',
+  stuffd:        'stuffd.com.sg',
+  grain:         'grain.com.sg',
+  popeyes:       'popeyes.com.sg',
+  wingstop:      'wingstop.com.sg',
+  nandos:        'nandos.com.sg',
+  shake_shack:   'shakeshack.com',
+  daily_cut:     'thedailycut.com.sg',
+  salad_stop:    'saladstop.com',
+  saladbox:      'saladbox.sg',
+  toast_box:     'toastbox.com.sg',
+  ya_kun:        'yakun.com',
+  super_snacks:  'supersnacks.sg',
+  bengawan_solo: 'bengawansolo.com.sg',
+};
+
+// ── RestaurantLogo — Clearbit CDN + initial fallback ─────────────────────
+function RestaurantLogo({
+  restaurantId, name, size = 46, radius = 14,
+}: { restaurantId?: string; name: string; size?: number; radius?: number }) {
+  const [failed, setFailed] = useState(false);
+  const domain = restaurantId ? RESTAURANT_DOMAINS[restaurantId] : undefined;
+
+  if (!failed && domain) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={`https://logo.clearbit.com/${domain}`}
+        alt={name}
+        onError={() => setFailed(true)}
+        style={{ width: size, height: size, borderRadius: radius, flexShrink: 0, objectFit: 'contain', background: 'var(--surface-2)' }}
+      />
+    );
+  }
+  // Fallback: initial letter
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: radius, flexShrink: 0,
+      background: 'var(--surface-2)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: Math.round(size * 0.42), fontWeight: 700,
+      fontFamily: '"Space Grotesk", system-ui, sans-serif',
+      color: 'var(--green-deep)',
+      userSelect: 'none',
+    }}>
+      {name.trim().charAt(0).toUpperCase()}
+    </div>
+  );
+}
+
+// Keep Initial for non-restaurant usage
 function Initial({ name, size = 46, radius = 14 }: { name: string; size?: number; radius?: number }) {
   return (
     <div style={{
@@ -145,43 +204,56 @@ function DietBadge({ fit }: { fit: DietFit }) {
 }
 
 // ── #2 Confidence badge — 3 tiers, dot + text ─────────────────────────────
+const CONFIDENCE_TIPS: Record<string, string> = {
+  approved:  'Sourced directly from the brand\'s official Singapore nutrition info. Highest accuracy.',
+  community: 'User-submitted data, not independently verified. Values may vary slightly.',
+  estimate:  'Estimated from reference data — reasonable accuracy for most tracking purposes.',
+};
+
 function ConfidenceBadge({ source, verified, confidence }: {
   source?: string; verified?: boolean; confidence?: string;
 }) {
+  const [tip, setTip] = useState(false);
   if (!source && !confidence) return null;
 
-  if (source === 'official_sg' && verified) {
-    return (
-      <span title="Sourced from the brand's official SG nutrition data" style={{
-        display: 'inline-flex', alignItems: 'center', gap: 4,
-        fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 6,
-        background: 'rgba(30,127,92,0.07)', border: '1px solid rgba(30,127,92,0.18)', color: GREEN,
-      }}>
-        <span style={{ width: 5, height: 5, borderRadius: '50%', background: GREEN, flexShrink: 0 }} />
-        Stride Approved
-      </span>
-    );
-  }
-  if (source === 'community' || confidence === 'community') {
-    return (
-      <span title="User-submitted data, not independently verified" style={{
-        display: 'inline-flex', alignItems: 'center', gap: 4,
-        fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 6,
-        background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(124,58,237,0.15)', color: PURPLE,
-      }}>
-        <span style={{ width: 5, height: 5, borderRadius: '50%', background: PURPLE, flexShrink: 0 }} />
-        Community
-      </span>
-    );
-  }
+  const isApproved  = source === 'official_sg' && !!verified;
+  const isCommunity = source === 'community' || confidence === 'community';
+  const tipText     = isApproved ? CONFIDENCE_TIPS.approved : isCommunity ? CONFIDENCE_TIPS.community : CONFIDENCE_TIPS.estimate;
+
+  const badgeStyle: React.CSSProperties = isApproved
+    ? { background: 'rgba(30,127,92,0.07)', border: '1px solid rgba(30,127,92,0.18)', color: GREEN }
+    : isCommunity
+    ? { background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(124,58,237,0.15)', color: PURPLE }
+    : { background: 'rgba(139,149,167,0.08)', border: `1px solid ${BORDER}`, color: FG3 };
+
+  const dotBg = isApproved ? GREEN : isCommunity ? PURPLE : FG3;
+  const label = isApproved ? 'Stride Approved' : isCommunity ? 'Community' : 'Estimated';
+
   return (
-    <span title="Derived from reference data, may vary slightly" style={{
-      display: 'inline-flex', alignItems: 'center', gap: 4,
-      fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 6,
-      background: 'rgba(139,149,167,0.08)', border: `1px solid ${BORDER}`, color: FG3,
-    }}>
-      <span style={{ width: 5, height: 5, borderRadius: '50%', background: FG3, flexShrink: 0 }} />
-      Estimated
+    <span style={{ position: 'relative', display: 'inline-block' }}>
+      <span
+        onClick={e => { e.stopPropagation(); setTip(t => !t); }}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 4,
+          fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 6,
+          cursor: 'pointer', ...badgeStyle }}
+      >
+        <span style={{ width: 5, height: 5, borderRadius: '50%', background: dotBg, flexShrink: 0 }} />
+        {label}
+        <span style={{ fontSize: 9, opacity: 0.55 }}>ⓘ</span>
+      </span>
+      {tip && (
+        <>
+          <span style={{ position: 'fixed', inset: 0, zIndex: 500 }} onClick={e => { e.stopPropagation(); setTip(false); }} />
+          <span style={{
+            position: 'absolute', bottom: 'calc(100% + 6px)', left: 0, zIndex: 501,
+            width: 220, background: '#1a1a2e', color: '#fff',
+            fontSize: 11, lineHeight: 1.5, padding: '8px 12px', borderRadius: 10,
+            boxShadow: '0 4px 16px rgba(0,0,0,.3)', display: 'block', pointerEvents: 'none',
+          }}>
+            {tipText}
+          </span>
+        </>
+      )}
     </span>
   );
 }
@@ -195,12 +267,14 @@ function PpdBadge({ protein, price }: { protein: number; price?: number | null }
     <span style={{
       display: 'inline-flex', alignItems: 'baseline', gap: 2,
       padding: '3px 9px', borderRadius: 9,
+      // top tier: gold fill + white text (passes WCAG AA)
+      // normal: deep amber text on tinted bg (≥4.5:1 contrast)
       background: top ? 'var(--gold)' : 'var(--gold-tint)',
-      color: top ? '#fff' : 'var(--gold)',
+      color: top ? '#fff' : '#7A5200',
       fontFamily: '"Space Grotesk", system-ui, sans-serif',
       fontWeight: 700, fontSize: 12, letterSpacing: '-0.02em', whiteSpace: 'nowrap',
     }}>
-      {v.toFixed(1)}<span style={{ fontSize: 10, fontWeight: 600, opacity: 0.85 }}>g/$</span>
+      {v.toFixed(1)}<span style={{ fontSize: 10, fontWeight: 600 }}>&thinsp;g&thinsp;/&thinsp;$</span>
     </span>
   );
 }
@@ -237,13 +311,14 @@ function LogConfirmSheet({
   pending, onConfirm, onCancel,
 }: {
   pending: PendingLog;
-  onConfirm: (mealType: MealType, date: string, time: string) => void;
+  onConfirm: (mealType: MealType, date: string, time: string, servings: number) => void;
   onCancel: () => void;
 }) {
   const ctx = getMealContext();
   const [mealType, setMealType] = useState<MealType>(ctx.mealType);
   const [date, setDate]         = useState(todayStr());
   const [time, setTime]         = useState(nowTimeStr());
+  const [servings, setServings] = useState(1);
 
   const name    = pending.item?.name ?? pending.recipe?.name ?? '';
   const emoji   = pending.item?.emoji ?? pending.recipe?.emoji ?? '🍽️';
@@ -272,10 +347,30 @@ function LogConfirmSheet({
             <div>
               <div style={{ fontSize: 16, fontWeight: 700, color: FG1 }}>{name}</div>
               <div style={{ fontSize: 12, color: FG3, marginTop: 2 }}>
-                {cal} cal · {protein}g protein{price ? ` · $${price.toFixed(2)}` : ''}
+                {Math.round(cal * servings)} cal · {Math.round(protein * servings)}g protein{price ? ` · $${(price * servings).toFixed(2)}` : ''}
               </div>
             </div>
           </div>
+
+          {/* Servings picker */}
+          {pending.type === 'item' && (
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: FG2, marginBottom: 10 }}>Servings</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {[1, 2, 3].map(s => (
+                  <button key={s} onClick={() => setServings(s)} style={{
+                    flex: 1, padding: '10px 4px', borderRadius: 12, cursor: 'pointer',
+                    border: `1.5px solid ${servings === s ? GREEN : BORDER}`,
+                    background: servings === s ? 'rgba(30,127,92,0.08)' : CARD,
+                    color: servings === s ? GREEN : FG2,
+                    fontSize: 13, fontWeight: 700, textAlign: 'center',
+                  }}>
+                    {s}×
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Meal type */}
           <div style={{ marginBottom: 18 }}>
@@ -326,7 +421,7 @@ function LogConfirmSheet({
               flex: 1, padding: '14px', borderRadius: 14, border: `1.5px solid ${BORDER}`,
               background: CARD, color: FG2, fontSize: 15, fontWeight: 700, cursor: 'pointer',
             }}>Cancel</button>
-            <button onClick={() => onConfirm(mealType, date, time)} style={{
+            <button onClick={() => onConfirm(mealType, date, time, servings)} style={{
               flex: 2, padding: '14px', borderRadius: 14, border: 'none',
               background: GREEN, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer',
             }}>Log meal ✓</button>
@@ -349,15 +444,19 @@ function MenuItemCard({
 }) {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const ppd     = item.price ? proteinPerDollar(item.protein, item.price) : 0;
-  const dietFit = getDietFit(item.compatibleWith ?? [], userFlags);
-  const grabUrl  = `https://food.grab.com/sg/en/search?query=${encodeURIComponent(restaurant.name)}`;
+  // Compute min price across restaurant ala carte menu (for "from $X" display)
+  const minPrice = useMemo(() => {
+    const prices = restaurant.menu.filter(i => !i.isSetMeal && i.price != null).map(i => i.price!);
+    return prices.length ? Math.min(...prices) : null;
+  }, [restaurant]);
+  const grabUrl  = `https://food.grab.com/sg/en/search?query=${encodeURIComponent(restaurant.name + ' Singapore')}`;
   const pandaUrl = `https://www.foodpanda.sg/search?q=${encodeURIComponent(restaurant.name)}`;
   const mapsUrl  = `https://www.google.com/maps/search/${encodeURIComponent(restaurant.name + ' Singapore')}`;
 
   return (
     <div style={{ background: CARD, borderRadius: 16, border: `1px solid ${BORDER}`, marginBottom: 10, boxShadow: SHADOW, overflow: 'hidden' }}>
       <div onClick={onToggle} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', cursor: 'pointer' }}>
-        <Initial name={item.name} size={46} radius={12} />
+        <RestaurantLogo restaurantId={restaurant.id} name={restaurant.name} size={46} radius={12} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: FG1, display: 'flex', alignItems: 'center', gap: 5 }}>
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
@@ -374,19 +473,30 @@ function MenuItemCard({
             {restaurant.name}
             {onRestaurantFilter && <span style={{ fontSize: 10, opacity: 0.6 }}>›</span>}
           </button>
+          {/* Collapsed macro row — price + cal prominent; C/F muted to reduce rainbow noise */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-            {item.price != null && <span style={{ fontSize: 13, fontWeight: 700, color: FG1 }}>${item.price.toFixed(2)}</span>}
-            <span style={{ fontSize: 11, color: FG3 }}>{item.calories} cal</span>
-            <span style={{ fontSize: 11, color: FG3 }}>
-              {distKm !== undefined
-                ? `📍 ${distKm < 1 ? `${(distKm * 1000).toFixed(0)}m away` : `${distKm.toFixed(1)}km away`}`
-                : '📍 Singapore'}
-            </span>
+            {item.price != null
+              ? <span style={{ fontSize: 13, fontWeight: 700, color: FG1 }}>${item.price.toFixed(2)}</span>
+              : minPrice != null && <span style={{ fontSize: 11, color: FG3 }}>from ${minPrice.toFixed(2)}</span>
+            }
+            {item.price != null && <span style={{ fontSize: 11, color: FG3 }}>·</span>}
+            <span style={{ fontSize: 11, color: RED, fontWeight: 700 }}>{item.calories} cal</span>
+            <span style={{ fontSize: 11, color: FG3 }}>|</span>
+            <span style={{ fontSize: 11, color: GREEN, fontWeight: 600 }}>P&thinsp;{item.protein}g</span>
+            <span style={{ fontSize: 11, color: FG3 }}>·</span>
+            <span style={{ fontSize: 11, color: FG3, fontWeight: 500 }}>C&thinsp;{item.carbs}g</span>
+            <span style={{ fontSize: 11, color: FG3 }}>·</span>
+            <span style={{ fontSize: 11, color: FG3, fontWeight: 500 }}>F&thinsp;{item.fat}g</span>
             {item.price && ppd > 0 && <PpdBadge protein={item.protein} price={item.price} />}
           </div>
+          {distKm !== undefined && (
+            <div style={{ fontSize: 10, color: FG3, marginTop: 2 }}>
+              📍 {distKm < 1 ? `${(distKm * 1000).toFixed(0)}m away` : `${distKm.toFixed(1)}km away`}
+            </div>
+          )}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-          {/* #9 — + logs (open confirm), ✓ un-logs */}
+          {/* + navigates to log/food with pre-filled data */}
           <button
             onClick={e => { e.stopPropagation(); logged ? onUnlog() : onLog(); }}
             title={logged ? 'Tap to remove from log' : 'Log this meal'}
@@ -406,42 +516,59 @@ function MenuItemCard({
 
       {isExpanded && (
         <div style={{ borderTop: `1px solid ${BORDER}`, padding: '12px 14px 0' }}>
-          {/* Macro grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginBottom: 10 }}>
-            {[
-              { label: 'Protein', val: `${item.protein}g`, color: BLUE  },
-              { label: 'Carbs',   val: `${item.carbs}g`,   color: AMBER },
-              { label: 'Fat',     val: `${item.fat}g`,     color: GREEN },
-              { label: 'Calories',val: `${item.calories}`, color: FG2   },
-            ].map(m => (
-              <div key={m.label} style={{ textAlign: 'center', background: BG, borderRadius: 10, padding: '8px 4px' }}>
-                <div style={{ fontSize: 13, fontWeight: 800, color: m.color }}>{m.val}</div>
-                <div style={{ fontSize: 10, color: FG3, marginTop: 2 }}>{m.label}</div>
+          {/* Macro grid — replaces the collapsed inline row; shows % of daily target too */}
+          {(() => {
+            const targetCal  = 2000; // sensible default; real value from store not in scope here
+            const pctProt    = Math.round((item.protein  / 120)        * 100);
+            const pctCarbs   = Math.round((item.carbs    / 250)        * 100);
+            const pctFat     = Math.round((item.fat      / 65)         * 100);
+            const pctCal     = Math.round((item.calories / targetCal)  * 100);
+            return (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginBottom: 10 }}>
+                {[
+                  { label: 'Protein',  val: `${item.protein}g`,  sub: `${pctProt}% DV`,  color: GREEN },
+                  { label: 'Carbs',    val: `${item.carbs}g`,    sub: `${pctCarbs}% DV`, color: AMBER },
+                  { label: 'Fat',      val: `${item.fat}g`,      sub: `${pctFat}% DV`,   color: FG2   },
+                  { label: 'Calories', val: `${item.calories}`,  sub: `${pctCal}% DV`,   color: RED   },
+                ].map(m => (
+                  <div key={m.label} style={{ textAlign: 'center', background: BG, borderRadius: 10, padding: '8px 4px' }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: m.color }}>{m.val}</div>
+                    <div style={{ fontSize: 9,  color: FG3, marginTop: 1 }}>{m.sub}</div>
+                    <div style={{ fontSize: 10, color: FG3, marginTop: 1 }}>{m.label}</div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            );
+          })()}
           {/* Badges row: confidence + diet + set meal */}
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
-            {/* #2 confidence */}
             <ConfidenceBadge source={item.source} verified={item.verified} confidence={item.confidence} />
-            {/* #7 set meal */}
             {item.isSetMeal && <SetMealChip includes={item.setIncludes} />}
-            {/* diet fit */}
             <DietBadge fit={getDietFit(item.compatibleWith ?? [], userFlags)} />
           </div>
-          {/* CTAs */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 10 }}>
-            {[
-              { href: grabUrl,  label: '🛵 Grab',  color: GREEN },
-              { href: pandaUrl, label: '🐼 Panda', color: RED   },
-              { href: mapsUrl,  label: '🗺️ Maps',  color: BLUE  },
-            ].map(l => (
-              <a key={l.label} href={l.href} target="_blank" rel="noreferrer"
-                onClick={() => track(Events.EAT_ORDER_LINK_TAPPED, { item: item.id })}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '9px 6px', borderRadius: 10, border: `1px solid ${BORDER}`, background: BG, textDecoration: 'none', fontSize: 11, fontWeight: 700, color: l.color }}>
-                {l.label}
+          {/* ── Order online (delivery aggregators with brand colors) ── */}
+          <div style={{ marginBottom: 8 }}>
+            <div style={{ fontSize: 9, fontWeight: 700, color: FG3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>Order online</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <a href={grabUrl} target="_blank" rel="noreferrer"
+                onClick={() => track(Events.EAT_ORDER_LINK_TAPPED, { item: item.id, platform: 'grab' })}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '9px 6px', borderRadius: 10, background: '#00B14F', textDecoration: 'none', fontSize: 12, fontWeight: 700, color: '#fff' }}>
+                🛵 Grab
               </a>
-            ))}
+              <a href={pandaUrl} target="_blank" rel="noreferrer"
+                onClick={() => track(Events.EAT_ORDER_LINK_TAPPED, { item: item.id, platform: 'foodpanda' })}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '9px 6px', borderRadius: 10, background: '#D70F64', textDecoration: 'none', fontSize: 12, fontWeight: 700, color: '#fff' }}>
+                🐼 foodpanda
+              </a>
+            </div>
+          </div>
+          {/* ── Utility ── */}
+          <div style={{ marginBottom: 10 }}>
+            <a href={mapsUrl} target="_blank" rel="noreferrer"
+              onClick={() => track(Events.EAT_ORDER_LINK_TAPPED, { item: item.id, platform: 'maps' })}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '9px 0', borderRadius: 10, border: `1px solid ${BORDER}`, background: BG, textDecoration: 'none', fontSize: 11, fontWeight: 600, color: FG2 }}>
+              🗺️ View on Google Maps
+            </a>
           </div>
 
           {/* Feedback row */}
@@ -484,7 +611,7 @@ function RestaurantBrowseCard({ restaurant, distKm, onSelect }: {
   const serviceIcons: Record<ServiceType, string> = { dine_in: '🍽️', grab_go: '🥡', delivery: '🛵' };
   return (
     <div onClick={onSelect} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 0', borderBottom: `1px solid ${BORDER}`, cursor: 'pointer' }}>
-      <Initial name={restaurant.name} size={52} radius={14} />
+      <RestaurantLogo restaurantId={restaurant.id} name={restaurant.name} size={52} radius={14} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: FG1, marginBottom: 2 }}>{restaurant.name}</div>
         <div style={{ fontSize: 12, color: FG2, marginBottom: 5 }}>
@@ -609,7 +736,7 @@ function RecipeCard({ recipe, onLog, onUnlog, logged, isExpanded, onToggle }: {
   );
 }
 
-/* ── #8 Filter bottom sheet with swipe-dismiss + manual inputs ── */
+/* ── Filter bottom sheet — accordion style ── */
 function FilterSheet({
   open, onClose,
   diningOption, setDiningOption,
@@ -620,6 +747,8 @@ function FilterSheet({
   distFilter, setDistFilter,
   sortKey, setSortKey,
   filterStrideApproved, setFilterStrideApproved,
+  filterIncludeSetMeals, setFilterIncludeSetMeals,
+  maxPriceNum, setMaxPriceNum,
   showDistance,
   onClear,
 }: {
@@ -632,13 +761,24 @@ function FilterSheet({
   distFilter: DistFilter; setDistFilter: (v: DistFilter) => void;
   sortKey: SortKey; setSortKey: (v: SortKey) => void;
   filterStrideApproved: boolean; setFilterStrideApproved: (v: boolean) => void;
+  filterIncludeSetMeals: boolean; setFilterIncludeSetMeals: (v: boolean) => void;
+  maxPriceNum: number | null; setMaxPriceNum: (v: number | null) => void;
   showDistance: boolean;
   onClear: () => void;
 }) {
-  // #8 swipe-to-dismiss
-  const sheetRef   = useRef<HTMLDivElement>(null);
+  const sheetRef    = useRef<HTMLDivElement>(null);
   const touchStartY = useRef(0);
   const [dragY, setDragY] = useState(0);
+  const [openSections, setOpenSections] = useState<Set<string>>(
+    new Set(['sort', 'data', 'price', 'dining', 'diet'])
+  );
+
+  const toggleSection = (id: string) =>
+    setOpenSections(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
@@ -659,15 +799,22 @@ function FilterSheet({
     setDietFlags(dietFlags.includes(flag) ? dietFlags.filter(f => f !== flag) : [...dietFlags, flag]);
 
   const chip = (active: boolean, accent = GREEN) => ({
-    padding: '8px 12px', borderRadius: 20, cursor: 'pointer', fontSize: 12, fontWeight: 600,
+    padding: '7px 12px', borderRadius: 20, cursor: 'pointer', fontSize: 12, fontWeight: 600,
     border: `1.5px solid ${active ? accent : BORDER}`,
-    background: active ? `${accent}14` : CARD, color: active ? accent : FG2,
-    outline: 'none', WebkitTapHighlightColor: 'transparent', transition: 'all .15s',
+    background: active ? `${accent}1a` : CARD, color: active ? accent : FG2,
+    outline: 'none', WebkitTapHighlightColor: 'transparent', transition: 'all .12s',
   } as React.CSSProperties);
 
-  const SL = ({ children }: { children: React.ReactNode }) => (
-    <div style={{ fontSize: 13, fontWeight: 700, color: FG2, marginBottom: 10, marginTop: 4 }}>{children}</div>
-  );
+  const secBtn = {
+    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    padding: '12px 20px', background: 'none', border: 'none', cursor: 'pointer',
+    WebkitTapHighlightColor: 'transparent',
+  } as React.CSSProperties;
+
+  const chevron = (id: string) => ({
+    width: 14, height: 14, flexShrink: 0, transition: 'transform .2s',
+    transform: openSections.has(id) ? 'rotate(0deg)' : 'rotate(-90deg)',
+  } as React.CSSProperties);
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.35)' }} onClick={onClose}>
@@ -680,156 +827,319 @@ function FilterSheet({
         style={{
           position: 'absolute', bottom: 0, left: 0, right: 0,
           background: CARD, borderRadius: '22px 22px 0 0',
-          padding: '8px 0 max(32px, env(safe-area-inset-bottom)) 0',
-          maxHeight: '88vh', overflowY: 'auto',
+          maxHeight: '88vh', display: 'flex', flexDirection: 'column',
           transform: `translateY(${dragY}px)`,
           transition: dragY === 0 ? 'transform .2s ease' : 'none',
         }}
       >
-        <div style={{ width: 36, height: 4, background: '#DDE0E8', borderRadius: 2, margin: '0 auto 20px' }} />
-        <div style={{ padding: '0 20px' }}>
+        {/* Drag handle */}
+        <div style={{ padding: '10px 0 0', flexShrink: 0 }}>
+          <div style={{ width: 36, height: 4, background: '#DDE0E8', borderRadius: 2, margin: '0 auto' }} />
+        </div>
 
-          {/* Sort */}
-          <SL>Sort by</SL>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
-            {([
-              { key: 'best_match'     as SortKey, label: 'Best Match'       },
-              { key: 'protein_dollar' as SortKey, label: 'Protein per $'    },
-              { key: 'price'          as SortKey, label: 'Price: Low→High'  },
-              { key: 'calories'       as SortKey, label: 'Lowest Calories'  },
-              ...(showDistance ? [{ key: 'distance' as SortKey, label: 'Nearest' }] : []),
-            ]).map(o => (
-              <button key={o.key} onClick={() => setSortKey(o.key)} style={chip(sortKey === o.key)}>{o.label}</button>
-            ))}
-          </div>
-          <div style={{ height: 1, background: BORDER, marginBottom: 20 }} />
+        {/* Header */}
+        <div style={{
+          flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '12px 20px', borderBottom: `1px solid ${BORDER}`,
+        }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: FG1 }}>Filter &amp; sort</span>
+          <button onClick={onClear} style={{
+            fontSize: 12, fontWeight: 700, color: GREEN, background: 'none', border: 'none',
+            cursor: 'pointer', padding: 0,
+          }}>Clear all</button>
+        </div>
 
-          {/* #10 Stride Approved */}
-          <div style={{ marginBottom: 20 }}>
-            <button onClick={() => setFilterStrideApproved(!filterStrideApproved)} style={{
-              ...chip(filterStrideApproved, GREEN),
-              display: 'flex', alignItems: 'center', gap: 6,
-            }}>
-              Stride Approved data only
+        {/* Scrollable sections */}
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+
+          {/* Sort by */}
+          <div style={{ borderBottom: `1px solid ${BORDER}` }}>
+            <button style={secBtn} onClick={() => toggleSection('sort')}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: FG1 }}>Sort by</span>
+              <svg style={chevron('sort')} viewBox="0 0 14 14" fill="none">
+                <path d="M3 5l4 4 4-4" stroke={FG3} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </button>
-            {filterStrideApproved && (
-              <div style={{ fontSize: 11, color: FG3, marginTop: 6, lineHeight: 1.5 }}>
-                Shows only items with macros from the brand's official SG nutrition data or HPB-verified sources.
+            {openSections.has('sort') && (
+              <div style={{ padding: '0 20px 14px', display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+                {([
+                  { key: 'best_match'     as SortKey, label: 'Best match'      },
+                  { key: 'protein_dollar' as SortKey, label: 'Protein per $'   },
+                  { key: 'price'          as SortKey, label: 'Price: low→high' },
+                  { key: 'calories'       as SortKey, label: 'Lowest calories' },
+                  ...(showDistance ? [{ key: 'distance' as SortKey, label: 'Nearest' }] : []),
+                ]).map(o => (
+                  <button key={o.key} onClick={() => setSortKey(o.key)} style={chip(sortKey === o.key)}>{o.label}</button>
+                ))}
               </div>
             )}
           </div>
-          <div style={{ height: 1, background: BORDER, marginBottom: 20 }} />
 
-          {/* Price */}
-          <SL>Price range</SL>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-            {(['all', '$', '$$', '$$$'] as PriceFilter[]).map(p => (
-              <button key={p} onClick={() => setPriceFilter(p)} style={chip(priceFilter === p, AMBER)}>
-                {p === 'all' ? 'Any' : p}
-              </button>
-            ))}
+          {/* Data quality */}
+          <div style={{ borderBottom: `1px solid ${BORDER}` }}>
+            <button style={secBtn} onClick={() => toggleSection('data')}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: FG1 }}>Data quality</span>
+              <svg style={chevron('data')} viewBox="0 0 14 14" fill="none">
+                <path d="M3 5l4 4 4-4" stroke={FG3} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            {openSections.has('data') && (
+              <div style={{ padding: '0 20px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {/* Stride Approved toggle */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: FG1 }}>Stride Approved only</div>
+                    <div style={{ fontSize: 11, color: FG3, marginTop: 2 }}>Verified nutrition data</div>
+                  </div>
+                  <div
+                    onClick={() => setFilterStrideApproved(!filterStrideApproved)}
+                    style={{
+                      width: 42, height: 24, borderRadius: 12, cursor: 'pointer', flexShrink: 0,
+                      background: filterStrideApproved ? GREEN : '#DDE0E8',
+                      position: 'relative', transition: 'background .2s',
+                    }}
+                  >
+                    <div style={{
+                      position: 'absolute', top: 3, width: 18, height: 18,
+                      borderRadius: '50%', background: '#fff',
+                      boxShadow: '0 1px 3px rgba(0,0,0,.15)',
+                      left: filterStrideApproved ? 21 : 3, transition: 'left .2s',
+                    }} />
+                  </div>
+                </div>
+                {/* Include set meals toggle */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: FG1 }}>Include set meals</div>
+                    <div style={{ fontSize: 11, color: FG3, marginTop: 2 }}>Show combo / bundled meals</div>
+                  </div>
+                  <div
+                    onClick={() => setFilterIncludeSetMeals(!filterIncludeSetMeals)}
+                    style={{
+                      width: 42, height: 24, borderRadius: 12, cursor: 'pointer', flexShrink: 0,
+                      background: filterIncludeSetMeals ? GREEN : '#DDE0E8',
+                      position: 'relative', transition: 'background .2s',
+                    }}
+                  >
+                    <div style={{
+                      position: 'absolute', top: 3, width: 18, height: 18,
+                      borderRadius: '50%', background: '#fff',
+                      boxShadow: '0 1px 3px rgba(0,0,0,.15)',
+                      left: filterIncludeSetMeals ? 21 : 3, transition: 'left .2s',
+                    }} />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-          <div style={{ height: 1, background: BORDER, marginBottom: 20 }} />
+
+          {/* Price range */}
+          <div style={{ borderBottom: `1px solid ${BORDER}` }}>
+            <button style={secBtn} onClick={() => toggleSection('price')}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: FG1 }}>Price range</span>
+              <svg style={chevron('price')} viewBox="0 0 14 14" fill="none">
+                <path d="M3 5l4 4 4-4" stroke={FG3} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            {openSections.has('price') && (
+              <div style={{ padding: '0 20px 14px' }}>
+                <div style={{ display: 'flex', gap: 7, marginBottom: 10 }}>
+                  {(['all', '$', '$$', '$$$'] as PriceFilter[]).map(p => (
+                    <button key={p} onClick={() => setPriceFilter(p)} style={chip(priceFilter === p)}>
+                      {p === 'all' ? 'Any' : p}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: FG2, flexShrink: 0 }}>Max price</span>
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <span style={{ position: 'absolute', left: 9, fontSize: 12, color: FG2, pointerEvents: 'none' }}>$</span>
+                    <input
+                      type='number' min='0' step='0.5'
+                      value={maxPriceNum ?? ''}
+                      onChange={e => setMaxPriceNum(e.target.value ? Number(e.target.value) : null)}
+                      placeholder='e.g. 8'
+                      style={{
+                        width: 90, paddingLeft: 20, paddingRight: 10, paddingTop: 7, paddingBottom: 7,
+                        borderRadius: 10, border: `1.5px solid ${maxPriceNum !== null ? GREEN : BORDER}`,
+                        fontSize: 13, color: FG1, background: BG, outline: 'none',
+                        fontFamily: '"Hanken Grotesk",system-ui,sans-serif',
+                      }}
+                    />
+                  </div>
+                  {maxPriceNum !== null && (
+                    <button onClick={() => setMaxPriceNum(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: FG3, padding: 0 }}>✕</button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Dining option */}
-          <SL>Dining option</SL>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
-            {([
-              { val: 'all'      as DiningOption, label: 'All'         },
-              { val: 'dine_in'  as DiningOption, label: 'Dine-in'  },
-              { val: 'grab_go'  as DiningOption, label: 'Takeaway' },
-              { val: 'delivery' as DiningOption, label: 'Delivery' },
-            ]).map(o => (
-              <button key={o.val} onClick={() => setDiningOption(o.val)} style={chip(diningOption === o.val)}>{o.label}</button>
-            ))}
-          </div>
-          <div style={{ height: 1, background: BORDER, marginBottom: 20 }} />
-
-          {/* #1 Diet type with icons */}
-          <SL>Diet type</SL>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
-            {(['halal','vegetarian','vegan','gluten_free','no_pork','high_protein','keto','low_carb','pescatarian'] as DietaryFlag[]).map(f => (
-              <button key={f} onClick={() => toggleDiet(f)} style={chip(dietFlags.includes(f))}>
-                {DIET_LABEL[f]}
-              </button>
-            ))}
-          </div>
-          <div style={{ height: 1, background: BORDER, marginBottom: 20 }} />
-
-          {/* Macros with #8 manual inputs */}
-          <SL>Macros</SL>
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <span style={{ fontSize: 12, color: FG2 }}>Min Protein</span>
-              {/* #8 manual input */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <input
-                  type="number" min={0} max={100} value={filterMinProtein || ''}
-                  onChange={e => setFilterMinProtein(Math.min(100, Math.max(0, Number(e.target.value) || 0)))}
-                  placeholder="0"
-                  style={{ width: 52, padding: '4px 8px', borderRadius: 8, border: `1px solid ${BORDER}`, fontSize: 12, fontWeight: 700, color: filterMinProtein > 0 ? BLUE : FG2, textAlign: 'center', outline: 'none' }}
-                />
-                <span style={{ fontSize: 11, color: FG3 }}>g</span>
+          <div style={{ borderBottom: `1px solid ${BORDER}` }}>
+            <button style={secBtn} onClick={() => toggleSection('dining')}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: FG1 }}>Dining option</span>
+              <svg style={chevron('dining')} viewBox="0 0 14 14" fill="none">
+                <path d="M3 5l4 4 4-4" stroke={FG3} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            {openSections.has('dining') && (
+              <div style={{ padding: '0 20px 14px', display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+                {([
+                  { val: 'all'      as DiningOption, label: 'All'      },
+                  { val: 'dine_in'  as DiningOption, label: 'Dine-in'  },
+                  { val: 'grab_go'  as DiningOption, label: 'Takeaway' },
+                  { val: 'delivery' as DiningOption, label: 'Delivery' },
+                ]).map(o => (
+                  <button key={o.val} onClick={() => setDiningOption(o.val)} style={chip(diningOption === o.val)}>{o.label}</button>
+                ))}
               </div>
-            </div>
-            <input type="range" min={0} max={100} step={5} value={filterMinProtein}
-              onChange={e => setFilterMinProtein(Number(e.target.value))}
-              style={{ width: '100%', accentColor: BLUE, cursor: 'pointer' }}
-            />
-          </div>
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <span style={{ fontSize: 12, color: FG2 }}>Max Calories</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <input
-                  type="number" min={0} max={2000} value={filterMaxCalories || ''}
-                  onChange={e => setFilterMaxCalories(Math.min(2000, Math.max(0, Number(e.target.value) || 0)))}
-                  placeholder="Any"
-                  style={{ width: 64, padding: '4px 8px', borderRadius: 8, border: `1px solid ${BORDER}`, fontSize: 12, fontWeight: 700, color: filterMaxCalories > 0 ? RED : FG2, textAlign: 'center', outline: 'none' }}
-                />
-                <span style={{ fontSize: 11, color: FG3 }}>kcal</span>
-              </div>
-            </div>
-            <input type="range" min={0} max={1200} step={50} value={filterMaxCalories}
-              onChange={e => setFilterMaxCalories(Number(e.target.value))}
-              style={{ width: '100%', accentColor: RED, cursor: 'pointer' }}
-            />
+            )}
           </div>
 
-          {showDistance && (
-            <>
-              <div style={{ height: 1, background: BORDER, marginBottom: 20 }} />
-              <SL>Max distance</SL>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 20, alignItems: 'center' }}>
-                {([0, 0.5, 1, 2, 5] as DistFilter[]).map(d => (
-                  <button key={d} onClick={() => setDistFilter(d)} style={chip(distFilter === d)}>
-                    {d === 0 ? 'Any' : d < 1 ? `${d*1000}m` : `${d}km`}
+          {/* Diet type — badge shows count of active flags */}
+          <div style={{ borderBottom: `1px solid ${BORDER}` }}>
+            <button style={secBtn} onClick={() => toggleSection('diet')}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: FG1 }}>Diet type</span>
+                {dietFlags.length > 0 && (
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, color: '#fff', background: GREEN,
+                    borderRadius: 999, padding: '1px 6px', lineHeight: 1.7,
+                  }}>{dietFlags.length}</span>
+                )}
+              </span>
+              <svg style={chevron('diet')} viewBox="0 0 14 14" fill="none">
+                <path d="M3 5l4 4 4-4" stroke={FG3} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            {openSections.has('diet') && (
+              <div style={{ padding: '0 20px 14px', display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+                {(['halal','vegetarian','vegan','gluten_free','no_pork','high_protein','keto','low_carb','pescatarian'] as DietaryFlag[]).map(f => (
+                  <button key={f} onClick={() => toggleDiet(f)} style={chip(dietFlags.includes(f))}>
+                    {DIET_LABEL[f]}
                   </button>
                 ))}
               </div>
-            </>
+            )}
+          </div>
+
+          {/* Macros — number inputs only, no sliders */}
+          <div style={{ borderBottom: `1px solid ${BORDER}` }}>
+            <button style={secBtn} onClick={() => toggleSection('macros')}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: FG1 }}>Macros</span>
+                {(filterMinProtein > 0 || filterMaxCalories > 0) && (
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, color: GREEN, background: `${GREEN}1a`,
+                    borderRadius: 999, padding: '1px 7px', lineHeight: 1.7,
+                  }}>set</span>
+                )}
+              </span>
+              <svg style={chevron('macros')} viewBox="0 0 14 14" fill="none">
+                <path d="M3 5l4 4 4-4" stroke={FG3} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            {openSections.has('macros') && (
+              <div style={{ padding: '0 20px 14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 12, color: FG2, width: 96 }}>Min protein</span>
+                  <input
+                    type="number" min={0} max={100} value={filterMinProtein || ''} placeholder="0"
+                    onChange={e => setFilterMinProtein(Math.min(100, Math.max(0, Number(e.target.value) || 0)))}
+                    style={{
+                      width: 68, padding: '7px 10px', borderRadius: 10,
+                      border: `1.5px solid ${filterMinProtein > 0 ? BLUE : BORDER}`,
+                      fontSize: 13, fontWeight: 700,
+                      color: filterMinProtein > 0 ? BLUE : FG2,
+                      textAlign: 'center', outline: 'none', background: CARD,
+                    }}
+                  />
+                  <span style={{ fontSize: 11, color: FG3 }}>g</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 12, color: FG2, width: 96 }}>Max calories</span>
+                  <input
+                    type="number" min={0} max={2000} value={filterMaxCalories || ''} placeholder="Any"
+                    onChange={e => setFilterMaxCalories(Math.min(2000, Math.max(0, Number(e.target.value) || 0)))}
+                    style={{
+                      width: 68, padding: '7px 10px', borderRadius: 10,
+                      border: `1.5px solid ${filterMaxCalories > 0 ? RED : BORDER}`,
+                      fontSize: 13, fontWeight: 700,
+                      color: filterMaxCalories > 0 ? RED : FG2,
+                      textAlign: 'center', outline: 'none', background: CARD,
+                    }}
+                  />
+                  <span style={{ fontSize: 11, color: FG3 }}>kcal</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Max distance — only shown when GPS is available */}
+          {showDistance && (
+            <div>
+              <button style={secBtn} onClick={() => toggleSection('dist')}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: FG1 }}>Max distance</span>
+                <svg style={chevron('dist')} viewBox="0 0 14 14" fill="none">
+                  <path d="M3 5l4 4 4-4" stroke={FG3} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+              {openSections.has('dist') && (
+                <div style={{ padding: '0 20px 14px', display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+                  {([0, 0.5, 1, 2, 5] as DistFilter[]).map(d => (
+                    <button key={d} onClick={() => setDistFilter(d)} style={chip(distFilter === d)}>
+                      {d === 0 ? 'Any' : d < 1 ? `${d*1000}m` : `${d}km`}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
-          {/* Action buttons */}
-          <div style={{ display: 'flex', gap: 10, paddingBottom: 8 }}>
-            <button onClick={onClear} style={{
-              flex: 1, padding: '13px', borderRadius: 14, border: `1.5px solid ${BORDER}`,
-              background: CARD, color: FG2, fontSize: 14, fontWeight: 700, cursor: 'pointer',
-            }}>Clear all</button>
-            <button onClick={onClose} style={{
-              flex: 2, padding: '13px', borderRadius: 14, border: 'none',
-              background: GREEN, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer',
-            }}>Show results</button>
-          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{
+          flexShrink: 0, display: 'flex', gap: 10,
+          padding: '12px 20px', paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
+          borderTop: `1px solid ${BORDER}`,
+        }}>
+          <button onClick={onClear} style={{
+            flex: 1, padding: '13px', borderRadius: 14, border: `1.5px solid ${BORDER}`,
+            background: CARD, color: FG2, fontSize: 14, fontWeight: 700, cursor: 'pointer',
+          }}>Clear all</button>
+          <button onClick={onClose} style={{
+            flex: 2, padding: '13px', borderRadius: 14, border: 'none',
+            background: GREEN, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer',
+          }}>Show results</button>
         </div>
       </div>
     </div>
   );
 }
 
+
+/* ── Build log URL for pre-filling the food log page ── */
+function buildLogUrl(item: SGMenuItem, restaurant: SGRestaurant): string {
+  const params = new URLSearchParams({
+    name:   item.name,
+    cal:    String(item.calories),
+    p:      String(item.protein),
+    c:      String(item.carbs),
+    f:      String(item.fat),
+    emoji:  item.emoji,
+    rid:    restaurant.id,
+    rname:  restaurant.name,
+  });
+  if (item.price != null) params.set('price', String(item.price));
+  return `/log/food?${params.toString()}`;
+}
+
 /* ══════════════════════════════ Main page ════════════════════════════════ */
 export default function EatPage() {
   const store   = useStrideStore();
+  const router  = useRouter();
   const mealCtx = getMealContext();
 
   // ── URL params ─────────────────────────────────────────────────────────
@@ -842,8 +1152,13 @@ export default function EatPage() {
     const r = p.get('r');   if (r)   { setFilterRestaurantId(r); setViewType('meals'); }
     const sort = p.get('sort');
     if (sort === 'ppd' || sort === 'protein') setSortKey('protein_dollar');
+    else if (sort === 'price')    setSortKey('price');
+    else if (sort === 'calories') setSortKey('calories');
+    else if (sort === 'distance') setSortKey('distance');
     const diet = p.get('diet');
     if (diet) setFilterDietFlags([diet as DietaryFlag]);
+    // Auto-open filter sheet when open_filter=1 is set (from Dashboard chips)
+    if (p.get('open_filter') === '1') setShowFilters(true);
   }, []);
 
   // ── Core state ──────────────────────────────────────────────────────────
@@ -862,14 +1177,16 @@ export default function EatPage() {
   const loggedIds = useMemo(() => new Set(loggedEntryIds.keys()), [loggedEntryIds]);
 
   // ── Filter state ────────────────────────────────────────────────────────
-  const [sortKey,             setSortKey]             = useState<SortKey>('best_match');
+  const [sortKey,             setSortKey]             = useState<SortKey>('protein_dollar');
   const [diningOption,        setDiningOption]        = useState<DiningOption>('all');
   const [priceFilter,         setPriceFilter]         = useState<PriceFilter>('all');
+  const [maxPriceNum,         setMaxPriceNum]         = useState<number | null>(null);
   const [filterDietFlags,     setFilterDietFlags]     = useState<DietaryFlag[]>([]);
   const [filterMinProtein,    setFilterMinProtein]    = useState(0);
   const [filterMaxCalories,   setFilterMaxCalories]   = useState(0);
   const [distFilter,          setDistFilter]          = useState<DistFilter>(0);
   const [filterStrideApproved,setFilterStrideApproved]= useState(false); // #10
+  const [filterIncludeSetMeals,setFilterIncludeSetMeals]= useState(false); // ala carte only by default
 
   // ── Location state ──────────────────────────────────────────────────────
   const [locState,            setLocState]            = useState<'idle'|'loading'|'granted'|'denied'|'no_key'>('idle');
@@ -1037,12 +1354,15 @@ export default function EatPage() {
   // ── Filtered + sorted items ─────────────────────────────────────────────
   const filteredItems = useMemo((): PooledItem[] => {
     let f = pooledItems;
+    // By default show only ala carte items; set meals hidden unless user enables them
+    if (!filterIncludeSetMeals) f = f.filter(p => !p.item.isSetMeal);
     if (filterRestaurantId) f = f.filter(p => p.restaurant.id === filterRestaurantId);
     if (diningOption !== 'all') {
       const svcMap: Record<DiningOption, ServiceType> = { dine_in:'dine_in', grab_go:'grab_go', delivery:'delivery', all:'dine_in' };
       f = f.filter(p => (p.restaurant.serviceTypes ?? []).includes(svcMap[diningOption]));
     }
     if (priceFilter !== 'all') f = f.filter(p => p.restaurant.priceRange === priceFilter);
+    if (maxPriceNum !== null) f = f.filter(p => (p.item.price ?? Infinity) <= maxPriceNum!);
     if (filterDietFlags.length) f = f.filter(p => filterDietFlags.every(flag => (p.item.compatibleWith ?? []).includes(flag)));
     if (filterMinProtein > 0)   f = f.filter(p => p.item.protein >= filterMinProtein);
     if (filterMaxCalories > 0)  f = f.filter(p => p.item.calories <= filterMaxCalories);
@@ -1066,12 +1386,30 @@ export default function EatPage() {
       return proteinPerDollar(b.item.protein, b.item.price ?? 0) - proteinPerDollar(a.item.protein, a.item.price ?? 0);
     });
     return f;
-  }, [pooledItems, filterRestaurantId, diningOption, priceFilter, filterDietFlags, filterMinProtein, filterMaxCalories, distFilter, sortKey, filterStrideApproved]);
+  }, [pooledItems, filterRestaurantId, diningOption, priceFilter, filterDietFlags, filterMinProtein, filterMaxCalories, distFilter, sortKey, filterStrideApproved, filterIncludeSetMeals]);
 
-  // ── Search results ──────────────────────────────────────────────────────
+  // ── Search results (item names + restaurant names) ──────────────────────
   const searchResults = useMemo(() => {
     if (!query.trim()) return null;
-    return searchAll(query).items.map(h => ({ ...h, distKm: distLookup.get(h.restaurant.id) }));
+    const q = query.toLowerCase();
+    // 1. Match by item name
+    const byItemName = searchAll(query).items.map(h => ({ ...h, distKm: distLookup.get(h.restaurant.id) }));
+    const seen = new Set(byItemName.map(h => h.item.id));
+    // 2. Match by restaurant name — show all ala carte items of matching restaurants
+    const byRestaurantName: typeof byItemName = [];
+    for (const rest of SG_RESTAURANTS) {
+      const matchesName = rest.name.toLowerCase().includes(q) ||
+        (rest.aliases || []).some((a: string) => a.toLowerCase().includes(q));
+      if (matchesName) {
+        for (const item of rest.menu.filter(i => !i.isSetMeal)) {
+          if (!seen.has(item.id)) {
+            seen.add(item.id);
+            byRestaurantName.push({ item, restaurant: rest, distKm: distLookup.get(rest.id) });
+          }
+        }
+      }
+    }
+    return [...byItemName, ...byRestaurantName];
   }, [query, distLookup]);
 
   const recipeSearchResults = useMemo(() => {
@@ -1103,7 +1441,7 @@ export default function EatPage() {
   // showToast declared above (before searchByLocation) to avoid TDZ in deps array
 
   // ── #9 Log confirm handler ──────────────────────────────────────────────
-  const commitLog = useCallback((mealType: MealType, _date: string, _time: string) => {
+  const commitLog = useCallback((mealType: MealType, _date: string, _time: string, servings: number = 1) => {
     if (!pendingLog) return;
     const { type, item, recipe, restaurant } = pendingLog;
 
@@ -1111,8 +1449,9 @@ export default function EatPage() {
       const entry = {
         foodItemId: item.id,
         name: item.name, emoji: item.emoji, mealType,
-        calories: item.calories, protein: item.protein, carbs: item.carbs, fat: item.fat,
-        quantity: 1, restaurantId: restaurant.id,
+        calories: Math.round(item.calories * servings), protein: Math.round(item.protein * servings),
+        carbs: Math.round(item.carbs * servings), fat: Math.round(item.fat * servings),
+        quantity: servings, restaurantId: restaurant.id,
       };
       store.addFoodEntry(entry);
       // Capture the newest entry id right after (Zustand set is synchronous)
@@ -1147,14 +1486,15 @@ export default function EatPage() {
 
   // ── Active filter count ─────────────────────────────────────────────────
   const activeFilterCount = [
-    diningOption !== 'all', priceFilter !== 'all', filterDietFlags.length > 0,
+    diningOption !== 'all', priceFilter !== 'all', maxPriceNum !== null, filterDietFlags.length > 0,
     filterMinProtein > 0, filterMaxCalories > 0, distFilter > 0, filterStrideApproved,
   ].filter(Boolean).length;
 
   const clearAllFilters = useCallback(() => {
-    setDiningOption('all'); setPriceFilter('all'); setFilterDietFlags([]);
+    setDiningOption('all'); setPriceFilter('all'); setMaxPriceNum(null); setFilterDietFlags([]);
     setFilterMinProtein(0); setFilterMaxCalories(0); setDistFilter(0);
     setSortKey('best_match'); setFilterRestaurantId(null); setFilterStrideApproved(false);
+    setFilterIncludeSetMeals(false);
   }, []);
 
   const handleQueryChange = (v: string) => {
@@ -1246,6 +1586,24 @@ export default function EatPage() {
             <button onClick={() => setQuery('')} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 18, lineHeight: 1, padding: 4 }}>✕</button>
           )}
         </div>
+
+        {/* Remaining budget strip */}
+        {(remaining.calories > 0 || remaining.protein > 0) && (
+          <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
+            <span style={{
+              fontSize: 11, fontWeight: 600, color: 'var(--ink-2)',
+              background: 'rgba(0,0,0,0.04)', padding: '4px 10px', borderRadius: 999,
+            }}>
+              {Math.max(0, Math.round(remaining.calories))} kcal left
+            </span>
+            <span style={{
+              fontSize: 11, fontWeight: 600, color: GREEN,
+              background: 'rgba(30,127,92,0.07)', padding: '4px 10px', borderRadius: 999,
+            }}>
+              {Math.max(0, Math.round(remaining.protein))}g protein left
+            </span>
+          </div>
+        )}
 
         {/* View tabs + List/Map toggle */}
         <div style={{ display: 'flex', alignItems: 'stretch' }}>
@@ -1513,7 +1871,7 @@ export default function EatPage() {
                   <div style={{ fontSize: 14, fontWeight: 700, color: FG1, marginBottom: 12 }}>Other options nearby</div>
                   {pooledItems.slice(0,5).map(({ item, restaurant, distKm }) => (
                     <MenuItemCard key={`${restaurant.id}__${item.id}`} item={item} restaurant={restaurant} distKm={distKm}
-                      userFlags={userFlags} onLog={() => setPendingLog({ type:'item', item, restaurant })}
+                      userFlags={userFlags} onLog={() => setPendingLog({ type: 'item', item, restaurant })}
                       onUnlog={() => unlog(item.id, item.name, item.emoji)}
                       logged={loggedIds.has(item.id)}
                       isExpanded={expandedId === item.id}
@@ -1559,7 +1917,7 @@ export default function EatPage() {
               )}
               {items.map(({ item, restaurant, distKm }) => (
                 <MenuItemCard key={`${restaurant.id}__${item.id}`} item={item} restaurant={restaurant} distKm={distKm}
-                  userFlags={userFlags} onLog={() => setPendingLog({ type:'item', item, restaurant })}
+                  userFlags={userFlags} onLog={() => setPendingLog({ type: 'item', item, restaurant })}
                   onUnlog={() => unlog(item.id, item.name, item.emoji)}
                   logged={loggedIds.has(item.id)}
                   isExpanded={expandedId === item.id}
@@ -1575,7 +1933,7 @@ export default function EatPage() {
                   <div style={{ fontSize: 11, color: FG3, marginBottom: 10 }}>These don't match all your criteria but may be worth a look</div>
                   {pooledItems.filter(p => !items.find(i => i.item.id === p.item.id)).slice(0, 4).map(({ item, restaurant, distKm }) => (
                     <MenuItemCard key={`fallback__${restaurant.id}__${item.id}`} item={item} restaurant={restaurant} distKm={distKm}
-                      userFlags={userFlags} onLog={() => setPendingLog({ type:'item', item, restaurant })}
+                      userFlags={userFlags} onLog={() => setPendingLog({ type: 'item', item, restaurant })}
                       onUnlog={() => unlog(item.id, item.name, item.emoji)}
                       logged={loggedIds.has(item.id)}
                       isExpanded={expandedId === item.id}
@@ -1694,6 +2052,8 @@ export default function EatPage() {
         distFilter={distFilter} setDistFilter={setDistFilter}
         sortKey={sortKey} setSortKey={setSortKey}
         filterStrideApproved={filterStrideApproved} setFilterStrideApproved={setFilterStrideApproved}
+        filterIncludeSetMeals={filterIncludeSetMeals} setFilterIncludeSetMeals={setFilterIncludeSetMeals}
+        maxPriceNum={maxPriceNum} setMaxPriceNum={setMaxPriceNum}
         showDistance={hasLocation}
         onClear={clearAllFilters}
       />

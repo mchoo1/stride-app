@@ -1,48 +1,50 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useStrideStore } from '@/lib/store';
-import { MOCK_FOODS, MOCK_SCAN_RESULTS } from '@/lib/mockFoods';
+import { MOCK_FOODS } from '@/lib/mockFoods';
 import { api } from '@/lib/apiClient';
-import { searchAll, SG_MACRO_FOODS } from '@/lib/sgFoodDb';
+import { searchAll, SG_MACRO_FOODS, SG_RESTAURANTS } from '@/lib/sgFoodDb';
 import MealFeedbackSheet from '@/components/MealFeedbackSheet';
 
 // Unified food shape for search results (mock + API)
 interface FoodSearchResult {
   id: string; name: string; emoji: string;
   calories: number; protein: number; carbs: number; fat: number;
+  restaurantId?: string;
+  restaurantName?: string;
+  price?: number;
 }
 
 const MEAL_TABS = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
-type ModalTab = 'search' | 'ai' | 'manual';
+type ModalTab = 'search' | 'manual';
 
 export default function FoodLogPage() {
   const store     = useStrideStore();
+  const params    = useSearchParams();
   const todayFood = store.getTodayFoodLog();
   const totals    = store.getTodayTotals();
   const profile   = store.profile;
 
-  const [activeTab, setActiveTab] = useState(0);
-  const [showModal, setShowModal] = useState(false);
-  const [modalTab,  setModalTab]  = useState<ModalTab>('search');
-  const [toast,     setToast]     = useState('');
+  const [activeTab,  setActiveTab]  = useState(0);
+  const [showModal,  setShowModal]  = useState(false);
+  const [modalTab,   setModalTab]   = useState<ModalTab>('search');
+  const [toast,      setToast]      = useState('');
 
   /* ── Search tab ── */
-  const [search,        setSearch]       = useState('');
-  const [selectedFood,  setSelectedFood] = useState<FoodSearchResult | null>(null);
-  const [weight,        setWeight]       = useState('100');
+  const [search,        setSearch]        = useState('');
+  const [selectedFood,  setSelectedFood]  = useState<FoodSearchResult | null>(null);
+  const [weight,        setWeight]        = useState('100');
   const [searchResults, setSearchResults] = useState<FoodSearchResult[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
 
-  /* ── AI tab ── */
-  const [aiPhoto,   setAiPhoto]   = useState<string | null>(null);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiResult,  setAiResult]  = useState<typeof MOCK_SCAN_RESULTS[0] | null>(null);
-  const aiInputRef = useRef<HTMLInputElement>(null);
+  /* ── Set meal builder ── */
+  const [setItems,       setSetItems]       = useState<FoodSearchResult[]>([]);
+  const [showSetBuilder, setShowSetBuilder] = useState(false);
+  const [restaurantItems, setRestaurantItems] = useState<FoodSearchResult[]>([]);
 
   /* ── Manual tab ── */
-  // Feedback sheet
   const [feedbackTarget, setFeedbackTarget] = useState<{ id: string; name: string } | null>(null);
-
   const [mPhoto, setMPhoto] = useState<string | null>(null);
   const [mName,  setMName]  = useState('');
   const [mQty,   setMQty]   = useState('100');
@@ -56,6 +58,60 @@ export default function FoodLogPage() {
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 2200); };
 
+  /* ── URL params: pre-fill from Eat page "Log" button ── */
+  useEffect(() => {
+    const name  = params.get('name');
+    const cal   = params.get('cal');
+    const p     = params.get('p');
+    const c     = params.get('c');
+    const f     = params.get('f');
+    const emoji = params.get('emoji');
+    const rid   = params.get('rid');
+    const rname = params.get('rname');
+    const price = params.get('price');
+    const mt    = params.get('mealType');
+
+    if (name && cal) {
+      const prefill: FoodSearchResult = {
+        id:             `prefill_${Date.now()}`,
+        name,
+        emoji:          emoji || '🍽️',
+        calories:       Number(cal),
+        protein:        Number(p)  || 0,
+        carbs:          Number(c)  || 0,
+        fat:            Number(f)  || 0,
+        restaurantId:   rid || undefined,
+        restaurantName: rname || undefined,
+        price:          price ? Number(price) : undefined,
+      };
+      if (mt) {
+        const idx = MEAL_TABS.findIndex(t => t.toLowerCase() === mt.toLowerCase());
+        if (idx >= 0) setActiveTab(idx);
+      }
+      setSelectedFood(prefill);
+      // Load sibling items if from a restaurant
+      if (rid) {
+        const rest = SG_RESTAURANTS.find(r => r.id === rid);
+        if (rest) {
+          const siblings: FoodSearchResult[] = rest.menu
+            .filter(item => !item.isSetMeal && item.id !== prefill.id)
+            .slice(0, 20)
+            .map(item => ({
+              id: item.id, name: item.name, emoji: item.emoji,
+              calories: item.calories, protein: item.protein,
+              carbs: item.carbs, fat: item.fat,
+              restaurantId: rest.id, restaurantName: rest.name,
+              price: item.price,
+            }));
+          setRestaurantItems(siblings);
+        }
+      }
+      setShowModal(true);
+      setModalTab('search');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Debounced food search — searches sgFoodDb (restaurant menus + macro foods) first,
   // then falls back to the Firestore community DB for user-submitted items.
   useEffect(() => {
@@ -65,31 +121,53 @@ export default function FoodLogPage() {
       try {
         const q = search.trim().toLowerCase();
 
-        // 1. Search sgFoodDb — restaurant menu items
+        // 1a. Search sgFoodDb — restaurant menu items by item name
         const menuResults = searchAll(q).items.map(({ item, restaurant }) => ({
-          id:       item.id,
-          name:     `${item.name} (${restaurant.name})`,
-          emoji:    item.emoji,
-          calories: item.calories,
-          protein:  item.protein,
-          carbs:    item.carbs,
-          fat:      item.fat,
+          id:             item.id,
+          name:           `${item.name} (${restaurant.name})`,
+          emoji:          item.emoji,
+          calories:       item.calories,
+          protein:        item.protein,
+          carbs:          item.carbs,
+          fat:            item.fat,
+          restaurantId:   restaurant.id,
+          restaurantName: restaurant.name,
+          price:          item.price,
         }));
+
+        // 1b. Search by RESTAURANT NAME — typing "mcdonald" shows all its ala carte items
+        const restaurantNameMatches: FoodSearchResult[] = [];
+        for (const rest of SG_RESTAURANTS) {
+          const matchesName =
+            rest.name.toLowerCase().includes(q) ||
+            (rest.aliases || []).some((a: string) => a.toLowerCase().includes(q));
+          if (matchesName) {
+            for (const item of rest.menu.filter(i => !i.isSetMeal).slice(0, 15)) {
+              restaurantNameMatches.push({
+                id:             item.id,
+                name:           `${item.name} (${rest.name})`,
+                emoji:          item.emoji,
+                calories:       item.calories,
+                protein:        item.protein,
+                carbs:          item.carbs,
+                fat:            item.fat,
+                restaurantId:   rest.id,
+                restaurantName: rest.name,
+                price:          item.price,
+              });
+            }
+          }
+        }
 
         // 2. Search SG_MACRO_FOODS (hawker / HPB dishes)
         const macroResults = SG_MACRO_FOODS
           .filter(f =>
             f.name.toLowerCase().includes(q) ||
-            f.aliases.some(a => a.includes(q))
+            f.aliases.some((a: string) => a.includes(q))
           )
           .map(f => ({
-            id:       f.id,
-            name:     f.name,
-            emoji:    f.emoji,
-            calories: f.calories,
-            protein:  f.protein,
-            carbs:    f.carbs,
-            fat:      f.fat,
+            id: f.id, name: f.name, emoji: f.emoji,
+            calories: f.calories, protein: f.protein, carbs: f.carbs, fat: f.fat,
           }));
 
         // 3. Community Firestore DB (user-submitted items) — secondary
@@ -97,22 +175,18 @@ export default function FoodLogPage() {
         try {
           const items = await api.foods.search(search.trim());
           communityResults = items.map(f => ({
-            id:       f.id,
-            name:     f.name,
-            emoji:    f.emoji ?? '🍽️',
-            calories: f.caloriesPer100g,
-            protein:  f.proteinPer100g,
-            carbs:    f.carbsPer100g,
-            fat:      f.fatPer100g,
+            id: f.id, name: f.name, emoji: f.emoji ?? '🍽️',
+            calories: f.caloriesPer100g, protein: f.proteinPer100g,
+            carbs: f.carbsPer100g, fat: f.fatPer100g,
           }));
         } catch {
           // community DB unavailable — silently skip
         }
 
-        // Merge: sgFoodDb results first, then macro foods, then community
+        // Merge: item-name matches first, restaurant-name matches, then macro foods, then community
         const seen = new Set<string>();
         const merged: FoodSearchResult[] = [];
-        for (const r of [...menuResults, ...macroResults, ...communityResults]) {
+        for (const r of [...menuResults, ...restaurantNameMatches, ...macroResults, ...communityResults]) {
           if (!seen.has(r.id)) { seen.add(r.id); merged.push(r); }
         }
         setSearchResults(merged.slice(0, 30));
@@ -128,7 +202,7 @@ export default function FoodLogPage() {
   const closeModal = () => {
     setShowModal(false);
     setSearch(''); setSelectedFood(null); setWeight('100');
-    setAiPhoto(null); setAiResult(null); setAiLoading(false);
+    setSetItems([]); setShowSetBuilder(false); setRestaurantItems([]);
     setMPhoto(null); setMName(''); setMQty('100');
     setMCal(''); setMPro(''); setMCarb(''); setMFat('');
   };
@@ -141,59 +215,68 @@ export default function FoodLogPage() {
     fat:     Math.round((selectedFood.fat      / 100) * Number(weight || 100) * 10) / 10,
   } : null;
 
+  // Set builder: combined totals of base item + added extras
+  const setTotals = {
+    cal:  (scaledNutrition?.cal  || selectedFood?.calories || 0) + setItems.reduce((s, i) => s + i.calories, 0),
+    prot: (scaledNutrition?.protein || selectedFood?.protein || 0) + setItems.reduce((s, i) => s + i.protein, 0),
+    carb: (scaledNutrition?.carbs   || selectedFood?.carbs  || 0) + setItems.reduce((s, i) => s + i.carbs,   0),
+    fat:  (scaledNutrition?.fat     || selectedFood?.fat    || 0) + setItems.reduce((s, i) => s + i.fat,     0),
+  };
+
+  const handleSelectFood = (food: FoodSearchResult) => {
+    setSelectedFood(food);
+    setSetItems([]);
+    setShowSetBuilder(false);
+    // Preload sibling restaurant items for set builder
+    if (food.restaurantId) {
+      const rest = SG_RESTAURANTS.find(r => r.id === food.restaurantId);
+      if (rest) {
+        const siblings: FoodSearchResult[] = rest.menu
+          .filter(item => !item.isSetMeal && item.id !== food.id)
+          .slice(0, 20)
+          .map(item => ({
+            id: item.id, name: item.name, emoji: item.emoji,
+            calories: item.calories, protein: item.protein,
+            carbs: item.carbs, fat: item.fat,
+            restaurantId: rest.id, restaurantName: rest.name,
+            price: item.price,
+          }));
+        setRestaurantItems(siblings);
+      }
+    } else {
+      setRestaurantItems([]);
+    }
+  };
+
+  const toggleSetItem = (item: FoodSearchResult) => {
+    setSetItems(prev =>
+      prev.some(i => i.id === item.id)
+        ? prev.filter(i => i.id !== item.id)
+        : [...prev, item]
+    );
+  };
+
   const addFromSearch = () => {
     if (!selectedFood) return;
+    // Log base item
     store.addFoodEntry({
       name: `${selectedFood.name} (${weight}g)`,
       calories: scaledNutrition!.cal, protein: scaledNutrition!.protein,
       carbs: scaledNutrition!.carbs, fat: scaledNutrition!.fat,
       emoji: selectedFood.emoji, foodItemId: selectedFood.id, quantity: Number(weight), mealType,
     });
-    showToast(`✅ ${selectedFood.name} added!`);
-    closeModal();
-  };
-
-  const [aiError, setAiError] = useState<string | null>(null);
-
-  const handleAiPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async ev => {
-      const dataUrl = ev.target?.result as string;
-      setAiPhoto(dataUrl);
-      setAiLoading(true);
-      setAiResult(null);
-      setAiError(null);
-      try {
-        const res = await fetch('/api/scan-food', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: dataUrl }),
-        });
-        const data = await res.json();
-        if (!res.ok || data.error) {
-          setAiError(data.error ?? 'Could not identify food. Try a clearer photo.');
-        } else {
-          setAiResult(data);
-        }
-      } catch {
-        setAiError('Network error. Please try again.');
-      } finally {
-        setAiLoading(false);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const addFromAI = () => {
-    if (!aiResult) return;
-    store.addFoodEntry({
-      name: aiResult.name, calories: aiResult.calories,
-      protein: aiResult.protein, carbs: aiResult.carbs, fat: aiResult.fat,
-      emoji: aiResult.emoji, foodItemId: '', quantity: 100, mealType,
+    // Log each added set item
+    setItems.forEach(item => {
+      store.addFoodEntry({
+        name: item.name, calories: item.calories,
+        protein: item.protein, carbs: item.carbs, fat: item.fat,
+        emoji: item.emoji, foodItemId: item.id, quantity: 100, mealType,
+      });
     });
-    showToast(`✅ ${aiResult.name} added!`);
+    const label = setItems.length > 0
+      ? `${selectedFood.name} + ${setItems.length} item${setItems.length > 1 ? 's' : ''}`
+      : selectedFood.name;
+    showToast(`✅ ${label} added!`);
     closeModal();
   };
 
@@ -207,17 +290,17 @@ export default function FoodLogPage() {
 
   const addManual = () => {
     if (!mName.trim() || !mCal) { showToast('⚠️ Name and calories are required'); return; }
+    const name = mName.trim();
     store.addFoodEntry({
-      name: mName.trim(), calories: Number(mCal),
+      name, calories: Number(mCal),
       protein: Number(mPro) || 0, carbs: Number(mCarb) || 0, fat: Number(mFat) || 0,
       emoji: '🍽️', foodItemId: '', quantity: Number(mQty) || 100, mealType,
     });
-    showToast(`✅ ${mName.trim()} added!`);
     closeModal();
+    setTimeout(() => showToast(`✅ ${name} added!`), 50);
   };
 
   const calPct = Math.min((totals.calories / Math.max(profile.targetCalories, 1)) * 100, 100);
-  // Display list: API results when searching, fallback to MOCK_FOODS for browse
   const displayFoods: FoodSearchResult[] = search.trim()
     ? (searchResults.length > 0
         ? searchResults
@@ -268,11 +351,10 @@ export default function FoodLogPage() {
         ))}
       </div>
 
-      {/* 3 Add method buttons */}
+      {/* 2 Add method buttons */}
       <div style={{ display: 'flex', gap: 8, padding: '10px 14px 14px' }}>
         {([
-          { tab: 'search' as ModalTab, icon: '🔍', label: 'Search DB',    color: '#4A90D9' },
-          { tab: 'ai'     as ModalTab, icon: '🤖', label: 'AI Scan',      color: '#9B59B6' },
+          { tab: 'search' as ModalTab, icon: '🔍', label: 'Search Foods', color: '#4A90D9' },
           { tab: 'manual' as ModalTab, icon: '✏️', label: 'Manual Entry', color: '#F5A623' },
         ]).map(btn => (
           <button key={btn.tab} onClick={() => openModal(btn.tab)} style={{
@@ -336,8 +418,7 @@ export default function FoodLogPage() {
             {/* Modal tabs */}
             <div style={{ display: 'flex', borderBottom: '1px solid #f0f0f0', padding: '6px 16px 0' }}>
               {([
-                { id: 'search' as ModalTab, icon: '🔍', label: 'Search DB' },
-                { id: 'ai'     as ModalTab, icon: '🤖', label: 'AI Scan' },
+                { id: 'search' as ModalTab, icon: '🔍', label: 'Search' },
                 { id: 'manual' as ModalTab, icon: '✏️', label: 'Manual' },
               ]).map(t => (
                 <button key={t.id} onClick={() => setModalTab(t.id)} style={{
@@ -360,42 +441,126 @@ export default function FoodLogPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f8f9fa', borderRadius: 12, padding: '10px 14px', marginBottom: 10 }}>
                   <span>🔍</span>
                   <input autoFocus value={search}
-                    onChange={e => { setSearch(e.target.value); setSelectedFood(null); }}
-                    placeholder="Search food name…"
+                    onChange={e => { setSearch(e.target.value); setSelectedFood(null); setSetItems([]); setShowSetBuilder(false); }}
+                    placeholder="Search food or restaurant name…"
                     style={{ border: 'none', outline: 'none', flex: 1, fontSize: 14, background: 'transparent' }}
                   />
-                  {search && <button onClick={() => { setSearch(''); setSelectedFood(null); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', fontSize: 16 }}>✕</button>}
+                  {search && <button onClick={() => { setSearch(''); setSelectedFood(null); setSetItems([]); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', fontSize: 16 }}>✕</button>}
                 </div>
 
                 {selectedFood && (
-                  <div style={{ background: '#f0faf5', border: '2px solid #4CAF82', borderRadius: 14, padding: 14, marginBottom: 10 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                      <span style={{ fontSize: 28 }}>{selectedFood.emoji}</span>
-                      <div>
-                        <div style={{ fontSize: 14, fontWeight: 700 }}>{selectedFood.name}</div>
-                        <div style={{ fontSize: 11, color: '#888' }}>Per 100g: {selectedFood.calories} kcal</div>
+                  <div style={{ overflowY: 'auto', flex: 1 }}>
+                    {/* Selected item card */}
+                    <div style={{ background: '#f0faf5', border: '2px solid #4CAF82', borderRadius: 14, padding: 14, marginBottom: 10 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                        <span style={{ fontSize: 28 }}>{selectedFood.emoji}</span>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 14, fontWeight: 700 }}>{selectedFood.name}</div>
+                          {selectedFood.restaurantName && (
+                            <div style={{ fontSize: 11, color: '#4CAF82', fontWeight: 600 }}>{selectedFood.restaurantName}</div>
+                          )}
+                          {selectedFood.price && (
+                            <div style={{ fontSize: 11, color: '#888' }}>${selectedFood.price.toFixed(2)}</div>
+                          )}
+                        </div>
+                        <button onClick={() => { setSelectedFood(null); setSetItems([]); setShowSetBuilder(false); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', fontSize: 16 }}>✕</button>
                       </div>
-                      <button onClick={() => setSelectedFood(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', fontSize: 16 }}>✕</button>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: '#555', whiteSpace: 'nowrap' }}>Weight (g):</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <button onClick={() => setWeight(w => String(Math.max(5, Number(w) - 25)))} style={{ width: 28, height: 28, borderRadius: '50%', border: '1px solid #ddd', background: '#fff', cursor: 'pointer', fontSize: 16 }}>−</button>
-                        <input type="number" value={weight} onChange={e => setWeight(e.target.value)}
-                          style={{ width: 64, textAlign: 'center', border: '1px solid #ddd', borderRadius: 8, padding: '4px 0', fontSize: 14, fontWeight: 700 }}
-                        />
-                        <button onClick={() => setWeight(w => String(Number(w) + 25))} style={{ width: 28, height: 28, borderRadius: '50%', border: '1px solid #ddd', background: '#fff', cursor: 'pointer', fontSize: 16 }}>+</button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#555', whiteSpace: 'nowrap' }}>Weight (g):</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <button onClick={() => setWeight(w => String(Math.max(5, Number(w) - 25)))} style={{ width: 28, height: 28, borderRadius: '50%', border: '1px solid #ddd', background: '#fff', cursor: 'pointer', fontSize: 16 }}>−</button>
+                          <input type="number" value={weight} onChange={e => setWeight(e.target.value)}
+                            style={{ width: 64, textAlign: 'center', border: '1px solid #ddd', borderRadius: 8, padding: '4px 0', fontSize: 14, fontWeight: 700 }}
+                          />
+                          <button onClick={() => setWeight(w => String(Number(w) + 25))} style={{ width: 28, height: 28, borderRadius: '50%', border: '1px solid #ddd', background: '#fff', cursor: 'pointer', fontSize: 16 }}>+</button>
+                        </div>
                       </div>
+                      {scaledNutrition && (
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+                          <span className="macro-pill pill-cal">{scaledNutrition.cal} kcal</span>
+                          <span className="macro-pill pill-pro">P:{scaledNutrition.protein}g</span>
+                          <span className="macro-pill pill-carb">C:{scaledNutrition.carbs}g</span>
+                          <span className="macro-pill pill-fat">F:{scaledNutrition.fat}g</span>
+                        </div>
+                      )}
                     </div>
-                    {scaledNutrition && (
-                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
-                        <span className="macro-pill pill-cal">{scaledNutrition.cal} kcal</span>
-                        <span className="macro-pill pill-pro">P:{scaledNutrition.protein}g</span>
-                        <span className="macro-pill pill-carb">C:{scaledNutrition.carbs}g</span>
-                        <span className="macro-pill pill-fat">F:{scaledNutrition.fat}g</span>
+
+                    {/* Set meal builder — only if from a restaurant */}
+                    {selectedFood.restaurantId && restaurantItems.length > 0 && (
+                      <div style={{ marginBottom: 10 }}>
+                        <button
+                          onClick={() => setShowSetBuilder(v => !v)}
+                          style={{
+                            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            padding: '10px 14px', background: '#fffbf0', border: '1.5px solid #F5A62350',
+                            borderRadius: showSetBuilder ? '12px 12px 0 0' : 12, cursor: 'pointer',
+                          }}
+                        >
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#C98A2E' }}>
+                            🍱 Build a set from {selectedFood.restaurantName}
+                          </span>
+                          <span style={{ color: '#C98A2E', fontSize: 12 }}>
+                            {setItems.length > 0 ? `${setItems.length} added · ` : ''}{showSetBuilder ? '▲' : '▼'}
+                          </span>
+                        </button>
+                        {showSetBuilder && (
+                          <div style={{
+                            border: '1.5px solid #F5A62350', borderTop: 'none',
+                            borderRadius: '0 0 12px 12px', padding: '4px 0', maxHeight: 200, overflowY: 'auto',
+                          }}>
+                            {restaurantItems.map(item => {
+                              const added = setItems.some(i => i.id === item.id);
+                              return (
+                                <div key={item.id} style={{
+                                  display: 'flex', alignItems: 'center', gap: 10,
+                                  padding: '9px 14px',
+                                  background: added ? 'rgba(245,166,35,0.08)' : 'transparent',
+                                  borderBottom: '1px solid #f5f5f5',
+                                }}>
+                                  <span style={{ fontSize: 20 }}>{item.emoji}</span>
+                                  <div style={{ flex: 1 }}>
+                                    <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e' }}>{item.name}</div>
+                                    <div style={{ fontSize: 11, color: '#aaa' }}>
+                                      {item.calories} kcal · P:{item.protein}g
+                                      {item.price ? ` · $${item.price.toFixed(2)}` : ''}
+                                    </div>
+                                  </div>
+                                  <button
+                                    onClick={() => toggleSetItem(item)}
+                                    style={{
+                                      width: 28, height: 28, borderRadius: '50%', border: 'none',
+                                      cursor: 'pointer', fontSize: 16, fontWeight: 700,
+                                      background: added ? '#4CAF82' : '#f0f0f0',
+                                      color: added ? '#fff' : '#999',
+                                    }}
+                                  >{added ? '✓' : '+'}</button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                        {/* Set totals */}
+                        {setItems.length > 0 && (
+                          <div style={{ marginTop: 8, padding: '8px 12px', background: 'rgba(245,166,35,0.08)', borderRadius: 10 }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: '#C98A2E', marginBottom: 4 }}>
+                              Set total ({1 + setItems.length} items)
+                            </div>
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                              <span className="macro-pill pill-cal">{setTotals.cal} kcal</span>
+                              <span className="macro-pill pill-pro">P:{setTotals.prot}g</span>
+                              <span className="macro-pill pill-carb">C:{setTotals.carb}g</span>
+                              <span className="macro-pill pill-fat">F:{setTotals.fat}g</span>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
-                    <button onClick={addFromSearch} className="btn-primary">Add to {MEAL_TABS[activeTab]}</button>
+
+                    <button onClick={addFromSearch} className="btn-primary">
+                      {setItems.length > 0
+                        ? `Add set (${1 + setItems.length} items) to ${MEAL_TABS[activeTab]}`
+                        : `Add to ${MEAL_TABS[activeTab]}`}
+                    </button>
                   </div>
                 )}
 
@@ -411,8 +576,8 @@ export default function FoodLogPage() {
                         display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
                         borderRadius: 12, marginBottom: 4, background: '#f8f9fa',
                       }}>
-                        <span onClick={() => setSelectedFood(f)} style={{ fontSize: 24, cursor: 'pointer' }}>{f.emoji}</span>
-                        <div onClick={() => setSelectedFood(f)} style={{ flex: 1, cursor: 'pointer' }}>
+                        <span onClick={() => handleSelectFood(f)} style={{ fontSize: 24, cursor: 'pointer' }}>{f.emoji}</span>
+                        <div onClick={() => handleSelectFood(f)} style={{ flex: 1, cursor: 'pointer' }}>
                           <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e' }}>{f.name}</div>
                           <div style={{ fontSize: 11, color: '#aaa' }}>{f.calories} kcal · P:{f.protein}g · C:{f.carbs}g · F:{f.fat}g</div>
                         </div>
@@ -421,7 +586,7 @@ export default function FoodLogPage() {
                           title="Rate accuracy"
                           style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#ccc', padding: '4px 6px', flexShrink: 0 }}
                         >⭐</button>
-                        <span onClick={() => setSelectedFood(f)} style={{ color: '#4CAF82', fontSize: 20, cursor: 'pointer' }}>›</span>
+                        <span onClick={() => handleSelectFood(f)} style={{ color: '#4CAF82', fontSize: 20, cursor: 'pointer' }}>›</span>
                       </div>
                     ))}
                     {!searchLoading && search.trim() && displayFoods.length === 0 && (
@@ -429,71 +594,6 @@ export default function FoodLogPage() {
                         No results found — try Manual Entry
                       </div>
                     )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ── AI SCAN ── */}
-            {modalTab === 'ai' && (
-              <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 24px' }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#1a1a2e', marginBottom: 4 }}>AI Food Recognition</div>
-                <div style={{ fontSize: 12, color: '#aaa', marginBottom: 14 }}>Upload a photo — AI will identify the food and estimate nutrition.</div>
-                <input ref={aiInputRef} type="file" accept="image/*" capture="environment" onChange={handleAiPhoto} style={{ display: 'none' }}/>
-                <div onClick={() => !aiLoading && aiInputRef.current?.click()} style={{
-                  border: '2px dashed #d0d0d0', borderRadius: 16, minHeight: 180,
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                  cursor: aiLoading ? 'default' : 'pointer', overflow: 'hidden',
-                  background: aiPhoto ? 'transparent' : '#fafafa', marginBottom: 14, position: 'relative',
-                }}>
-                  {aiPhoto
-                    // eslint-disable-next-line @next/next/no-img-element
-                    ? <img src={aiPhoto} alt="food" style={{ width: '100%', maxHeight: 220, objectFit: 'cover' }}/>
-                    : (
-                      <>
-                        <span style={{ fontSize: 40, marginBottom: 8 }}>📷</span>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: '#888' }}>Tap to upload photo</div>
-                        <div style={{ fontSize: 12, color: '#bbb', marginTop: 4 }}>Camera or gallery</div>
-                      </>
-                    )
-                  }
-                  {aiLoading && (
-                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.55)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-                      <div style={{ fontSize: 32 }}>🤖</div>
-                      <div style={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>Analysing food…</div>
-                      <div style={{ width: 120, height: 4, background: 'rgba(255,255,255,.3)', borderRadius: 2, overflow: 'hidden' }}>
-                        <div style={{ height: '100%', background: '#4CAF82', borderRadius: 2, animation: 'loadBar 1.8s ease forwards' }}/>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                {aiError && !aiLoading && (
-                  <div style={{ background: '#fff5f5', border: '2px solid #FF6B6B', borderRadius: 14, padding: 14, marginBottom: 10 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#c0392b', marginBottom: 8 }}>⚠️ {aiError}</div>
-                    <button onClick={() => { setAiPhoto(null); setAiError(null); }} className="btn-secondary">Try again</button>
-                  </div>
-                )}
-                {aiResult && !aiLoading && (
-                  <div style={{ background: '#f5f0ff', border: '2px solid #9B59B6', borderRadius: 16, padding: 14 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                      <span style={{ fontSize: 28 }}>{aiResult.emoji}</span>
-                      <div>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a2e' }}>{aiResult.name}</div>
-                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 2 }}>
-                          <span style={{ fontSize: 11, color: '#9B59B6', fontWeight: 600 }}>🎯 {Math.round(((aiResult as Record<string, unknown>).confidence as number ?? 0.9) * 100)}% confidence</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
-                      <span className="macro-pill pill-cal">{aiResult.calories} kcal</span>
-                      <span className="macro-pill pill-pro">P:{aiResult.protein}g</span>
-                      <span className="macro-pill pill-carb">C:{aiResult.carbs}g</span>
-                      <span className="macro-pill pill-fat">F:{aiResult.fat}g</span>
-                    </div>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button onClick={() => { setAiPhoto(null); setAiResult(null); }} className="btn-secondary" style={{ flex: 1 }}>Retake</button>
-                      <button onClick={addFromAI} className="btn-primary" style={{ flex: 2 }}>Add to {MEAL_TABS[activeTab]}</button>
-                    </div>
                   </div>
                 )}
               </div>

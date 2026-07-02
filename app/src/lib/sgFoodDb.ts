@@ -13536,7 +13536,4 @@ export function calcCostPerServing(recipe: SGRecipe): number | null {
   const total = recipe.ingredients.reduce((sum, ing) => {
     const ingredient = SG_INGREDIENTS.find(i => i.id === ing.ingredientId);
     if (!ingredient || !ingredient.price) return sum;
-    return sum + ingredient.price * ing.quantity;
-  }, 0);
-  return Math.round(total * 100) / 100;
-}
+    return sum + ing

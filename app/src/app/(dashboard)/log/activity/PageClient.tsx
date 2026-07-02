@@ -26,7 +26,7 @@ const inputStyle: React.CSSProperties = {
   outline: 'none', fontFamily: 'inherit',
 };
 
-type Mode = 'browse' | 'ai' | 'manual';
+type Mode = 'browse' | 'ai';
 
 export default function ActivityLogPage() {
   const store    = useStrideStore();
@@ -35,6 +35,7 @@ export default function ActivityLogPage() {
   const burned   = store.getTodayCaloriesBurned();
 
   const [mode, setMode]           = useState<Mode>('browse');
+  const [showManualQuick, setShowManualQuick] = useState(false);
   const [duration, setDuration]   = useState(30);
   const [intensity, setIntensity] = useState<IntensityLevel>('medium');
   const [aiDesc, setAiDesc]       = useState('');
@@ -126,6 +127,54 @@ export default function ActivityLogPage() {
 
       <div style={{ flex: 1, padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 100 }}>
 
+        {/* ── Quick Manual Entry (always at top) ── */}
+        <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, boxShadow: SHADOW, overflow: 'hidden' }}>
+          <button
+            onClick={() => setShowManualQuick(v => !v)}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer',
+            }}
+          >
+            <span style={{ fontSize: 13, fontWeight: 700, color: FG1 }}>✏️ Manual Entry</span>
+            <span style={{ fontSize: 12, color: FG3 }}>{showManualQuick ? '▲ Hide' : '▼ Quick log'}</span>
+          </button>
+          {showManualQuick && (
+            <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <input style={inputStyle} placeholder="Activity name (e.g. Morning run)"
+                value={manualForm.name} onChange={e => setManualForm(f => ({ ...f, name: e.target.value }))} />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <input type="number" style={inputStyle} placeholder="Duration (mins)"
+                  value={manualForm.duration} onChange={e => setManualForm(f => ({ ...f, duration: e.target.value }))} />
+                <input type="number" style={inputStyle} placeholder="Calories burned"
+                  value={manualForm.calories} onChange={e => setManualForm(f => ({ ...f, calories: e.target.value }))} />
+              </div>
+              {/* Intensity for manual */}
+              <div style={{ display: 'flex', gap: 6 }}>
+                {INTENSITY_OPTS.map(opt => (
+                  <button key={opt.key} onClick={() => setIntensity(opt.key)} style={{
+                    flex: 1, borderRadius: 10, padding: '8px 0', fontSize: 11, fontWeight: 700,
+                    cursor: 'pointer', transition: 'all .15s', border: `1.5px solid ${intensity === opt.key ? opt.color : BORDER}`,
+                    background: intensity === opt.key ? opt.bg : BG, color: intensity === opt.key ? opt.color : FG3,
+                  }}>
+                    {opt.emoji} {opt.label}
+                  </button>
+                ))}
+              </div>
+              <button onClick={() => { logManual(); setShowManualQuick(false); }} disabled={!manualForm.name || !manualForm.calories} style={{
+                width: '100%', padding: '12px 0', borderRadius: 12, border: 'none',
+                background: manualForm.name && manualForm.calories ? GREEN : '#E5E9F2',
+                color: manualForm.name && manualForm.calories ? '#fff' : FG3,
+                fontSize: 14, fontWeight: 700, cursor: manualForm.name && manualForm.calories ? 'pointer' : 'default',
+                boxShadow: manualForm.name && manualForm.calories ? '0 4px 14px rgba(30,127,92,0.25)' : 'none',
+                transition: 'all .15s',
+              }}>
+                Log Activity
+              </button>
+            </div>
+          )}
+        </div>
+
         {/* Duration + intensity */}
         <div style={{ background: CARD, borderRadius: 20, padding: '16px', border: `1px solid ${BORDER}`, boxShadow: SHADOW }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: FG3, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
@@ -160,7 +209,6 @@ export default function ActivityLogPage() {
           {([
             { key: 'browse', l: '🏋️ Browse'     },
             { key: 'ai',     l: '🤖 AI Estimate' },
-            { key: 'manual', l: '✏️ Manual'       },
           ] as { key: Mode; l: string }[]).map(t => (
             <button key={t.key} onClick={() => setMode(t.key)} style={{
               flex: 1, borderRadius: 14, padding: '10px 0', fontSize: 13,
@@ -247,49 +295,24 @@ export default function ActivityLogPage() {
                 <div style={{ fontSize: 11, color: FG3, marginBottom: 12 }}>
                   * Estimated for {profile.currentWeight}kg body weight.
                 </div>
-                <button onClick={logAiResult} style={{
-                  width: '100%', padding: '12px 0', borderRadius: 12, border: 'none',
-                  background: GREEN, color: '#fff', fontSize: 14, fontWeight: 700,
-                  cursor: 'pointer', boxShadow: '0 4px 14px rgba(30,127,92,0.25)',
-                }}>
-                  ✅ Log This Activity
-                </button>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={() => { setAiResult(null); setAiDesc(''); }} style={{
+                    flex: 1, padding: '12px 0', borderRadius: 12, border: `1px solid ${BORDER}`,
+                    background: CARD, color: FG2, fontSize: 14, fontWeight: 600,
+                    cursor: 'pointer',
+                  }}>
+                    ✕ Dismiss
+                  </button>
+                  <button onClick={logAiResult} style={{
+                    flex: 2, padding: '12px 0', borderRadius: 12, border: 'none',
+                    background: GREEN, color: '#fff', fontSize: 14, fontWeight: 700,
+                    cursor: 'pointer', boxShadow: '0 4px 14px rgba(30,127,92,0.25)',
+                  }}>
+                    ✅ Log This Activity
+                  </button>
+                </div>
               </div>
             )}
-          </div>
-        )}
-
-        {/* Manual */}
-        {mode === 'manual' && (
-          <div style={{ background: CARD, borderRadius: 20, padding: 18, border: `1px solid ${BORDER}`, boxShadow: SHADOW, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: FG2, marginBottom: 6 }}>Activity name *</label>
-              <input style={inputStyle} placeholder="e.g. Morning run"
-                value={manualForm.name} onChange={e => setManualForm(f => ({ ...f, name: e.target.value }))} />
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: FG2, marginBottom: 6 }}>Duration (mins)</label>
-                <input type="number" style={inputStyle}
-                  value={manualForm.duration} onChange={e => setManualForm(f => ({ ...f, duration: e.target.value }))} />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: FG2, marginBottom: 6 }}>Calories burned *</label>
-                <input type="number" style={inputStyle} placeholder="kcal"
-                  value={manualForm.calories} onChange={e => setManualForm(f => ({ ...f, calories: e.target.value }))} />
-              </div>
-            </div>
-            <button onClick={logManual} disabled={!manualForm.name || !manualForm.calories} style={{
-              width: '100%', padding: '13px 0', borderRadius: 14, border: 'none',
-              background: manualForm.name && manualForm.calories ? GREEN : '#E5E9F2',
-              color: manualForm.name && manualForm.calories ? '#fff' : FG3,
-              fontSize: 14, fontWeight: 700,
-              cursor: manualForm.name && manualForm.calories ? 'pointer' : 'default',
-              boxShadow: manualForm.name && manualForm.calories ? '0 4px 14px rgba(30,127,92,0.25)' : 'none',
-              transition: 'all .15s',
-            }}>
-              Log Activity
-            </button>
           </div>
         )}
 
