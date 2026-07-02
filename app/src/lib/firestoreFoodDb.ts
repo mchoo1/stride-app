@@ -27,7 +27,15 @@ import type { FieldValue, Timestamp } from 'firebase/firestore';
  *   community       — user-submitted or user-verified data (feedback_count >= 3)
  *   stride_estimate — extracted from USDA or external DB, not SG-specific
  */
-export type ConfidenceTier = 'stride_approved' | 'community' | 'stride_estimate';
+export type ConfidenceTier =
+  | 'stride_approved'    // independent official source (brand PDF / HPB), verified
+  | 'merchant_verified'  // first-party, from a verified restaurant/merchant account
+  | 'staff_verified'     // a community/single submission we checked against a source
+  | 'community'          // ≥5 users corroborated
+  | 'stride_estimate';   // USDA / extracted / uncorroborated
+
+/** Who set/verified the current data (drives badge + audit). */
+export type VerifiedByRole = 'staff' | 'merchant' | 'system';
 
 /**
  * Meal type — what kind of food item this is.
@@ -158,6 +166,8 @@ export interface FirestoreMeal {
   sourceUrl?:       string;
   verified:         boolean;
   lastVerified?:    string | null;
+  /** Who set/verified the current value — for the badge + audit trail. */
+  verifiedByRole?:  VerifiedByRole;
 
   // Macro specificity — guards generic-data-tagged-onto-an-outlet
   // (optional for back-compat; backfill rule in proposed_schema_changes.ts / seed):
@@ -202,6 +212,9 @@ export interface FirestoreMealFeedback {
   mealId:              string;
   userId:              string;
   feedbackType:        FeedbackType;
+
+  /** Role of the submitter — a merchant's submission is first-party (Method 3). */
+  submitterRole?:      'user' | 'merchant' | 'staff';
 
   // Submitted values (all optional — depends on feedbackType)
   submittedCalories?:  number | null;

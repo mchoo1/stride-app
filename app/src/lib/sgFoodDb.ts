@@ -52,6 +52,7 @@ export type VerifiedSource =
   | 'hpb'               // Health Promotion Board SG
   | 'usda'              // USDA FoodData Central
   | 'open_food_facts'   // Open Food Facts (barcode scan)
+  | 'merchant'          // first-party, submitted by a verified restaurant/merchant
   | 'community'         // community estimate — less reliable
   | 'ai_estimate';      // AI-generated estimate — should be replaced
 

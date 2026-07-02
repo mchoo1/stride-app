@@ -25,6 +25,9 @@ app/functions/lib/
 firebase-debug.log
 firestore-debug.log
 
+# editor backups
+*.bak
+
 # debug
 npm-debug.log*
 
