@@ -422,4 +422,20 @@ export function evaluateCommunityCorroboration(
   const agreement = within / n;
 
   const mean = values.reduce((s, v) => s + v, 0) / n;
-  const vari
+  const variance = n > 1 ? values.reduce((s, v) => s + (v - mean) ** 2, 0) / (n - 1) : 0;
+  const stdDev = Math.sqrt(variance);
+
+  const corroborated   = agreement >= CORROBORATION_AGREEMENT;
+  const enoughToDisplay = n >= CORROBORATION_DISPLAY_REPORTS;
+  const noisy = median !== 0 && stdDev / Math.abs(median) > CORROBORATION_RANGE_STDDEV;
+
+  let recommendDisplay: DisplayRecommendation;
+  if (!enoughToDisplay)            recommendDisplay = 'caveat';
+  else if (noisy || !corroborated) recommendDisplay = 'range';
+  else                             recommendDisplay = 'average';
+
+  return {
+    promote: enoughToDisplay && corroborated && !noisy,
+    median, agreement, stdDev, recommendDisplay,
+  };
+}

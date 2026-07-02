@@ -130,7 +130,7 @@ function LogInner() {
   const [activityDate,  setActivityDate]  = useState(() => new Date().toISOString().slice(0, 10));
   const [activityTime,  setActivityTime]  = useState(() => {
     const d = new Date();
-    return \`\${String(d.getHours()).padStart(2,'0')}:\${String(d.getMinutes()).padStart(2,'0')}\`;
+    return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
   });
 
   // ── 7-day history ──────────────────────────────────────────────────────────
