@@ -262,6 +262,16 @@ export interface SGMenuItem {
   visibility?: 'menu' | 'component_only';
 
   /**
+   * Turns this à-la-carte main into an optional meal (main + side + drink).
+   * If present, the item shows a "Meal from $mealPrice" tag and a "Make it a
+   * meal" toggle. A slot with ONE option is a fixed combo; several options make
+   * it customizable (swap side/drink with an upcharge). Sides/drinks are
+   * `component_only` items; price = mealPrice + chosen deltas; macros are summed
+   * from the chosen component items. See MEAL_BUILDER_SPEC.md.
+   */
+  mealBuilder?: MealBuilder;
+
+  /**
    * Whether these macros are specific to this outlet or a generic estimate
    * tagged onto it. Pairs with `macroDbRef` (the pointer).
    *   'outlet_specific' — measured/sourced for this exact outlet (default).
@@ -282,6 +292,38 @@ export interface SGMenuItem {
    * Most fast-food and hawker items have the same price either way — omit this.
    */
   dineInPrice?: number;
+}
+
+// ─── Meal builder (à-la-carte main → optional meal) ───────────────────────────
+
+/** One choice within a meal slot. The default option has priceDelta 0. */
+export interface MealOption {
+  /** References a `component_only` SGMenuItem.id (e.g. mcd_fries_l). */
+  itemId: string;
+  /** Upcharge in SGD vs the default option (default = 0). */
+  priceDelta: number;
+}
+
+/** A swappable slot in a meal (e.g. the side, or the drink). */
+export interface MealSlot {
+  /** Which option is included in `mealPrice`. */
+  defaultId: string;
+  /** 1 entry = fixed slot · several = customizable (swap with upcharge). */
+  options: MealOption[];
+}
+
+/**
+ * Meal configuration attached to an à-la-carte main.
+ *   price  = mealPrice + chosen side delta + chosen drink delta
+ *   macros = main + chosen side item + chosen drink item (computeSetMacros)
+ * Omit a slot the meal doesn't have. This coexists with `isSetMeal` +
+ * `setComponents`, which remain for standalone bundles.
+ */
+export interface MealBuilder {
+  /** Price of the meal with the DEFAULT side + DEFAULT drink. */
+  mealPrice: number;
+  side?: MealSlot;
+  drink?: MealSlot;
 }
 
 // ─── Restaurant / chain ───────────────────────────────────────────────────────
