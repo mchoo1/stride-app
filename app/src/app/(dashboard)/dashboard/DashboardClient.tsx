@@ -101,7 +101,7 @@ function BestValueCard({ item, restaurant, ppd, index }: {
 function PopularMealRow({ item, restaurant }: { item: SGMenuItem; restaurant: SGRestaurant }) {
   const ppd = item.price ? proteinPerDollar(item.protein, item.price) : 0;
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '13px 0' }}>
+    <Link href={`/eat?r=${restaurant.id}`} style={{ textDecoration: 'none', display: 'flex', alignItems: 'flex-start', gap: 12, padding: '13px 0' }}>
       <Avatar name={item.name} size={44} radius={13} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink)', marginBottom: 3, lineHeight: 1.2 }}>{item.name}</div>
@@ -123,13 +123,13 @@ function PopularMealRow({ item, restaurant }: { item: SGMenuItem; restaurant: SG
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 9, flexShrink: 0 }}>
         {ppd > 0 && <ValueBadge value={ppd} />}
-        <Link href={`/log/food?name=${encodeURIComponent(item.name)}&cal=${item.calories}&p=${item.protein}&c=${item.carbs}&f=${item.fat}&emoji=${encodeURIComponent(item.emoji)}&rid=${restaurant.id}&rname=${encodeURIComponent(restaurant.name)}${item.price != null ? `&price=${item.price}` : ''}`} style={{
+        <div style={{
           width: 34, height: 34, borderRadius: 10, background: 'var(--green-tint)', color: 'var(--green-deep)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 20, lineHeight: 1,
-        }}>+</Link>
+        }}>›</div>
       </div>
-    </div>
+    </Link>
   );
 }
 

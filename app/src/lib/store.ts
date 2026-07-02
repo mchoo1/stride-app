@@ -75,7 +75,7 @@ interface StrideStore {
   removeFoodEntry:        (id: string) => void;
 
   // Activity log actions
-  addActivityEntry: (entry: Omit<ActivityLogEntry, 'id' | 'timestamp'>) => void;
+  addActivityEntry: (entry: Omit<ActivityLogEntry, 'id' | 'timestamp'> & { loggedAt?: string }) => void;
   removeActivityEntry:    (id: string) => void;
 
   // Water actions
@@ -287,7 +287,7 @@ export const useStrideStore = create<StrideStore>()(
 
       // ── Activity ──────────────────────────────────────────────────────────────
       addActivityEntry: (entry) => {
-        const now     = new Date().toISOString();
+        const now     = entry.loggedAt ?? new Date().toISOString();
         const localId = uid();
         set((s) => ({
           activityLog: [...s.activityLog, { ...entry, id: localId, timestamp: now }],
