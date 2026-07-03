@@ -136,17 +136,25 @@ export default function RegisterPage() {
         dietaryFlags:  data.dietaryFlags,
       });
 
-      Promise.all([
-        setDoc(doc(db!, 'users', user.uid), {
-          name: data.name, email: data.email.toLowerCase(), createdAt: serverTimestamp(),
-        }),
-        setDoc(doc(db!, 'profiles', user.uid), {
-          age: data.age, heightCm: data.heightCm,
-          weightKg: data.currentWeight, goalWeightKg: data.targetWeight,
-          activityLevel: data.activityLevel, goal: data.goalType,
-          dietaryFlags: data.dietaryFlags, updatedAt: serverTimestamp(),
-        }),
-      ]).catch(() => {});
+      // Await Firestore writes before navigating — prevents a race where the dashboard
+      // or server sync reads /users + /profiles before the docs are written, causing
+      // intermittent failures (empty profile, missing user doc).
+      try {
+        await Promise.all([
+          setDoc(doc(db!, 'users', user.uid), {
+            name: data.name, email: data.email.toLowerCase(), createdAt: serverTimestamp(),
+          }),
+          setDoc(doc(db!, 'profiles', user.uid), {
+            age: data.age, heightCm: data.heightCm,
+            weightKg: data.currentWeight, goalWeightKg: data.targetWeight,
+            activityLevel: data.activityLevel, goal: data.goalType,
+            dietaryFlags: data.dietaryFlags, updatedAt: serverTimestamp(),
+          }),
+        ]);
+      } catch {
+        // Firestore write failed (offline / network blip) — local Zustand state
+        // still works, so proceed. Docs will sync on next online session.
+      }
 
       router.push('/eat');
     } catch (err: unknown) {

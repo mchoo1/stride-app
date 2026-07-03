@@ -32,8 +32,11 @@ import {
 } from '@/lib/sgFoodDb';
 import { isAvailableNow, daypartLabel } from '@/lib/dayparts';
 import type { DietaryFlag } from '@/types';
-import MealFeedbackSheet from '@/components/MealFeedbackSheet';
-import AddMealSheet      from '@/components/AddMealSheet';
+import MealFeedbackSheet  from '@/components/MealFeedbackSheet';
+import AddMealSheet       from '@/components/AddMealSheet';
+import { useMealOverlay } from '@/lib/useMealOverlay';
+import { resolveDisplay } from '@/lib/resolveDisplay';
+import type { ConfidenceTier } from '@/lib/firestoreFoodDb';
 
 /* ── Design tokens — now aligned to Stride design system ── */
 const BG     = 'var(--bg)';
@@ -211,24 +214,35 @@ const CONFIDENCE_TIPS: Record<string, string> = {
   estimate:  'Estimated from reference data — reasonable accuracy for most tracking purposes.',
 };
 
-function ConfidenceBadge({ source, verified, confidence }: {
+function ConfidenceBadge({ source, verified, confidence, confidenceTier }: {
   source?: string; verified?: boolean; confidence?: string;
+  confidenceTier?: ConfidenceTier | null;
 }) {
   const [tip, setTip] = useState(false);
   if (!source && !confidence) return null;
 
-  const isApproved  = source === 'official_sg' && !!verified;
-  const isCommunity = source === 'community' || confidence === 'community';
-  const tipText     = isApproved ? CONFIDENCE_TIPS.approved : isCommunity ? CONFIDENCE_TIPS.community : CONFIDENCE_TIPS.estimate;
+  // Resolve effective tier: prefer Firestore-stored tier, fall back to static
+  const effectiveTier: ConfidenceTier | 'legacy_approved' | 'legacy_community' | 'legacy_estimate' =
+    confidenceTier ??
+    ((source === 'official_sg' && !!verified) ? 'legacy_approved'
+     : (source === 'community' || confidence === 'community') ? 'legacy_community'
+     : 'legacy_estimate');
 
-  const badgeStyle: React.CSSProperties = isApproved
-    ? { background: 'rgba(30,127,92,0.07)', border: '1px solid rgba(30,127,92,0.18)', color: GREEN }
-    : isCommunity
-    ? { background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(124,58,237,0.15)', color: PURPLE }
-    : { background: 'rgba(139,149,167,0.08)', border: `1px solid ${BORDER}`, color: FG3 };
-
-  const dotBg = isApproved ? GREEN : isCommunity ? PURPLE : FG3;
-  const label = isApproved ? 'Stride Approved' : isCommunity ? 'Community' : 'Estimated';
+  const TIER_CONFIG: Record<string, { label: string; tip: string; bg: string; border: string; color: string }> = {
+    stride_approved:   { label: 'Stride Approved',   tip: CONFIDENCE_TIPS.approved,  bg: 'rgba(30,127,92,0.07)',   border: '1px solid rgba(30,127,92,0.18)',   color: GREEN  },
+    merchant_verified: { label: 'Merchant Verified', tip: 'Data submitted and verified by the restaurant directly.',             bg: 'rgba(46,111,184,0.07)',   border: '1px solid rgba(46,111,184,0.20)',  color: BLUE   },
+    staff_verified:    { label: 'Staff Verified',    tip: 'Checked against a primary source by the Stride team.',               bg: 'rgba(0,180,180,0.07)',    border: '1px solid rgba(0,180,180,0.22)',   color: '#0B9A9A' },
+    community:         { label: 'Community',         tip: CONFIDENCE_TIPS.community, bg: 'rgba(124,58,237,0.06)',  border: '1px solid rgba(124,58,237,0.15)', color: PURPLE },
+    stride_estimate:   { label: 'Estimated',         tip: CONFIDENCE_TIPS.estimate,  bg: 'rgba(139,149,167,0.08)', border: `1px solid ${BORDER}`,             color: FG3    },
+    legacy_approved:   { label: 'Stride Approved',   tip: CONFIDENCE_TIPS.approved,  bg: 'rgba(30,127,92,0.07)',   border: '1px solid rgba(30,127,92,0.18)',   color: GREEN  },
+    legacy_community:  { label: 'Community',         tip: CONFIDENCE_TIPS.community, bg: 'rgba(124,58,237,0.06)',  border: '1px solid rgba(124,58,237,0.15)', color: PURPLE },
+    legacy_estimate:   { label: 'Estimated',         tip: CONFIDENCE_TIPS.estimate,  bg: 'rgba(139,149,167,0.08)', border: `1px solid ${BORDER}`,             color: FG3    },
+  };
+  const cfg      = TIER_CONFIG[effectiveTier] ?? TIER_CONFIG.legacy_estimate;
+  const tipText  = cfg.tip;
+  const badgeStyle: React.CSSProperties = { background: cfg.bg, border: cfg.border, color: cfg.color };
+  const dotBg    = cfg.color;
+  const label    = cfg.label;
 
   return (
     <span style={{ position: 'relative', display: 'inline-block' }}>
@@ -444,6 +458,9 @@ function MenuItemCard({
   onRestaurantFilter?: () => void;
 }) {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  // Fetch Firestore overlay when card is expanded (lazy — not on every visible card)
+  const overlay = useMealOverlay(item.id, isExpanded);
+  const display = resolveDisplay(item, overlay);
   const ppd     = item.price ? proteinPerDollar(item.protein, item.price) : 0;
   // Compute min price across restaurant ala carte menu (for "from $X" display)
   const minPrice = useMemo(() => {
@@ -541,12 +558,25 @@ function MenuItemCard({
               </div>
             );
           })()}
-          {/* Badges row: confidence + diet + set meal */}
+          {/* Badges row: confidence (5-tier) + diet + set meal */}
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
-            <ConfidenceBadge source={item.source} verified={item.verified} confidence={item.confidence} />
+            <ConfidenceBadge
+              source={item.source} verified={item.verified} confidence={item.confidence}
+              confidenceTier={display.confidenceTier ?? undefined}
+            />
             {item.isSetMeal && <SetMealChip includes={item.setIncludes} />}
             <DietBadge fit={getDietFit(item.compatibleWith ?? [], userFlags)} />
           </div>
+          {/* Community note — shown when ≥5 users corroborated */}
+          {display.communityNote && (
+            <div style={{
+              fontSize: 11, fontWeight: 500, color: PURPLE,
+              background: 'rgba(124,58,237,0.05)', border: '1px solid rgba(124,58,237,0.12)',
+              borderRadius: 8, padding: '5px 10px', marginBottom: 10,
+            }}>
+              {display.communityNote}
+            </div>
+          )}
           {/* ── Order online (delivery aggregators with brand colors) ── */}
           <div style={{ marginBottom: 8 }}>
             <div style={{ fontSize: 9, fontWeight: 700, color: FG3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>Order online</div>
