@@ -30,6 +30,7 @@ import {
   SG_RESTAURANTS, SG_RECIPES, SG_INGREDIENTS,
   type SGRestaurant, type SGMenuItem, type SGRecipe, type ServiceType, type RestaurantTier,
 } from '@/lib/sgFoodDb';
+import { isAvailableNow, daypartLabel } from '@/lib/dayparts';
 import type { DietaryFlag } from '@/types';
 import MealFeedbackSheet from '@/components/MealFeedbackSheet';
 import AddMealSheet      from '@/components/AddMealSheet';
@@ -1356,6 +1357,8 @@ export default function EatPage() {
     let f = pooledItems;
     // By default show only ala carte items; set meals hidden unless user enables them
     if (!filterIncludeSetMeals) f = f.filter(p => !p.item.isSetMeal);
+    // Daypart: hide items not served now (breakfast vs regular). Browse only — search is unaffected.
+    f = f.filter(p => isAvailableNow(p.item, new Date(), p.restaurant.dayparts));
     if (filterRestaurantId) f = f.filter(p => p.restaurant.id === filterRestaurantId);
     if (diningOption !== 'all') {
       const svcMap: Record<DiningOption, ServiceType> = { dine_in:'dine_in', grab_go:'grab_go', delivery:'delivery', all:'dine_in' };
@@ -1892,6 +1895,9 @@ export default function EatPage() {
                     ? `${items.length} results for "${query}"`
                     : `${items.length} meals`}
                 </span>
+                {!searchResults && (
+                  <span style={{ fontSize: 11, fontWeight: 700, color: GREEN }}>{daypartLabel()}</span>
+                )}
                 {filterRestaurantId && <span style={{ color: GREEN, fontSize: 11, fontWeight: 600 }}>from {SG_RESTAURANTS.find(r => r.id === filterRestaurantId)?.name}</span>}
               </div>
 
