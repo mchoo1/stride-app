@@ -1,9 +1,9 @@
 {
   "name": "stride-functions",
-  "description": "Cloud Functions for Stride — community feedback aggregation",
+  "description": "Cloud Functions for Stride \u2014 community feedback aggregation",
   "private": true,
   "engines": {
-    "node": "20"
+    "node": "22"
   },
   "main": "lib/index.js",
   "scripts": {
