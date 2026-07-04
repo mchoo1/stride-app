@@ -6,11 +6,10 @@ import { useAuth } from '@/lib/auth-context';
 import { useStrideStore } from '@/lib/store';
 import { calculateTargetCalories } from '@/lib/utils';
 import {
-  SG_RESTAURANTS, proteinPerDollar,
+  SG_RESTAURANTS, proteinPerDollar, matchRestaurant,
   type SGRestaurant, type SGMenuItem,
 } from '@/lib/sgFoodDb';
 import Avatar from '@/components/ui/Avatar';
-import ValueBadge from '@/components/ui/ValueBadge';
 import type { FoodLogEntry } from '@/types';
 
 /* ── helpers ── */
@@ -18,27 +17,23 @@ function todayLabel() {
   return new Date().toLocaleDateString('en-SG', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase();
 }
 
-function getPopularMeals(): Array<{ item: SGMenuItem; restaurant: SGRestaurant }> {
-  const out: Array<{ item: SGMenuItem; restaurant: SGRestaurant }> = [];
-  for (const r of SG_RESTAURANTS) {
-    const picks = r.menu.filter(m => m.isPopular).slice(0, 1);
-    if (!picks.length) picks.push(r.menu[0]);
-    picks.forEach(item => out.push({ item, restaurant: r }));
-  }
-  return out.slice(0, 8);
-}
-
-function getBestValueMeals(): Array<{ item: SGMenuItem; restaurant: SGRestaurant; ppd: number }> {
+/* ── High-PPD meal helper ── */
+function getTopPPDMeals(
+  limit = 8,
+  restaurantIds?: Set<string>
+): Array<{ item: SGMenuItem; restaurant: SGRestaurant; ppd: number }> {
   const out: Array<{ item: SGMenuItem; restaurant: SGRestaurant; ppd: number }> = [];
   for (const r of SG_RESTAURANTS) {
+    if (restaurantIds && !restaurantIds.has(r.id)) continue;
     for (const item of r.menu) {
+      if (item.visibility === 'component_only') continue;
       if (item.price && item.protein) {
         const ppd = proteinPerDollar(item.protein, item.price);
         if (ppd > 0) out.push({ item, restaurant: r, ppd });
       }
     }
   }
-  return out.sort((a, b) => b.ppd - a.ppd).slice(0, 6);
+  return out.sort((a, b) => b.ppd - a.ppd).slice(0, limit);
 }
 
 /* ── Mini calorie ring (slim strip) ── */
@@ -55,80 +50,35 @@ function MiniRing({ frac, size = 38 }: { frac: number; size?: number }) {
   );
 }
 
-/* ── Value meter bar ── */
-function ValueMeter({ value, max = 7 }: { value: number; max?: number }) {
-  const pct = Math.min(100, (value / max) * 100);
-  return (
-    <div style={{ height: 5, borderRadius: 999, background: 'var(--surface-2)', overflow: 'hidden' }}>
-      <div style={{ width: `${pct}%`, height: '100%', borderRadius: 999, background: 'linear-gradient(90deg, var(--gold-bright), var(--gold))' }} />
-    </div>
-  );
-}
-
-/* ── Best value card (horizontal rail) ── */
-function BestValueCard({ item, restaurant, ppd, index }: {
+/* ── High-PPD card (horizontal rail) ── */
+function TopPPDCard({ item, restaurant, ppd, index }: {
   item: SGMenuItem; restaurant: SGRestaurant; ppd: number; index: number;
 }) {
   return (
     <Link href={`/eat?r=${restaurant.id}`} style={{
-      display: 'flex', flexDirection: 'column', flexShrink: 0, width: 190,
+      display: 'flex', flexDirection: 'column', flexShrink: 0, width: 180,
       background: 'var(--surface)', borderRadius: 'var(--r-card)',
-      boxShadow: 'var(--shadow-md)', padding: 16, textDecoration: 'none',
+      boxShadow: 'var(--shadow-md)', padding: 14, textDecoration: 'none',
       animation: `scaleIn .4s ease ${index * 0.05}s both`,
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-        <Avatar name={restaurant.name} size={40} radius={12} />
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+        <Avatar name={restaurant.name} size={38} radius={11} />
         {index === 0 && (
-          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--gold)', background: 'var(--gold-tint)', padding: '3px 8px', borderRadius: 999 }}>⭐ TOP</span>
+          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--gold)', background: 'var(--gold-tint)', padding: '2px 7px', borderRadius: 999 }}>⭐ TOP</span>
         )}
       </div>
-      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.2, marginBottom: 2 }}>{item.name}</div>
-      <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--green)', marginBottom: 14 }}>{restaurant.name}</div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 3, marginBottom: 8 }}>
-        <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 26, fontWeight: 700, color: 'var(--gold)', letterSpacing: '-0.03em' }}>{ppd.toFixed(1)}</span>
-        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--gold)' }}>g protein / $ <span style={{ fontSize: 9, fontWeight: 500, opacity: 0.7 }}>(↑ better)</span></span>
+      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.25, marginBottom: 2,
+        overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box',
+        WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const }}>{item.name}</div>
+      <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--green)', marginBottom: 10 }}>{restaurant.name}</div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 3, marginBottom: 6 }}>
+        <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 24, fontWeight: 700, color: 'var(--gold)', letterSpacing: '-0.03em' }}>{ppd.toFixed(1)}</span>
+        <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--gold)' }}>g P/$</span>
       </div>
-      <ValueMeter value={ppd} />
-      <div style={{ display: 'flex', gap: 6, marginTop: 10, fontSize: 12 }}>
+      <div style={{ display: 'flex', gap: 6, fontSize: 11 }}>
         {item.price != null && <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontWeight: 700, color: 'var(--ink)' }}>${item.price.toFixed(2)}</span>}
-        <span style={{ color: 'var(--faint)' }}>·</span>
-        <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', color: 'var(--ink-2)', fontWeight: 600 }}>{item.calories} cal</span>
-      </div>
-    </Link>
-  );
-}
-
-/* ── Popular meal row ── */
-function PopularMealRow({ item, restaurant }: { item: SGMenuItem; restaurant: SGRestaurant }) {
-  const ppd = item.price ? proteinPerDollar(item.protein, item.price) : 0;
-  return (
-    <Link href={`/eat?r=${restaurant.id}`} style={{ textDecoration: 'none', display: 'flex', alignItems: 'flex-start', gap: 12, padding: '13px 0' }}>
-      <Avatar name={item.name} size={44} radius={13} />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink)', marginBottom: 3, lineHeight: 1.2 }}>{item.name}</div>
-        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--green)', marginBottom: 4 }}>
-          {restaurant.name}
-          {restaurant.dietTags?.includes('halal') && <span style={{ color: 'var(--muted)', fontWeight: 500 }}> · Halal</span>}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          {item.price != null && <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 13.5, fontWeight: 700, color: 'var(--ink)' }}>${item.price.toFixed(2)}</span>}
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12, color: 'var(--ink-2)' }}>
-            <span style={{ width: 5, height: 5, borderRadius: 999, background: 'var(--coral)', display: 'inline-block' }} />
-            <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontWeight: 600 }}>{item.calories}</span> cal
-          </span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12, color: 'var(--ink-2)' }}>
-            <span style={{ width: 5, height: 5, borderRadius: 999, background: 'var(--green)', display: 'inline-block' }} />
-            <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontWeight: 600 }}>{item.protein}g</span> protein
-          </span>
-        </div>
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 9, flexShrink: 0 }}>
-        {ppd > 0 && <ValueBadge value={ppd} />}
-        <div style={{
-          width: 34, height: 34, borderRadius: 10, background: 'var(--green-tint)', color: 'var(--green-deep)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 20, lineHeight: 1,
-        }}>›</div>
+        <span style={{ color: 'var(--muted)' }}>·</span>
+        <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', color: 'var(--ink-2)', fontWeight: 600 }}>{item.protein}g P</span>
       </div>
     </Link>
   );
@@ -204,9 +154,38 @@ export default function DashboardClient() {
   const targetWaterMl = profile.targetWater ?? 2500;
   const waterFrac = Math.min(1, waterMl / targetWaterMl);
 
-  // Memoised — these iterate all 30+ restaurants on every call
-  const bestMeals = useMemo(() => getBestValueMeals(), []);
-  const popular   = useMemo(() => getPopularMeals(), []);
+  // GPS state for near-me section
+  const [gpsState, setGpsState]     = useState<'idle' | 'loading' | 'granted' | 'denied'>('idle');
+  const [nearbyIds, setNearbyIds]   = useState<Set<string> | null>(null);
+
+  useEffect(() => {
+    if (!navigator.geolocation) { setGpsState('denied'); return; }
+    setGpsState('loading');
+    navigator.geolocation.getCurrentPosition(
+      async pos => {
+        setGpsState('granted');
+        try {
+          const { latitude: lat, longitude: lng } = pos.coords;
+          const res = await fetch(`/api/nearby-places?lat=${lat}&lng=${lng}&type=food`);
+          if (!res.ok) { setNearbyIds(null); return; }
+          const data = await res.json() as { places?: Array<{ name: string }> };
+          const ids = new Set<string>();
+          (data.places ?? []).forEach(p => {
+            const r = matchRestaurant(p.name);
+            if (r) ids.add(r.id);
+          });
+          setNearbyIds(ids.size > 0 ? ids : null);
+        } catch { setNearbyIds(null); }
+      },
+      () => { setGpsState('denied'); setNearbyIds(null); }
+    );
+  }, []); // eslint-disable-line
+
+  // Top PPD meals — filtered to nearby restaurants when GPS is available
+  const topMeals = useMemo(
+    () => getTopPPDMeals(8, nearbyIds ?? undefined),
+    [nearbyIds]
+  );
 
   // Last 5 unique food items logged (for quick re-log)
   const recentMeals = useMemo<FoodLogEntry[]>(() => {
@@ -415,41 +394,78 @@ export default function DashboardClient() {
         ))}
       </div>
 
-      {/* ── Best value right now ── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', padding: '0 20px', marginBottom: 12 }}>
-        <div>
-          <h2 style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 18, fontWeight: 600, color: 'var(--ink)', margin: 0, letterSpacing: '-0.02em' }}>Best value right now</h2>
-          <p style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 500, margin: '2px 0 0' }}>g&thinsp;protein / $ — higher score = better value</p>
+      {/* ── High protein/$ near you (or island-wide) ── */}
+      <div style={{ marginBottom: 26 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', padding: '0 20px', marginBottom: 12 }}>
+          <div>
+            <h2 style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 18, fontWeight: 600, color: 'var(--ink)', margin: 0, letterSpacing: '-0.02em' }}>
+              {gpsState === 'granted' && nearbyIds ? '📍 High Protein/$ Near You' : 'Best Protein/$ Picks'}
+            </h2>
+            <p style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 500, margin: '2px 0 0' }}>
+              {gpsState === 'granted' && nearbyIds
+                ? 'Top value meals from restaurants near you'
+                : 'g protein / $ — higher score = better value'}
+            </p>
+          </div>
+          <Link href="/eat?sort=ppd" style={{ display: 'flex', alignItems: 'center', gap: 3, color: 'var(--green)', fontWeight: 600, fontSize: 13.5, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+            See all <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+          </Link>
         </div>
-        <Link href="/eat?sort=ppd" style={{ display: 'flex', alignItems: 'center', gap: 3, color: 'var(--green)', fontWeight: 600, fontSize: 13.5, textDecoration: 'none', whiteSpace: 'nowrap' }}>
-          See all <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
-        </Link>
-      </div>
 
-      <div style={{ display: 'flex', gap: 12, overflowX: 'auto', padding: '2px 20px 6px', marginBottom: 28, scrollbarWidth: 'none' }}>
-        {bestMeals.map((m, i) => (
-          <BestValueCard key={`${m.restaurant.id}-${m.item.id}`} item={m.item} restaurant={m.restaurant} ppd={m.ppd} index={i} />
-        ))}
-      </div>
+        {/* GPS enable prompt if idle/denied */}
+        {gpsState === 'idle' && (
+          <div style={{ padding: '0 20px', marginBottom: 10 }}>
+            <button
+              onClick={() => {
+                setGpsState('loading');
+                navigator.geolocation?.getCurrentPosition(
+                  async pos => {
+                    setGpsState('granted');
+                    try {
+                      const { latitude: lat, longitude: lng } = pos.coords;
+                      const res = await fetch(`/api/nearby-places?lat=${lat}&lng=${lng}&type=food`);
+                      if (!res.ok) return;
+                      const data = await res.json() as { places?: Array<{ name: string }> };
+                      const ids = new Set<string>();
+                      (data.places ?? []).forEach((p: { name: string }) => {
+                        const r = matchRestaurant(p.name);
+                        if (r) ids.add(r.id);
+                      });
+                      setNearbyIds(ids.size > 0 ? ids : null);
+                    } catch { /* ignore */ }
+                  },
+                  () => { setGpsState('denied'); }
+                );
+              }}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                padding: '10px 14px', borderRadius: 14, cursor: 'pointer',
+                background: 'rgba(30,127,92,0.05)',
+                border: '1.5px dashed rgba(30,127,92,0.25)',
+              }}
+            >
+              <span style={{ fontSize: 16 }}>📍</span>
+              <div style={{ flex: 1, textAlign: 'left' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--green)' }}>Find top meals near you</div>
+                <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 1 }}>Enable GPS to filter by your location</div>
+              </div>
+              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--green)', flexShrink: 0 }}>Enable →</span>
+            </button>
+          </div>
+        )}
 
-      {/* ── Popular meals ── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', padding: '0 20px', marginBottom: 4 }}>
-        <div>
-          <h2 style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 18, fontWeight: 600, color: 'var(--ink)', margin: 0, letterSpacing: '-0.02em' }}>Popular meals</h2>
-          <p style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 500, margin: '2px 0 0' }}>Price · calories · protein per dollar</p>
-        </div>
-        <Link href="/eat" style={{ display: 'flex', alignItems: 'center', gap: 3, color: 'var(--green)', fontWeight: 600, fontSize: 13.5, textDecoration: 'none', whiteSpace: 'nowrap' }}>
-          Browse <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
-        </Link>
-      </div>
-
-      <div style={{ padding: '0 20px' }}>
-        <div style={{ background: 'var(--surface)', borderRadius: 'var(--r-card)', boxShadow: 'var(--shadow-md)', padding: '4px 16px' }}>
-          {popular.map(({ item, restaurant }, i) => (
-            <div key={`${restaurant.id}-${item.id}`}>
-              {i > 0 && <hr style={{ border: 'none', borderTop: '1px solid var(--line)', margin: 0 }} />}
-              <PopularMealRow item={item} restaurant={restaurant} />
+        {gpsState === 'loading' && (
+          <div style={{ padding: '0 20px', marginBottom: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 14, background: 'rgba(30,127,92,0.05)', border: '1px solid rgba(30,127,92,0.12)' }}>
+              <span style={{ fontSize: 14 }}>📍</span>
+              <span style={{ fontSize: 12, color: 'var(--green)', fontWeight: 600 }}>Getting your location…</span>
             </div>
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: 12, overflowX: 'auto', padding: '2px 20px 4px', scrollbarWidth: 'none' }}>
+          {topMeals.map((m, i) => (
+            <TopPPDCard key={`${m.restaurant.id}-${m.item.id}`} item={m.item} restaurant={m.restaurant} ppd={m.ppd} index={i} />
           ))}
         </div>
       </div>

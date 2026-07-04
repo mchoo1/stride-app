@@ -112,6 +112,18 @@ function LogInner() {
   const [manual,        setManual]        = useState({ name: '', cal: '', p: '', c: '', f: '' });
   const [foodLogged,    setFoodLogged]    = useState(false);
 
+  // Reset portion when a perServing item is selected
+  useEffect(() => {
+    if (selectedFood?._perServing) {
+      // For restaurant items, reset to 1 serving (portion=100 internally)
+      setPortion(100);
+      setCustomPortion('');
+    } else if (selectedFood && !selectedFood._perServing) {
+      setPortion(100);
+      setCustomPortion('');
+    }
+  }, [selectedFood?.id]); // eslint-disable-line
+
   // ── Activity tab state ──────────────────────────────────────────────────────
   const [actSearch,     setActSearch]     = useState('');
   const [selectedAct,   setSelectedAct]   = useState<typeof ACTIVITY_LIST[0] | null>(null);
@@ -523,17 +535,46 @@ function LogInner() {
                       {selectedFood._perServing ? (
                         <>
                           <div style={{ fontSize: 11, fontWeight: 700, color: FG3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Servings</div>
-                          <div style={{ display: 'flex', gap: 6 }}>
-                            {[100, 200, 300].map((v, i) => (
-                              <button key={v} onClick={() => { setPortion(v); setCustomPortion(''); }} style={{
-                                flex: 1, padding: '5px 0', borderRadius: 20,
-                                fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                                background: portion === v && !customPortion ? 'rgba(30,127,92,0.10)' : BG,
-                                color:      portion === v && !customPortion ? GREEN : FG3,
-                                border: `1px solid ${portion === v && !customPortion ? 'rgba(30,127,92,0.25)' : BORDER}`,
-                                transition: 'all .15s',
-                              }}>{i + 1}×</button>
-                            ))}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <button
+                              onClick={() => {
+                                const cur = customPortion ? Number(customPortion) : portion;
+                                const next = Math.max(50, cur - 50);
+                                setPortion(next); setCustomPortion('');
+                              }}
+                              style={{
+                                width: 40, height: 40, borderRadius: 12, border: `1px solid ${BORDER}`,
+                                background: BG, color: FG1, fontSize: 20, fontWeight: 700, cursor: 'pointer',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                              }}
+                            >−</button>
+                            <input
+                              type="number"
+                              value={((customPortion ? Number(customPortion) : portion) / 100).toFixed(
+                                (customPortion ? Number(customPortion) : portion) % 100 === 0 ? 0 : 1
+                              )}
+                              min="0.5" step="0.5"
+                              onChange={e => {
+                                const v = parseFloat(e.target.value);
+                                if (!isNaN(v) && v >= 0.5) { setPortion(Math.round(v * 100)); setCustomPortion(''); }
+                              }}
+                              style={{
+                                flex: 1, textAlign: 'center', padding: '8px 4px', borderRadius: 12,
+                                border: `1px solid ${GREEN}`, background: 'rgba(30,127,92,0.08)',
+                                color: GREEN, fontSize: 18, fontWeight: 800, outline: 'none',
+                              }}
+                            />
+                            <button
+                              onClick={() => {
+                                const cur = customPortion ? Number(customPortion) : portion;
+                                setPortion(cur + 50); setCustomPortion('');
+                              }}
+                              style={{
+                                width: 40, height: 40, borderRadius: 12, border: `1px solid ${BORDER}`,
+                                background: BG, color: FG1, fontSize: 20, fontWeight: 700, cursor: 'pointer',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                              }}
+                            >+</button>
                           </div>
                         </>
                       ) : (
@@ -588,7 +629,7 @@ function LogInner() {
                       transition: 'all .2s', boxShadow: foodLogged ? 'none' : '0 4px 16px rgba(30,127,92,0.28)',
                     }}>
                       {foodLogged ? '✓ Logged!' : selectedFood._perServing
-                        ? `Log ${effectivePortion / 100 === 1 ? '1 serving' : `${effectivePortion / 100}× serving`} of ${selectedFood.name}`
+                        ? (() => { const s = effectivePortion / 100; return `Log ${s % 1 === 0 ? s : s.toFixed(1)}× serving${s !== 1 ? 's' : ''} of ${selectedFood.name}`; })()
                         : `Log ${effectivePortion}g of ${selectedFood.name}`}
                     </button>
                   </>

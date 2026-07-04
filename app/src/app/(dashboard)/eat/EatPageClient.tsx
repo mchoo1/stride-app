@@ -29,6 +29,7 @@ import {
   resolveIngredients, calcCostPerServing,
   SG_RESTAURANTS, SG_RECIPES, SG_INGREDIENTS,
   type SGRestaurant, type SGMenuItem, type SGRecipe, type ServiceType, type RestaurantTier,
+  type MealBuilder, type MealSlot, type MealOption,
 } from '@/lib/sgFoodDb';
 import { isAvailableNow, daypartLabel } from '@/lib/dayparts';
 import type { DietaryFlag } from '@/types';
@@ -370,19 +371,41 @@ function LogConfirmSheet({
           {/* Servings picker */}
           {pending.type === 'item' && (
             <div style={{ marginBottom: 18 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: FG2, marginBottom: 10 }}>Servings</div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                {[1, 2, 3].map(s => (
-                  <button key={s} onClick={() => setServings(s)} style={{
-                    flex: 1, padding: '10px 4px', borderRadius: 12, cursor: 'pointer',
-                    border: `1.5px solid ${servings === s ? GREEN : BORDER}`,
-                    background: servings === s ? 'rgba(30,127,92,0.08)' : CARD,
-                    color: servings === s ? GREEN : FG2,
-                    fontSize: 13, fontWeight: 700, textAlign: 'center',
-                  }}>
-                    {s}×
-                  </button>
-                ))}
+              <div style={{ fontSize: 13, fontWeight: 700, color: FG2, marginBottom: 10 }}>
+                Servings
+                <span style={{ fontSize: 11, fontWeight: 500, color: FG3, marginLeft: 6 }}>
+                  {Math.round(cal * servings)} cal · {Math.round(protein * servings)}g P
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <button
+                  onClick={() => setServings(s => Math.max(0.5, parseFloat((s - 0.5).toFixed(1))))}
+                  style={{
+                    width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${BORDER}`,
+                    background: CARD, color: FG1, fontSize: 22, fontWeight: 700, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  }}
+                >−</button>
+                <input
+                  type="number" value={servings} min="0.5" step="0.5"
+                  onChange={e => {
+                    const v = parseFloat(e.target.value);
+                    if (!isNaN(v) && v >= 0.5) setServings(parseFloat(v.toFixed(1)));
+                  }}
+                  style={{
+                    flex: 1, textAlign: 'center', padding: '10px 4px', borderRadius: 12,
+                    border: `1.5px solid ${GREEN}`, background: 'rgba(30,127,92,0.08)',
+                    color: GREEN, fontSize: 20, fontWeight: 800, outline: 'none',
+                  }}
+                />
+                <button
+                  onClick={() => setServings(s => parseFloat((s + 0.5).toFixed(1)))}
+                  style={{
+                    width: 44, height: 44, borderRadius: 12, border: `1.5px solid ${BORDER}`,
+                    background: CARD, color: FG1, fontSize: 22, fontWeight: 700, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  }}
+                >+</button>
               </div>
             </div>
           )}
@@ -447,15 +470,168 @@ function LogConfirmSheet({
   );
 }
 
+/* ── MealBuilderPanel — inline set-meal configurator ── */
+function MealBuilderPanel({
+  item, restaurant, onLogSetMeal,
+}: {
+  item: SGMenuItem;
+  restaurant: SGRestaurant;
+  onLogSetMeal: (syntheticItem: SGMenuItem) => void;
+}) {
+  const mb = item.mealBuilder!;
+  const [open, setOpen]       = useState(false);
+  const [upsize, setUpsize]   = useState(false);
+  const [sideId, setSideId]   = useState(mb.side?.defaultId ?? '');
+  const [drinkId, setDrinkId] = useState(mb.drink?.defaultId ?? '');
+
+  // Resolve component items from restaurant menu
+  const findItem = (id: string) => restaurant.menu.find(m => m.id === id);
+  const side  = findItem(sideId);
+  const drink = findItem(drinkId);
+  const upsizeSideId  = mb.side?.defaultIdLarge  ?? sideId;
+  const upsizeDrinkId = mb.drink?.defaultIdLarge ?? drinkId;
+  const resolvedSide  = upsize ? (findItem(upsizeSideId)  ?? side)  : side;
+  const resolvedDrink = upsize ? (findItem(upsizeDrinkId) ?? drink) : drink;
+
+  // Price = mealPrice + upsize delta + option deltas
+  const sideOpt  = mb.side?.options.find(o => o.itemId === sideId);
+  const drinkOpt = mb.drink?.options.find(o => o.itemId === drinkId);
+  const price = mb.mealPrice
+    + (sideOpt?.priceDelta ?? 0)
+    + (drinkOpt?.priceDelta ?? 0)
+    + (upsize && mb.upsizeDelta ? mb.upsizeDelta : 0);
+
+  // Combined macros
+  const totalCal  = item.calories + (resolvedSide?.calories ?? 0) + (resolvedDrink?.calories ?? 0);
+  const totalProt = item.protein  + (resolvedSide?.protein  ?? 0) + (resolvedDrink?.protein  ?? 0);
+  const totalCarb = item.carbs    + (resolvedSide?.carbs    ?? 0) + (resolvedDrink?.carbs    ?? 0);
+  const totalFat  = item.fat      + (resolvedSide?.fat      ?? 0) + (resolvedDrink?.fat      ?? 0);
+  const ppd = price > 0 ? proteinPerDollar(totalProt, price) : 0;
+
+  const handleLog = () => {
+    const synthetic: SGMenuItem = {
+      ...item,
+      id:       `${item.id}_meal`,
+      name:     `${item.name} Meal${upsize ? ' (L)' : ''}`,
+      price,
+      calories: totalCal,
+      protein:  totalProt,
+      carbs:    totalCarb,
+      fat:      totalFat,
+    };
+    onLogSetMeal(synthetic);
+  };
+
+  const chipBtn = (selected: boolean, label: string, onClick: () => void) => (
+    <button onClick={onClick} style={{
+      padding: '5px 11px', borderRadius: 20, cursor: 'pointer', fontSize: 12, fontWeight: 600,
+      border: `1.5px solid ${selected ? GREEN : BORDER}`,
+      background: selected ? 'rgba(30,127,92,0.08)' : CARD,
+      color: selected ? GREEN : FG2,
+    }}>{label}</button>
+  );
+
+  return (
+    <div style={{ marginBottom: 10 }}>
+      {/* Toggle row */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '9px 12px', borderRadius: 12, cursor: 'pointer',
+          border: `1.5px solid ${open ? GREEN : BORDER}`,
+          background: open ? 'rgba(30,127,92,0.06)' : CARD,
+        }}
+      >
+        <span style={{ fontSize: 13, fontWeight: 700, color: open ? GREEN : FG2 }}>
+          🍔 Make it a Meal from ${mb.mealPrice.toFixed(2)}
+        </span>
+        <span style={{ fontSize: 11, color: FG3, transform: `rotate(${open ? 180 : 0}deg)`, display: 'inline-block', transition: 'transform .2s' }}>▼</span>
+      </button>
+
+      {open && (
+        <div style={{ marginTop: 10, padding: '12px 12px', background: BG, borderRadius: 12, border: `1px solid ${BORDER}` }}>
+          {/* Upsize */}
+          {mb.upsizeDelta != null && (
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: FG3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>Size</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {chipBtn(!upsize, 'Medium (default)', () => setUpsize(false))}
+                {chipBtn(upsize,  `Large (+$${mb.upsizeDelta.toFixed(2)})`, () => setUpsize(true))}
+              </div>
+            </div>
+          )}
+
+          {/* Side picker — only shown if multiple options */}
+          {mb.side && mb.side.options.length > 1 && (
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: FG3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>Side</div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {mb.side.options.map(opt => {
+                  const it = findItem(opt.itemId);
+                  return chipBtn(sideId === opt.itemId, it?.name ?? opt.itemId, () => setSideId(opt.itemId));
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Drink picker — only shown if multiple options */}
+          {mb.drink && mb.drink.options.length > 1 && (
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: FG3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>Drink</div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {mb.drink.options.map(opt => {
+                  const it = findItem(opt.itemId);
+                  return chipBtn(drinkId === opt.itemId, it?.name ?? opt.itemId, () => setDrinkId(opt.itemId));
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Macro summary */}
+          <div style={{
+            display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6, marginBottom: 12,
+            background: CARD, borderRadius: 10, padding: '8px 6px',
+          }}>
+            {[
+              { label: 'Cal',     val: String(totalCal),        color: RED   },
+              { label: 'Protein', val: `${totalProt}g`,         color: GREEN },
+              { label: 'Carbs',   val: `${totalCarb}g`,         color: AMBER },
+              { label: 'Fat',     val: `${totalFat}g`,          color: FG2   },
+            ].map(m => (
+              <div key={m.label} style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: m.color }}>{m.val}</div>
+                <div style={{ fontSize: 9, color: FG3 }}>{m.label}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: FG1 }}>Total: ${price.toFixed(2)}</span>
+            {ppd > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: GREEN }}>{ppd.toFixed(1)} g protein/$</span>}
+          </div>
+
+          <button onClick={handleLog} style={{
+            width: '100%', padding: '11px 0', borderRadius: 12, border: 'none',
+            background: GREEN, color: '#fff', fontSize: 13, fontWeight: 800, cursor: 'pointer',
+          }}>
+            Log Meal ✓
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── MenuItemCard — expandable ── */
 function MenuItemCard({
   item, restaurant, distKm, userFlags, onLog, onUnlog, logged,
-  isExpanded, onToggle, onRestaurantFilter,
+  isExpanded, onToggle, onRestaurantFilter, onLogSetMeal,
 }: {
   item: SGMenuItem; restaurant: SGRestaurant; distKm?: number;
   userFlags: DietaryFlag[]; onLog: () => void; onUnlog: () => void; logged: boolean;
   isExpanded: boolean; onToggle: () => void;
   onRestaurantFilter?: () => void;
+  onLogSetMeal?: (syntheticItem: SGMenuItem) => void;
 }) {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   // Fetch Firestore overlay when card is expanded (lazy — not on every visible card)
@@ -577,6 +753,11 @@ function MenuItemCard({
               {display.communityNote}
             </div>
           )}
+          {/* ── Set meal builder ── */}
+          {item.mealBuilder && onLogSetMeal && (
+            <MealBuilderPanel item={item} restaurant={restaurant} onLogSetMeal={onLogSetMeal} />
+          )}
+
           {/* ── Order online (delivery aggregators with brand colors) ── */}
           <div style={{ marginBottom: 8 }}>
             <div style={{ fontSize: 9, fontWeight: 700, color: FG3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>Order online</div>
@@ -1910,6 +2091,7 @@ export default function EatPage() {
                       isExpanded={expandedId === item.id}
                       onToggle={() => setExpandedId(expandedId === item.id ? null : item.id)}
                       onRestaurantFilter={() => { setFilterRestaurantId(restaurant.id); setViewType('meals'); }}
+                      onLogSetMeal={synth => setPendingLog({ type: 'item', item: synth, restaurant })}
                     />
                   ))}
                 </div>
@@ -1959,6 +2141,7 @@ export default function EatPage() {
                   isExpanded={expandedId === item.id}
                   onToggle={() => { setExpandedId(expandedId === item.id ? null : item.id); if (expandedId !== item.id) track(Events.EAT_ITEM_EXPANDED, { itemId: item.id }); }}
                   onRestaurantFilter={filterRestaurantId ? undefined : () => { setFilterRestaurantId(restaurant.id); setViewType('meals'); }}
+                  onLogSetMeal={synth => setPendingLog({ type: 'item', item: synth, restaurant })}
                 />
               ))}
 
@@ -1975,6 +2158,7 @@ export default function EatPage() {
                       isExpanded={expandedId === item.id}
                       onToggle={() => setExpandedId(expandedId === item.id ? null : item.id)}
                       onRestaurantFilter={() => { setFilterRestaurantId(restaurant.id); setViewType('meals'); }}
+                      onLogSetMeal={synth => setPendingLog({ type: 'item', item: synth, restaurant })}
                     />
                   ))}
                 </div>
