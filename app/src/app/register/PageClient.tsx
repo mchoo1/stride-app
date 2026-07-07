@@ -74,6 +74,8 @@ export default function RegisterPage() {
     activityLevel: 'moderate' as UserProfile['activityLevel'],
   });
 
+  const [consentChecked, setConsentChecked] = useState(false);
+
   const [rawNums, setRawNums] = useState({ age: '27', height: '170', cw: '75', tw: '65' });
   const setRaw = (key: keyof typeof rawNums, val: string) => {
     setRawNums(r => ({ ...r, [key]: val }));
@@ -100,6 +102,7 @@ export default function RegisterPage() {
   // registrations to bypass the check. Duplicate detection now happens at
   // createUserWithEmailAndPassword in finish(), which is the reliable source.
   function validateAccount(): boolean {
+    if (!consentChecked)                    { setError('Please confirm you are 18+ and agree to the Terms and Privacy Policy.'); return false; }
     if (!data.name.trim())                 { setError('Please enter your name');                  return false; }
     if (!data.email.trim())                { setError('Please enter your email');                 return false; }
     if (!/\S+@\S+\.\S+/.test(data.email)) { setError('Please enter a valid email');              return false; }
@@ -143,6 +146,7 @@ export default function RegisterPage() {
         await Promise.all([
           setDoc(doc(db!, 'users', user.uid), {
             name: data.name, email: data.email.toLowerCase(), createdAt: serverTimestamp(),
+            ageConfirmed: true, pdpaConsentAt: serverTimestamp(), termsVersion: '1.0',
           }),
           setDoc(doc(db!, 'profiles', user.uid), {
             age: data.age, heightCm: data.heightCm,
@@ -246,12 +250,51 @@ export default function RegisterPage() {
               <Link href="/login" style={{ color: '#1E7F5C', fontWeight: 600 }}>Sign in</Link>
             </p>
 
-            <p style={{ textAlign: 'center', color: '#C8D0DC', fontSize: 11, marginTop: 12, lineHeight: 1.6 }}>
-              By continuing, you agree to our{' '}
-              <Link href="/terms" style={{ color: '#8B95A7', textDecoration: 'underline' }}>Terms of Service</Link>
-              {' '}and{' '}
-              <Link href="/privacy" style={{ color: '#8B95A7', textDecoration: 'underline' }}>Privacy Policy</Link>
-            </p>
+            {/* ── PDPA consent checkbox (required) ── */}
+            <label style={{
+              display: 'flex', alignItems: 'flex-start', gap: 12, marginTop: 18, cursor: 'pointer',
+              padding: '14px 16px', borderRadius: 14,
+              background: consentChecked ? 'rgba(30,127,92,0.06)' : '#fff',
+              border: `1.5px solid ${consentChecked ? 'rgba(30,127,92,0.35)' : '#E5E9F2'}`,
+              transition: 'all .2s',
+            }}>
+              <div style={{ flexShrink: 0, marginTop: 1 }}>
+                <input
+                  type="checkbox"
+                  checked={consentChecked}
+                  onChange={e => { setConsentChecked(e.target.checked); setError(''); }}
+                  style={{ display: 'none' }}
+                />
+                <div style={{
+                  width: 20, height: 20, borderRadius: 6, flexShrink: 0,
+                  border: `2px solid ${consentChecked ? '#1E7F5C' : '#C8D0DC'}`,
+                  background: consentChecked ? '#1E7F5C' : '#fff',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'all .15s',
+                }}>
+                  {consentChecked && (
+                    <svg width="11" height="9" viewBox="0 0 11 9" fill="none">
+                      <path d="M1 4L4 7.5L10 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                </div>
+              </div>
+              <span style={{ fontSize: 12, color: '#5B6576', lineHeight: 1.6 }}>
+                I confirm that I am <strong style={{ color: '#0F1B2D' }}>18 years of age or older</strong> and I
+                agree to Stride&apos;s{' '}
+                <Link href="/terms" target="_blank" onClick={e => e.stopPropagation()}
+                  style={{ color: '#1E7F5C', fontWeight: 700, textDecoration: 'underline' }}>
+                  Terms of Service
+                </Link>
+                {' '}and{' '}
+                <Link href="/privacy" target="_blank" onClick={e => e.stopPropagation()}
+                  style={{ color: '#1E7F5C', fontWeight: 700, textDecoration: 'underline' }}>
+                  Privacy Policy
+                </Link>
+                , including the collection of health-adjacent data (body stats, food logs) to provide
+                personalised calorie tracking.
+              </span>
+            </label>
           </>
         )}
 
