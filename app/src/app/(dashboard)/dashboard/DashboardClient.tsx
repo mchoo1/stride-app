@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect, useMemo } from 'react';
+import { sendEmailVerification } from 'firebase/auth';
 import { useAuth } from '@/lib/auth-context';
 import { useStrideStore } from '@/lib/store';
 import { calculateTargetCalories } from '@/lib/utils';
@@ -132,6 +133,8 @@ function SkeletonBlock({ w = '100%', h = 16, r = 8 }: { w?: string | number; h?:
 /* ════════════════════════════════════ Main ══════════════════════════════ */
 export default function DashboardClient() {
   const { user }  = useAuth();
+  const [verifyDismissed, setVerifyDismissed] = useState(false);
+  const [verifySent,      setVerifySent     ] = useState(false);
   const store     = useStrideStore();
   const profile   = store.profile;
   const firstName = user?.displayName?.split(' ')[0] ?? profile.name?.split(' ')[0] ?? 'there';
@@ -252,6 +255,44 @@ export default function DashboardClient() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', paddingBottom: 88 }}>
+
+      {/* ── Email verification banner ── */}
+      {user && !user.emailVerified && !verifyDismissed && (
+        <div style={{
+          margin: '12px 16px 0',
+          borderRadius: 14,
+          padding: '12px 14px',
+          background: '#fff8e1',
+          border: '1px solid #ffe082',
+          display: 'flex', alignItems: 'center', gap: 10,
+        }}>
+          <span style={{ fontSize: 18, flexShrink: 0 }}>📧</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#7c5c00', marginBottom: 2 }}>Verify your email</div>
+            <div style={{ fontSize: 12, color: '#a07800', lineHeight: 1.4 }}>
+              {verifySent ? 'Verification email sent! Check your inbox.' : 'Please verify your email to keep your account secure.'}
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }}>
+            {!verifySent && (
+              <button
+                onClick={async () => {
+                  if (user) { try { await sendEmailVerification(user); setVerifySent(true); } catch { /* ignore */ } }
+                }}
+                style={{ fontSize: 11, fontWeight: 700, color: '#1E7F5C', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+              >
+                Resend
+              </button>
+            )}
+            <button
+              onClick={() => setVerifyDismissed(true)}
+              style={{ fontSize: 11, fontWeight: 600, color: '#a07800', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Greeting ── */}
       <div style={{ padding: '52px 20px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>

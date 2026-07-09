@@ -6,7 +6,9 @@ import { useStrideStore } from '@/lib/store';
 import { calculateBMR, calculateTargetCalories, calculateMacros } from '@/lib/utils';
 import { useAuth } from '@/lib/auth-context';
 import { auth } from '@/lib/firebase';
-import { signOut } from 'firebase/auth';
+import { signOut, deleteUser, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
+import { collection, getDocs, deleteDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { api } from '@/lib/apiClient';
 import type { GoalType, DietaryFlag } from '@/types';
 
@@ -93,6 +95,10 @@ export default function MePage() {
   const [dietFlags,   setDietFlags  ] = useState<DietaryFlag[]>(profile.dietaryFlags ?? []);
   const [dietSaved,   setDietSaved  ] = useState(false);
   const [signingOut,  setSigningOut ] = useState(false);
+  const [deleting,    setDeleting   ] = useState(false);
+  const [deleteStep,  setDeleteStep  ] = useState<'idle' | 'confirm' | 'password'>('idle');
+  const [deletePass,  setDeletePass  ] = useState('');
+  const [deleteError, setDeleteError ] = useState('');
 
   // Track whether we've done the initial server sync so we don't overwrite
   // in-progress user edits after the first sync completes.
@@ -598,8 +604,17 @@ export default function MePage() {
               </div>
               <div style={{ marginBottom: 12 }}>
                 <label style={labelStyle}>Email</label>
-                <input style={inputStyle} type="email" value={form.email}
-                  onChange={e => update('email', e.target.value)} placeholder="your@email.com"/>
+                <div style={{
+                  ...inputStyle,
+                  display: 'flex', alignItems: 'center',
+                  color: 'var(--muted)', userSelect: 'none',
+                  background: 'var(--surface-2)',
+                }}>
+                  {form.email || user?.email || '—'}
+                  <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--muted)', fontWeight: 500 }}>
+                    Cannot be changed here
+                  </span>
+                </div>
               </div>
               <div>
                 <label style={labelStyle}>
@@ -726,21 +741,100 @@ export default function MePage() {
                 }}>
                   {signingOut ? 'Signing out…' : '🚪 Sign Out'}
                 </button>
-                <button onClick={async () => {
-                  if (confirm('Reset all app data and start over? This will clear all logs.')) {
-                    store.resetAll();
-                    try { await signOut(auth!); } catch { /* ignore */ }
-                    window.location.href = '/register';
-                  }
-                }} style={{
-                  width: '100%', borderRadius: 14, padding: '12px 0',
-                  fontSize: 14, fontWeight: 600,
-                  background: 'var(--coral-tint)', color: 'var(--coral)',
-                  border: '1px solid rgba(223,95,59,0.20)', cursor: 'pointer',
-                  fontFamily: '"Hanken Grotesk", system-ui, sans-serif',
-                }}>
-                  🔄 Reset App &amp; Start Over
-                </button>
+                {/* ── Delete Account ── */}
+                {deleteStep === 'idle' && (
+                  <button onClick={() => setDeleteStep('confirm')} style={{
+                    width: '100%', borderRadius: 14, padding: '12px 0',
+                    fontSize: 14, fontWeight: 600,
+                    background: 'var(--coral-tint)', color: 'var(--coral)',
+                    border: '1px solid rgba(223,95,59,0.20)', cursor: 'pointer',
+                    fontFamily: '"Hanken Grotesk", system-ui, sans-serif',
+                  }}>
+                    🗑 Delete Account
+                  </button>
+                )}
+
+                {deleteStep === 'confirm' && (
+                  <div style={{ borderRadius: 14, padding: '14px', background: '#fff5f5', border: '1px solid #fecaca' }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#c53030', marginBottom: 6 }}>Delete your account?</div>
+                    <div style={{ fontSize: 12, color: '#7b2323', marginBottom: 12, lineHeight: 1.5 }}>
+                      This permanently deletes all your logs, profile, and data. This cannot be undone.
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button onClick={() => setDeleteStep('idle')} style={{
+                        flex: 1, borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 600,
+                        background: 'var(--surface)', border: '1px solid var(--line)', cursor: 'pointer',
+                        color: 'var(--ink-2)', fontFamily: '"Hanken Grotesk", system-ui, sans-serif',
+                      }}>Cancel</button>
+                      <button onClick={() => { setDeleteStep('password'); setDeleteError(''); }} style={{
+                        flex: 1, borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 700,
+                        background: '#c53030', color: '#fff', border: 'none', cursor: 'pointer',
+                        fontFamily: '"Hanken Grotesk", system-ui, sans-serif',
+                      }}>Continue</button>
+                    </div>
+                  </div>
+                )}
+
+                {deleteStep === 'password' && (
+                  <div style={{ borderRadius: 14, padding: '14px', background: '#fff5f5', border: '1px solid #fecaca' }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#c53030', marginBottom: 8 }}>Enter your password to confirm</div>
+                    <input
+                      type="password" placeholder="Password" value={deletePass}
+                      onChange={e => setDeletePass(e.target.value)}
+                      style={{
+                        width: '100%', boxSizing: 'border-box',
+                        padding: '10px 12px', borderRadius: 10, marginBottom: 8,
+                        border: '1px solid #fca5a5', background: '#fff',
+                        fontSize: 14, color: 'var(--ink)', outline: 'none',
+                      }}
+                    />
+                    {deleteError && <div style={{ fontSize: 12, color: '#c53030', marginBottom: 8 }}>{deleteError}</div>}
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button onClick={() => { setDeleteStep('idle'); setDeletePass(''); setDeleteError(''); }} style={{
+                        flex: 1, borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 600,
+                        background: 'var(--surface)', border: '1px solid var(--line)', cursor: 'pointer',
+                        color: 'var(--ink-2)', fontFamily: '"Hanken Grotesk", system-ui, sans-serif',
+                      }}>Cancel</button>
+                      <button disabled={deleting} onClick={async () => {
+                        if (!auth?.currentUser || !user?.email) return;
+                        setDeleting(true); setDeleteError('');
+                        try {
+                          // Re-authenticate first
+                          const cred = EmailAuthProvider.credential(user.email, deletePass);
+                          await reauthenticateWithCredential(auth.currentUser, cred);
+                          // Delete all Firestore subcollections
+                          const uid = auth.currentUser.uid;
+                          const subs = ['foodLogs','activityLogs','waterLogs','dailySummaries','recommendations'];
+                          for (const sub of subs) {
+                            const snap = await getDocs(collection(db!, 'users', uid, sub));
+                            await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
+                          }
+                          // Delete user profile doc
+                          try { await deleteDoc((await import('firebase/firestore')).doc(db!, 'users', uid)); } catch { /* ok */ }
+                          // Delete Firebase Auth account
+                          store.resetAll();
+                          await deleteUser(auth.currentUser);
+                          window.location.href = '/register';
+                        } catch (err: unknown) {
+                          const code = (err as { code?: string })?.code ?? '';
+                          if (code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
+                            setDeleteError('Incorrect password. Please try again.');
+                          } else {
+                            setDeleteError('Something went wrong. Please try again.');
+                          }
+                          setDeleting(false);
+                        }
+                      }} style={{
+                        flex: 1, borderRadius: 10, padding: '10px 0', fontSize: 13, fontWeight: 700,
+                        background: deleting ? '#fca5a5' : '#c53030', color: '#fff',
+                        border: 'none', cursor: deleting ? 'not-allowed' : 'pointer',
+                        fontFamily: '"Hanken Grotesk", system-ui, sans-serif',
+                      }}>
+                        {deleting ? 'Deleting…' : 'Delete Forever'}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </>
