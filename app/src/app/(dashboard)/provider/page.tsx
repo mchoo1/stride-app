@@ -1,3 +1,5 @@
-import { notFound } from 'next/navigation';
-export default function Page() { notFound(); }
+import dynamic from 'next/dynamic';
+
+const PageClient = dynamic(() => import('./PageClient'), { ssr: false });
+export default function Page() { return <PageClient />; }
 

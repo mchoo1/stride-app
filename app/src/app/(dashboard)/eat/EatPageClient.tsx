@@ -38,6 +38,7 @@ import AddMealSheet       from '@/components/AddMealSheet';
 import { useMealOverlay } from '@/lib/useMealOverlay';
 import { resolveDisplay } from '@/lib/resolveDisplay';
 import type { ConfidenceTier } from '@/lib/firestoreFoodDb';
+import { HawkerStallGrid }    from '@/components/hawker/HawkerStallGrid';
 
 /* ── Design tokens — now aligned to Stride design system ── */
 const BG     = 'var(--bg)';
@@ -1804,6 +1805,9 @@ export default function EatPage() {
         </div>
 
         {/* Remaining budget strip */}
+        {/* Hawker stall grid — renders only when ?r= is a hawker with stalls */}
+        <HawkerStallGrid />
+
         {(remaining.calories > 0 || remaining.protein > 0) && (
           <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
             <span style={{

@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { mealId, feedbackType, ...rest } = body;
+  const { mealId, stallUnit, feedbackType, ...rest } = body;
 
   // Validate required fields
   if (typeof mealId !== 'string' || !mealId.trim()) {
