@@ -479,6 +479,8 @@ function MealBuilderPanel({
   onLogSetMeal: (syntheticItem: SGMenuItem) => void;
 }) {
   const mb = item.mealBuilder!;
+  // Upsize hidden for now — show only the 'from' price. Re-enable when upsize deltas are finalized (v5).
+  const SHOW_UPSIZE = false;
   const [open, setOpen]       = useState(false);
   const [upsize, setUpsize]   = useState(false);
   const [sideId, setSideId]   = useState(mb.side?.defaultId ?? '');
@@ -551,8 +553,8 @@ function MealBuilderPanel({
 
       {open && (
         <div style={{ marginTop: 10, padding: '12px 12px', background: BG, borderRadius: 12, border: `1px solid ${BORDER}` }}>
-          {/* Upsize */}
-          {mb.upsizeDelta != null && (
+          {/* Upsize (hidden for now) */}
+          {SHOW_UPSIZE && mb.upsizeDelta != null && (
             <div style={{ marginBottom: 10 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: FG3, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>Size</div>
               <div style={{ display: 'flex', gap: 8 }}>

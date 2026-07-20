@@ -286,10 +286,15 @@ export default function RegisterPage() {
                   style={{ color: '#1E7F5C', fontWeight: 700, textDecoration: 'underline' }}>
                   Terms of Service
                 </Link>
-                {' '}and{' '}
+                {', '}
                 <Link href="/privacy" target="_blank" onClick={e => e.stopPropagation()}
                   style={{ color: '#1E7F5C', fontWeight: 700, textDecoration: 'underline' }}>
                   Privacy Policy
+                </Link>
+                {' and '}
+                <Link href="/disclaimer" target="_blank" onClick={e => e.stopPropagation()}
+                  style={{ color: '#1E7F5C', fontWeight: 700, textDecoration: 'underline' }}>
+                  Health Disclaimer
                 </Link>
                 , including the collection of health-adjacent data (body stats, food logs) to provide
                 personalised calorie tracking.
