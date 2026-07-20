@@ -157,5 +157,12 @@ service cloud.firestore {
       allow create: if isAuth();
       allow update, delete: if isAuth() && resource.data.userId == request.auth.uid;
     }
+
+    // Merchant applications — merchant reads/creates own doc; admin approves
+    match /merchants/{uid} {
+      allow read:   if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null && request.auth.uid == uid;
+      allow update: if isAdmin();
+    }
   }
 }

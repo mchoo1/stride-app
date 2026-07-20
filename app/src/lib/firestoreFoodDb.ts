@@ -71,6 +71,7 @@ export const GENERIC_TAGGED_CAVEAT =
 export interface SetComponent {
   /** References FirestoreMeal.id */
   mealId: string;
+  stallUnit?:    string;      // unit e.g. '01-168' — links a new_submission to a stall
   /** How many of that component the set includes — default 1 */
   qty: number;
 }
