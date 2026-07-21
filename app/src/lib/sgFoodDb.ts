@@ -342,6 +342,12 @@ export interface MealBuilder {
 
 // ─── Restaurant / chain ───────────────────────────────────────────────────────
 
+export type HawkerStall = {
+  unit:   string;
+  grade?: 'A' | 'B' | 'C' | 'D' | 'na';
+  name?:  string;
+};
+
 export interface SGRestaurant {
   /**
    * Unique ID — use brand slug, e.g. `mcd`, `kfc`, `old_chang_kee`
