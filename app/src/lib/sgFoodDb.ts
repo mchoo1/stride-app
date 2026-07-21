@@ -24,6 +24,7 @@
  */
 
 import type { DietaryFlag, OutletType } from '@/types';
+import { SG_HAWKER_CENTRES_AUTO } from './sgHawkerCentresAuto';
 
 // ─── Enums & literals ────────────────────────────────────────────────────────
 
@@ -434,9 +435,10 @@ export interface SGRestaurant {
     breakfastStart?: string;
     breakfastEnd?: string;
     breakfastEndWeekend?: string;
-  
-  stalls?:  HawkerStall[];  // hawker stall list (Old Airport Road etc.)
-};
+  };
+
+  /** SFA-licensed stall skeleton (unit + hygiene grade). Dishes/prices attach per stall. */
+  stalls?: HawkerStall[];
 }
 
 // ─── Grocery ingredient ───────────────────────────────────────────────────────
@@ -12755,6 +12757,7 @@ export const SG_RESTAURANTS: SGRestaurant[] = [
         source: 'official_sg', verified: false, confidence: 'estimated', lastVerified: '2026-04-19' },
     ],
   },
+  ...SG_HAWKER_CENTRES_AUTO,
 ];
 
 /**
@@ -14230,6 +14233,35 @@ const SG_HAWKER_PLACES: SGRestaurant[] = [
     dietTags: ['lactose_free'],
     priceRange: '$',
     lastUpdated: '2026-04-18',
+    stalls: [
+      { unit: '01-001', grade: 'A' }, { unit: '01-002', grade: 'B' }, { unit: '01-003', grade: 'B' }, { unit: '01-004', grade: 'A' }, { unit: '01-005', grade: 'A' }, { unit: '01-006', grade: 'A' },
+      { unit: '01-007', grade: 'A' }, { unit: '01-008', grade: 'A' }, { unit: '01-009', grade: 'A' }, { unit: '01-010' }, { unit: '01-011', grade: 'B' }, { unit: '01-012', grade: 'A' },
+      { unit: '01-013', grade: 'A' }, { unit: '01-014', grade: 'A' }, { unit: '01-015', grade: 'B' }, { unit: '01-016', grade: 'A' }, { unit: '01-017', grade: 'B' }, { unit: '01-018', grade: 'A' },
+      { unit: '01-019', grade: 'A' }, { unit: '01-020', grade: 'A' }, { unit: '01-021', grade: 'A' }, { unit: '01-022', grade: 'A' }, { unit: '01-023', grade: 'A' }, { unit: '01-024', grade: 'A' },
+      { unit: '01-025', grade: 'A' }, { unit: '01-026', grade: 'A' }, { unit: '01-027', grade: 'A' }, { unit: '01-028', grade: 'B' }, { unit: '01-029', grade: 'A' }, { unit: '01-030', grade: 'B' },
+      { unit: '01-031', grade: 'A' }, { unit: '01-032', grade: 'A' }, { unit: '01-033', grade: 'B' }, { unit: '01-035', grade: 'B' }, { unit: '01-036', grade: 'B' }, { unit: '01-037', grade: 'A' },
+      { unit: '01-038', grade: 'B' }, { unit: '01-039', grade: 'A' }, { unit: '01-040', grade: 'A' }, { unit: '01-042', grade: 'B' }, { unit: '01-043', grade: 'A' }, { unit: '01-044', grade: 'A' },
+      { unit: '01-045', grade: 'A' }, { unit: '01-047' }, { unit: '01-048', grade: 'B' }, { unit: '01-050', grade: 'A' }, { unit: '01-051', grade: 'A' }, { unit: '01-052', grade: 'B' },
+      { unit: '01-053', grade: 'B' }, { unit: '01-054', grade: 'A' }, { unit: '01-055', grade: 'B' }, { unit: '01-056', grade: 'A' }, { unit: '01-057', grade: 'A' }, { unit: '01-058', grade: 'B' },
+      { unit: '01-059', grade: 'A' }, { unit: '01-060', grade: 'B' }, { unit: '01-061', grade: 'A' }, { unit: '01-062', grade: 'A' }, { unit: '01-063', grade: 'B' }, { unit: '01-064', grade: 'A' },
+      { unit: '01-065', grade: 'A' }, { unit: '01-066', grade: 'A' }, { unit: '01-067', grade: 'B' }, { unit: '01-068', grade: 'B' }, { unit: '01-069' }, { unit: '01-070', grade: 'A' },
+      { unit: '01-071', grade: 'A' }, { unit: '01-072', grade: 'A' }, { unit: '01-073' }, { unit: '01-074', grade: 'A' }, { unit: '01-075', grade: 'A' }, { unit: '01-076', grade: 'A' },
+      { unit: '01-077', grade: 'A' }, { unit: '01-078', grade: 'B' }, { unit: '01-079', grade: 'A' }, { unit: '01-080', grade: 'A' }, { unit: '01-081', grade: 'A' }, { unit: '01-082', grade: 'A' },
+      { unit: '01-083', grade: 'A' }, { unit: '01-084', grade: 'A' }, { unit: '01-085', grade: 'A' }, { unit: '01-086', grade: 'A' }, { unit: '01-087', grade: 'B' }, { unit: '01-088', grade: 'A' },
+      { unit: '01-089', grade: 'A' }, { unit: '01-090', grade: 'A' }, { unit: '01-091', grade: 'A' }, { unit: '01-092', grade: 'A' }, { unit: '01-093', grade: 'A' }, { unit: '01-094', grade: 'A' },
+      { unit: '01-095', grade: 'B' }, { unit: '01-097', grade: 'A' }, { unit: '01-098' }, { unit: '01-099', grade: 'A' }, { unit: '01-100', grade: 'A' }, { unit: '01-101', grade: 'B' },
+      { unit: '01-102', grade: 'B' }, { unit: '01-103', grade: 'A' }, { unit: '01-104', grade: 'B' }, { unit: '01-105', grade: 'A' }, { unit: '01-106', grade: 'A' }, { unit: '01-107', grade: 'A' },
+      { unit: '01-108', grade: 'A' }, { unit: '01-109', grade: 'A' }, { unit: '01-110', grade: 'A' }, { unit: '01-111', grade: 'B' }, { unit: '01-112', grade: 'B' }, { unit: '01-114', grade: 'B' },
+      { unit: '01-115', grade: 'A' }, { unit: '01-116', grade: 'A' }, { unit: '01-117', grade: 'B' }, { unit: '01-118', grade: 'B' }, { unit: '01-119', grade: 'A' }, { unit: '01-120', grade: 'A' },
+      { unit: '01-121', grade: 'A' }, { unit: '01-122', grade: 'B' }, { unit: '01-123', grade: 'A' }, { unit: '01-124', grade: 'A' }, { unit: '01-125', grade: 'B' }, { unit: '01-126', grade: 'A' },
+      { unit: '01-127', grade: 'A' }, { unit: '01-128', grade: 'A' }, { unit: '01-129', grade: 'A' }, { unit: '01-130', grade: 'B' }, { unit: '01-131', grade: 'B' }, { unit: '01-132', grade: 'B' },
+      { unit: '01-133', grade: 'A' }, { unit: '01-134', grade: 'A' }, { unit: '01-135', grade: 'A' }, { unit: '01-136', grade: 'A' }, { unit: '01-137', grade: 'A' }, { unit: '01-138', grade: 'B' },
+      { unit: '01-139', grade: 'A' }, { unit: '01-140', grade: 'A' }, { unit: '01-141', grade: 'A' }, { unit: '01-142', grade: 'A' }, { unit: '01-145', grade: 'A' }, { unit: '01-146', grade: 'B' },
+      { unit: '01-147', grade: 'A' }, { unit: '01-148', grade: 'A' }, { unit: '01-149', grade: 'A' }, { unit: '01-150', grade: 'A' }, { unit: '01-151', grade: 'A' }, { unit: '01-152', grade: 'A' },
+      { unit: '01-153', grade: 'A' }, { unit: '01-154' }, { unit: '01-155', grade: 'B' }, { unit: '01-156', grade: 'B' }, { unit: '01-157', grade: 'A' }, { unit: '01-158', grade: 'B' },
+      { unit: '01-159', grade: 'A' }, { unit: '01-160', grade: 'A' }, { unit: '01-161', grade: 'A' }, { unit: '01-162', grade: 'A' }, { unit: '01-163', grade: 'A' }, { unit: '01-164', grade: 'A' },
+      { unit: '01-165', grade: 'A' }, { unit: '01-166', grade: 'A' }, { unit: '01-167', grade: 'A' }, { unit: '01-168', grade: 'A' },
+    ],
     menu: [
       { id: 'oar_char_kway_teow', name: 'Char Kway Teow', emoji: '🍜', price: 5.00,
         calories: 660, protein: 20, carbs: 82, fat: 26, category: 'Noodles',
