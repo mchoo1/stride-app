@@ -10,7 +10,7 @@
  * Integration (EatPageClient.tsx):
  *   1. Add import:  import { HawkerStallGrid } from '@/components/hawker/HawkerStallGrid';
  *   2. Add render:  <HawkerStallGrid />
- *      — place it just above the {/* Remaining budget strip */} block.
+ * — place it just above the "Remaining budget strip" comment block.
  */
 
 import { useState, useCallback } from 'react';
