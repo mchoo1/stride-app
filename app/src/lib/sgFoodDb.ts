@@ -434,7 +434,9 @@ export interface SGRestaurant {
     breakfastStart?: string;
     breakfastEnd?: string;
     breakfastEndWeekend?: string;
-  };
+  
+  stalls?:  HawkerStall[];  // hawker stall list (Old Airport Road etc.)
+};
 }
 
 // ─── Grocery ingredient ───────────────────────────────────────────────────────
