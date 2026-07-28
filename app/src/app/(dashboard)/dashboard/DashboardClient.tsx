@@ -63,7 +63,6 @@ function TopPPDCard({ item, restaurant, ppd, index }: {
       animation: `scaleIn .4s ease ${index * 0.05}s both`,
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-        <Avatar name={restaurant.name} size={38} radius={11} />
         {index === 0 && (
           <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--gold)', background: 'var(--gold-tint)', padding: '2px 7px', borderRadius: 999 }}>⭐ TOP</span>
         )}
@@ -95,7 +94,6 @@ function RecentlyLoggedRow({ entry, onLog }: { entry: FoodLogEntry; onLog: () =>
       background: 'var(--surface)', borderRadius: 16,
       boxShadow: 'var(--shadow-md)', padding: '12px 12px 10px',
     }}>
-      <div style={{ fontSize: 26, marginBottom: 8, lineHeight: 1 }}>{entry.emoji}</div>
       <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.25, marginBottom: 2,
         overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box',
         WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const }}>
@@ -511,13 +509,10 @@ export default function DashboardClient() {
         </div>
       </div>
 
-      {/* ── Water tracker (moved below content) ── */}
+      {/* ── Water / hydration (inline with macros) ── */}
       {user && (
-        <div style={{ padding: '28px 20px 0' }}>
-          <div style={{ marginBottom: 10 }}>
-            <h2 style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 16, fontWeight: 600, color: 'var(--ink)', margin: 0, letterSpacing: '-0.02em' }}>Hydration</h2>
-          </div>
-          <div style={{
+        <div style={{ padding: '0 20px' }}>
+                    <div style={{
             background: 'var(--surface)', borderRadius: 'var(--r-card)',
             boxShadow: 'var(--shadow-md)', padding: '14px 16px',
           }}>

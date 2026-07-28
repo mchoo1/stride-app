@@ -652,8 +652,7 @@ function MenuItemCard({
 
   return (
     <div style={{ background: CARD, borderRadius: 16, border: `1px solid ${BORDER}`, marginBottom: 10, boxShadow: SHADOW, overflow: 'hidden' }}>
-      <div onClick={onToggle} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', cursor: 'pointer' }}>
-        <RestaurantLogo restaurantId={restaurant.id} name={restaurant.name} size={46} radius={12} />
+      <div onClick={onToggle} style={{ display: 'flex', alignItems: 'center', padding: '13px 14px', cursor: 'pointer' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: FG1, display: 'flex', alignItems: 'center', gap: 5 }}>
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
@@ -826,7 +825,6 @@ function RestaurantBrowseCard({ restaurant, distKm, onSelect }: {
   const serviceIcons: Record<ServiceType, string> = { dine_in: '🍽️', grab_go: '🥡', delivery: '🛵' };
   return (
     <div onClick={onSelect} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 0', borderBottom: `1px solid ${BORDER}`, cursor: 'pointer' }}>
-      <RestaurantLogo restaurantId={restaurant.id} name={restaurant.name} size={52} radius={14} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: FG1, marginBottom: 2 }}>{restaurant.name}</div>
         <div style={{ fontSize: 12, color: FG2, marginBottom: 5 }}>
@@ -889,8 +887,7 @@ function RecipeCard({ recipe, onLog, onUnlog, logged, isExpanded, onToggle }: {
 
   return (
     <div style={{ background: CARD, borderRadius: 16, border: `1px solid ${BORDER}`, marginBottom: 10, boxShadow: SHADOW, overflow: 'hidden' }}>
-      <div onClick={onToggle} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', cursor: 'pointer' }}>
-        <Initial name={recipe.name} size={46} radius={12} />
+      <div onClick={onToggle} style={{ display: 'flex', alignItems: 'center', padding: '13px 14px', cursor: 'pointer' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: FG1, marginBottom: 2 }}>{recipe.name}</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
