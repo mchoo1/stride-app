@@ -297,14 +297,14 @@ export default function DashboardClient() {
                 onClick={async () => {
                   if (user) { try { await sendEmailVerification(user); setVerifySent(true); } catch { /* ignore */ } }
                 }}
-                style={{ fontSize: 11, fontWeight: 700, color: '#1E7F5C', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                style={{ fontSize: 11, fontWeight: 700, color: '#1E7F5C', background: 'none', border: 'none', cursor: 'pointer', padding: '6px 10px', minHeight: 36 }}
               >
                 Resend
               </button>
             )}
             <button
               onClick={() => setVerifyDismissed(true)}
-              style={{ fontSize: 11, fontWeight: 600, color: '#a07800', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+              style={{ fontSize: 11, fontWeight: 600, color: '#a07800', background: 'none', border: 'none', cursor: 'pointer', padding: '6px 10px', minHeight: 36 }}
             >
               Dismiss
             </button>

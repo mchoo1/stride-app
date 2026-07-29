@@ -99,8 +99,9 @@ function LogInner() {
   const params  = useSearchParams();
   const store   = useStrideStore();
 
-  const initialTab = params.get('tab') === 'activity' ? 'activity' : 'food';
-  const [tab, setTab] = useState<'food' | 'activity'>(initialTab);
+  const rawTab = params.get('tab');
+  const initialTab = rawTab === 'activity' ? 'activity' : rawTab === 'water' ? 'water' : 'food';
+  const [tab, setTab] = useState<'food' | 'activity' | 'water'>(initialTab);
 
   // ── Food tab state ──────────────────────────────────────────────────────────
   const [query,         setQuery]         = useState('');
@@ -431,6 +432,7 @@ function LogInner() {
         }}>
           <button style={tabBtnStyle(tab === 'food')}     onClick={() => setTab('food')}>🍽 Food</button>
           <button style={tabBtnStyle(tab === 'activity')} onClick={() => setTab('activity')}>⚡ Activity</button>
+          <button style={tabBtnStyle(tab === 'water')}    onClick={() => setTab('water')}>💧 Water</button>
         </div>
       </div>
 
@@ -944,6 +946,78 @@ function LogInner() {
             })}
           </div>
         )}
+
+        {/* ====================== WATER TAB ====================== */}
+        {tab === 'water' && (() => {
+          const waterMl  = store.getTodayWater();
+          const targetMl = store.profile.targetWater ?? 2500;
+          const pct      = Math.min(1, waterMl / targetMl);
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+              {/* Progress summary */}
+              <div style={{
+                background: 'var(--surface)', borderRadius: 22, padding: 20,
+                border: '1px solid var(--line)', boxShadow: 'var(--shadow-md)',
+                textAlign: 'center',
+              }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  Today&apos;s water
+                </div>
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 6, marginBottom: 14 }}>
+                  <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 52, fontWeight: 700, color: '#2E6FB8', letterSpacing: '-0.03em' }}>
+                    {waterMl >= 1000 ? (waterMl / 1000).toFixed(1) : waterMl}
+                  </span>
+                  <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--muted)' }}>
+                    {waterMl >= 1000 ? 'L' : 'ml'}
+                  </span>
+                </div>
+                <div style={{ background: 'rgba(46,111,184,0.12)', borderRadius: 99, height: 10, overflow: 'hidden', marginBottom: 10 }}>
+                  <div style={{ height: '100%', borderRadius: 99, background: '#2E6FB8', width: `${pct * 100}%`, transition: 'width .4s ease' }} />
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+                  {waterMl >= targetMl
+                    ? `Goal reached! (${targetMl} ml target)`
+                    : `${targetMl - waterMl} ml to go - goal ${targetMl} ml`}
+                </div>
+              </div>
+
+              {/* Quick-add grid */}
+              <div style={{
+                background: 'var(--surface)', borderRadius: 22, padding: 18,
+                border: '1px solid var(--line)', boxShadow: 'var(--shadow-md)',
+              }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 12 }}>Quick add</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  {([
+                    { label: 'Glass',  ml: 250,  emoji: '🥛'  },
+                    { label: 'Bottle', ml: 500,  emoji: '💧' },
+                    { label: 'Large',  ml: 750,  emoji: '🍶'    },
+                    { label: '1 L',    ml: 1000, emoji: '🫗' },
+                  ] as { label: string; ml: number; emoji: string }[]).map(({ label, ml, emoji }) => (
+                    <button
+                      key={ml}
+                      onClick={() => store.addWater(ml)}
+                      style={{
+                        borderRadius: 16, padding: '14px 12px', cursor: 'pointer',
+                        border: '1.5px solid rgba(46,111,184,0.20)',
+                        background: 'rgba(46,111,184,0.06)',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                        fontFamily: '"Hanken Grotesk",system-ui,sans-serif',
+                        transition: 'all .15s',
+                      }}
+                    >
+                      <span style={{ fontSize: 24 }}>{emoji}</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: '#2E6FB8' }}>+{ml} ml</span>
+                      <span style={{ fontSize: 11, color: 'var(--muted)' }}>{label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+          );
+        })()}
 
       </div>
     </div>

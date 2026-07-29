@@ -203,6 +203,8 @@ export default function MePage() {
   };
 
   const saveProfile = () => {
+    if (Number(form.heightCm) > 0 &&
+        (Number(form.heightCm) < 100 || Number(form.heightCm) > 250)) return;
     const calories = calculateTargetCalories(form);
     const macros   = calculateMacros(calories, form.goalType);
     const updated  = { ...form, targetCalories: calories, targetProtein: macros.protein, targetCarbs: macros.carbs, targetFat: macros.fat };
@@ -524,8 +526,19 @@ export default function MePage() {
                 </div>
                 <div style={{ flex: 1 }}>
                   <label style={labelStyle}>Height (cm)</label>
-                  <input type="number" style={inputStyle} value={form.heightCm}
+                  <input type="number" min={100} max={250} style={{
+                    ...inputStyle,
+                    borderColor: (Number(form.heightCm) > 0 &&
+                      (Number(form.heightCm) < 100 || Number(form.heightCm) > 250))
+                        ? 'var(--coral)' : undefined,
+                  }} value={form.heightCm}
                     onChange={e => update('heightCm', Number(e.target.value))}/>
+                  {Number(form.heightCm) > 0 &&
+                    (Number(form.heightCm) < 100 || Number(form.heightCm) > 250) && (
+                    <div style={{ fontSize: 11, color: 'var(--coral)', marginTop: 4 }}>
+                      Height must be 100-250 cm
+                    </div>
+                  )}
                 </div>
               </div>
 
