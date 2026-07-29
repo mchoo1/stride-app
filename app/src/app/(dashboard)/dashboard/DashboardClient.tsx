@@ -51,6 +51,30 @@ function MiniRing({ frac, size = 38 }: { frac: number; size?: number }) {
   );
 }
 
+/* ── Nearby restaurant card ── */
+function NearbyRestaurantCard({ restaurant }: { restaurant: SGRestaurant }) {
+  const topItem = restaurant.menu
+    .filter(i => i.price && i.protein && i.visibility !== 'component_only')
+    .sort((a, b) => (b.protein / (b.price ?? 1)) - (a.protein / (a.price ?? 1)))[0];
+  return (
+    <Link href={`/eat?r=${restaurant.id}`} style={{
+      display: 'flex', flexDirection: 'column', flexShrink: 0, width: 160,
+      background: 'var(--surface)', borderRadius: 'var(--r-card)',
+      boxShadow: 'var(--shadow-md)', padding: 14, textDecoration: 'none',
+    }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 3, lineHeight: 1.25,
+        overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box',
+        WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const }}>{restaurant.name}</div>
+      {topItem && (
+        <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 6 }}>
+          Best: {topItem.name} · ${topItem.price?.toFixed(2)}
+        </div>
+      )}
+      <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--green)', marginTop: 'auto' }}>View menu →</div>
+    </Link>
+  );
+}
+
 /* ── High-PPD card (horizontal rail) ── */
 function TopPPDCard({ item, restaurant, ppd, index }: {
   item: SGMenuItem; restaurant: SGRestaurant; ppd: number; index: number;
@@ -62,11 +86,7 @@ function TopPPDCard({ item, restaurant, ppd, index }: {
       boxShadow: 'var(--shadow-md)', padding: 14, textDecoration: 'none',
       animation: `scaleIn .4s ease ${index * 0.05}s both`,
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-        {index === 0 && (
-          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--gold)', background: 'var(--gold-tint)', padding: '2px 7px', borderRadius: 999 }}>⭐ TOP</span>
-        )}
-      </div>
+
       <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.25, marginBottom: 2,
         overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box',
         WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const }}>{item.name}</div>
@@ -509,6 +529,31 @@ export default function DashboardClient() {
         </div>
       </div>
 
+
+      {/* ── Nearby restaurants (GPS) ── */}
+      {gpsState === 'granted' && nearbyIds && nearbyIds.size > 0 && (
+        <div style={{ marginBottom: 26 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', padding: '0 20px', marginBottom: 12 }}>
+            <div>
+              <h2 style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 18, fontWeight: 600, color: 'var(--ink)', margin: 0, letterSpacing: '-0.02em' }}>
+                📍 Near You
+              </h2>
+              <p style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 500, margin: '2px 0 0' }}>
+                Restaurants within walking distance
+              </p>
+            </div>
+            <Link href="/eat" style={{ display: 'flex', alignItems: 'center', gap: 3, color: 'var(--green)', fontWeight: 600, fontSize: 13.5, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+              See all <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+            </Link>
+          </div>
+          <div style={{ display: 'flex', gap: 12, overflowX: 'auto', padding: '2px 20px 4px', scrollbarWidth: 'none' }}>
+            {SG_RESTAURANTS.filter(r => nearbyIds.has(r.id)).map(r => (
+              <NearbyRestaurantCard key={r.id} restaurant={r} />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ── Water / hydration (inline with macros) ── */}
       {user && (
         <div style={{ padding: '0 20px' }}>
@@ -544,17 +589,15 @@ export default function DashboardClient() {
                 transition: 'width 0.6s cubic-bezier(.22,.61,.36,1)',
               }} />
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {[250, 500, 750].map(ml => (
-                <button key={ml} onClick={() => store.addWater(ml)} style={{
-                  flex: 1, height: 36, borderRadius: 10, border: '1.5px solid #bbdefb',
-                  background: '#e8f4fd', color: '#1565c0', fontSize: 13, fontWeight: 700,
-                  cursor: 'pointer', letterSpacing: '-0.01em',
-                }}>
-                  +{ml}ml
-                </button>
-              ))}
-            </div>
+            <Link href="/log?tab=water" style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              height: 34, borderRadius: 10, border: '1.5px solid #bbdefb',
+              background: '#e8f4fd', color: '#1565c0', fontSize: 13, fontWeight: 700,
+              textDecoration: 'none', letterSpacing: '-0.01em',
+            }}>
+              Log water
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+            </Link>
           </div>
         </div>
       )}
