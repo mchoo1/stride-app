@@ -96,7 +96,7 @@ export default function HistoryPage() {
             fontFamily: "'Anton', Impact, sans-serif",
           }}
         >
-          FULL LOG
+          Full log
         </h1>
       </div>
 

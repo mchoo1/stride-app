@@ -190,9 +190,31 @@ export default function RegisterPage() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#F7F8FB' }}>
 
-      {/* Progress bar */}
+      {/* D2-01: Progress bar + named step dots */}
       <div style={{ height: 4, background: '#E5E9F2' }}>
         <div style={{ height: '100%', background: '#1E7F5C', width: `${progress}%`, transition: 'width .4s ease' }} />
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 20px 0', background: '#fff' }}>
+        {STEPS.map((s, i) => (
+          <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <div style={{
+              width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+              background: i <= step ? '#1E7F5C' : '#E5E9F2',
+              border: `2px solid ${i <= step ? '#1E7F5C' : '#C8D0DC'}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              {i < step ? (
+                <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                  <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              ) : (
+                <span style={{ fontSize: 9, fontWeight: 700, color: i === step ? '#fff' : '#C8D0DC' }}>{i + 1}</span>
+              )}
+            </div>
+            <span style={{ fontSize: 10, fontWeight: i === step ? 700 : 500, color: i <= step ? '#1E7F5C' : '#C8D0DC' }}>{s}</span>
+            {i < STEPS.length - 1 && <div style={{ width: 14, height: 1, background: i < step ? '#1E7F5C' : '#E5E9F2', marginLeft: 2 }} />}
+          </div>
+        ))}
       </div>
 
       {/* Top bar */}
@@ -279,25 +301,27 @@ export default function RegisterPage() {
                   )}
                 </div>
               </div>
-              <span style={{ fontSize: 12, color: '#5B6576', lineHeight: 1.6 }}>
-                I confirm that I am <strong style={{ color: '#0F1B2D' }}>18 years of age or older</strong> and I
-                agree to Stride&apos;s{' '}
-                <Link href="/terms" target="_blank" onClick={e => e.stopPropagation()}
-                  style={{ color: '#1E7F5C', fontWeight: 700, textDecoration: 'underline' }}>
-                  Terms of Service
-                </Link>
-                {', '}
-                <Link href="/privacy" target="_blank" onClick={e => e.stopPropagation()}
-                  style={{ color: '#1E7F5C', fontWeight: 700, textDecoration: 'underline' }}>
-                  Privacy Policy
-                </Link>
-                {' and '}
-                <Link href="/disclaimer" target="_blank" onClick={e => e.stopPropagation()}
-                  style={{ color: '#1E7F5C', fontWeight: 700, textDecoration: 'underline' }}>
-                  Health Disclaimer
-                </Link>
-                , including the collection of health-adjacent data (body stats, food logs) to provide
-                personalised calorie tracking.
+              {/* D2-02: Split into two distinct lines for clarity */}
+              <span style={{ fontSize: 12, color: '#5B6576', lineHeight: 1.65 }}>
+                <div>I confirm I am <strong style={{ color: '#0F1B2D' }}>18 years of age or older.</strong></div>
+                <div style={{ marginTop: 5 }}>
+                  I agree to Stride&apos;s{' '}
+                  <Link href="/terms" target="_blank" onClick={e => e.stopPropagation()}
+                    style={{ color: '#1E7F5C', fontWeight: 700, textDecoration: 'underline' }}>
+                    Terms
+                  </Link>
+                  {', '}
+                  <Link href="/privacy" target="_blank" onClick={e => e.stopPropagation()}
+                    style={{ color: '#1E7F5C', fontWeight: 700, textDecoration: 'underline' }}>
+                    Privacy Policy
+                  </Link>
+                  {' & '}
+                  <Link href="/disclaimer" target="_blank" onClick={e => e.stopPropagation()}
+                    style={{ color: '#1E7F5C', fontWeight: 700, textDecoration: 'underline' }}>
+                    Health Disclaimer
+                  </Link>
+                  {' — including collection of body stats and food logs.'}
+                </div>
               </span>
             </label>
           </>

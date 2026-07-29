@@ -24,11 +24,12 @@ function IconSearch({ active }: { active: boolean }) {
 }
 
 function IconLog({ active }: { active: boolean }) {
+  // D11-04: Pencil/edit icon — "record an entry" vs ambiguous clock/timer
   const sw = active ? '2' : '1.6';
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="9" fill={active ? 'currentColor' : 'none'}/>
-      <path d="M12 8v4l2.5 2.5" stroke={active ? '#fff' : 'currentColor'} strokeWidth={sw}/>
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" fill={active ? 'currentColor' : 'none'} />
     </svg>
   );
 }

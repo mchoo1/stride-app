@@ -397,7 +397,7 @@ function LogInner() {
                       {history.map((d, i) => {
                         const isToday = i === history.length - 1;
                         const over    = d.calories > goalCal;
-                        const h       = d.calories > 0 ? Math.max(6, (d.calories / maxCal) * H) : 4;
+                        const h       = d.calories > 0 ? Math.max(20, (d.calories / maxCal) * H) : 4; // D5-02: min 20px
                         const days    = ['Su','Mo','Tu','We','Th','Fr','Sa'];
                         const dow     = new Date(d.date + 'T00:00:00').getDay();
                         return (
@@ -456,11 +456,16 @@ function LogInner() {
               ))}
             </div>
 
-            {/* Toggle manual */}
+            {/* D6-02: "Manual entry" as outlined chip for better discoverability */}
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <button onClick={() => setManualMode(!manualMode)} style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                fontSize: 12, fontWeight: 700, color: FG3, padding: 0,
+                background: manualMode ? 'none' : 'var(--surface-2)',
+                border: manualMode ? 'none' : '1px solid var(--line)',
+                cursor: 'pointer', borderRadius: 8,
+                fontSize: 12, fontWeight: 700,
+                color: manualMode ? FG3 : 'var(--ink-2)',
+                padding: manualMode ? '0' : '5px 10px',
+                transition: 'all .15s',
               }}>
                 {manualMode ? '← Search foods' : '✏️ Manual entry'}
               </button>
@@ -972,13 +977,16 @@ function LogInner() {
                     {waterMl >= 1000 ? 'L' : 'ml'}
                   </span>
                 </div>
-                <div style={{ background: 'rgba(46,111,184,0.12)', borderRadius: 99, height: 10, overflow: 'hidden', marginBottom: 10 }}>
+                <div style={{ background: 'rgba(46,111,184,0.12)', borderRadius: 99, height: 14, overflow: 'hidden', marginBottom: 10 }}>{/* D7-01: 14px */}
                   <div style={{ height: '100%', borderRadius: 99, background: '#2E6FB8', width: `${pct * 100}%`, transition: 'width .4s ease' }} />
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+                  {/* D7-03: contextual label at 0% */}
                   {waterMl >= targetMl
                     ? `Goal reached! (${targetMl} ml target)`
-                    : `${targetMl - waterMl} ml to go - goal ${targetMl} ml`}
+                    : waterMl === 0
+                      ? `Goal: ${targetMl} ml · Start logging!`
+                      : `${targetMl - waterMl} ml to go · goal ${targetMl} ml`}
                 </div>
               </div>
 

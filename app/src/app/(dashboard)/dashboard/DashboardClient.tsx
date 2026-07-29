@@ -320,9 +320,10 @@ export default function DashboardClient() {
             Hello, {firstName}
           </h1>
         </div>
+        {/* D3-05: More prominent streak pill */}
         {streak > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, height: 30, padding: '0 10px', borderRadius: 999, background: 'var(--coral-tint)', color: 'var(--coral)', fontSize: 13, fontWeight: 700, flexShrink: 0 }}>
-            🔥 {streak}d
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, height: 34, padding: '0 12px', borderRadius: 999, background: 'var(--coral-tint)', color: 'var(--coral)', fontSize: 14, fontWeight: 700, flexShrink: 0, boxShadow: '0 1px 4px rgba(223,95,59,0.15)' }}>
+            🔥 {streak}d streak
           </div>
         )}
       </div>
@@ -346,6 +347,14 @@ export default function DashboardClient() {
               </div>
               <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 500, marginTop: 1 }}>
                 {onTrack ? 'On track' : 'Over budget'} · tap to log a meal
+              </div>
+              {/* D3-01: Macro breakdown row */}
+              <div style={{ fontSize: 11, marginTop: 4, display: 'flex', gap: 5, alignItems: 'center' }}>
+                <span style={{ color: 'var(--green)', fontWeight: 700 }}>P {Math.round(totals.protein)}g</span>
+                <span style={{ color: 'var(--line)' }}>·</span>
+                <span style={{ color: 'var(--gold)', fontWeight: 700 }}>C {Math.round(totals.carbs)}g</span>
+                <span style={{ color: 'var(--line)' }}>·</span>
+                <span style={{ color: 'var(--coral)', fontWeight: 700 }}>F {Math.round(totals.fat)}g</span>
               </div>
             </div>
             <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 13, fontWeight: 600, color: 'var(--green)', flexShrink: 0 }}>
@@ -387,20 +396,28 @@ export default function DashboardClient() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 20px', marginBottom: 10 }}>
             <h2 style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 16, fontWeight: 600, color: 'var(--ink)', margin: 0, letterSpacing: '-0.02em' }}>Log again</h2>
           </div>
-          <div style={{ display: 'flex', gap: 10, overflowX: 'auto', padding: '2px 20px', scrollbarWidth: 'none' }}>
-            {recentMeals.map(entry => (
-              <RecentlyLoggedRow
-                key={entry.foodItemId}
-                entry={entry}
-                onLog={() => store.addFoodEntry({
-                  foodItemId: entry.foodItemId,
-                  name: entry.name, emoji: entry.emoji,
-                  mealType: entry.mealType,
-                  calories: entry.calories, protein: entry.protein,
-                  carbs: entry.carbs, fat: entry.fat, quantity: 1,
-                })}
-              />
-            ))}
+          {/* D3-02: Fade gradient on horizontal scroll rail */}
+          <div style={{ position: 'relative' }}>
+            <div style={{ display: 'flex', gap: 10, overflowX: 'auto', padding: '2px 20px', scrollbarWidth: 'none' }}>
+              {recentMeals.map(entry => (
+                <RecentlyLoggedRow
+                  key={entry.foodItemId}
+                  entry={entry}
+                  onLog={() => store.addFoodEntry({
+                    foodItemId: entry.foodItemId,
+                    name: entry.name, emoji: entry.emoji,
+                    mealType: entry.mealType,
+                    calories: entry.calories, protein: entry.protein,
+                    carbs: entry.carbs, fat: entry.fat, quantity: 1,
+                  })}
+                />
+              ))}
+            </div>
+            <div style={{
+              position: 'absolute', right: 0, top: 0, bottom: 0, width: 56,
+              background: 'linear-gradient(to right, transparent, var(--bg))',
+              pointerEvents: 'none', zIndex: 1,
+            }} />
           </div>
         </div>
       )}

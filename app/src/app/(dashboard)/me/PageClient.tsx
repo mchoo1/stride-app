@@ -282,14 +282,15 @@ export default function MePage() {
             </div>
           </div>
         </div>
-        <Link href="/log" style={{
+        {/* D8-03: "+ Food" is unambiguous on the Profile page */}
+        <Link href="/log?tab=food" style={{
           display: 'flex', alignItems: 'center', gap: 5,
           height: 40, padding: '0 15px', borderRadius: 13,
           background: 'var(--green)', color: '#fff',
           fontWeight: 600, fontSize: 14, textDecoration: 'none',
           boxShadow: 'var(--shadow-green)',
           fontFamily: '"Hanken Grotesk",system-ui,sans-serif',
-        }}>+ Log</Link>
+        }}>+ Food</Link>
       </div>
 
       {/* ── Tab bar ── */}
@@ -329,7 +330,7 @@ export default function MePage() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
               {[
                 { label: 'Current weight', val: latestWeight, unit: 'kg',   iconBg: 'var(--green-tint)', iconColor: 'var(--green)', sub: 'Last logged', icon: 'scale' },
-                { label: 'Body fat',       val: latestBf ?? '—', unit: latestBf ? '%' : '', iconBg: 'var(--gold-tint)', iconColor: 'var(--gold)', sub: latestBf ? '' : 'Not set', icon: 'trend' },
+                { label: 'Body fat',       val: latestBf ?? '—', unit: latestBf ? '%' : '', iconBg: 'var(--gold-tint)', iconColor: 'var(--gold)', sub: latestBf ? '' : 'Log below ↓', icon: 'trend' }, // D8-01
                 { label: 'BMR',            val: bmr.toLocaleString(), unit: 'kcal', iconBg: 'var(--coral-tint)', iconColor: 'var(--coral)', sub: 'At rest', icon: 'bolt' },
                 { label: 'TDEE',           val: tdee.toLocaleString(), unit: 'kcal', iconBg: 'var(--green-tint)', iconColor: 'var(--green-deep)', sub: 'Daily burn', icon: 'flame' },
               ].map(s => (
@@ -407,8 +408,9 @@ export default function MePage() {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, height: 120, borderRadius: 14, background: 'var(--surface-3)', border: '1px dashed var(--line)' }}>
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--faint)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-                  <span style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink-2)' }}>No weight logged yet</span>
-                  <span style={{ fontSize: 12, color: 'var(--muted)' }}>Log below to start tracking</span>
+                  {/* D8-02: Motivational empty state */}
+                  <span style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink-2)' }}>Your 30-day trend will appear here</span>
+                  <span style={{ fontSize: 12, color: 'var(--muted)' }}>Log your weight below to start</span>
                 </div>
               </div>
             )}
@@ -542,47 +544,44 @@ export default function MePage() {
                 </div>
               </div>
 
+              {/* D9-03: Preview moved above activity selector — changes visible live */}
+              <div style={{
+                background: 'rgba(30,127,92,0.06)',
+                borderRadius: 12,
+                padding: '12px 14px',
+                marginBottom: 10,
+                border: '1px solid rgba(30,127,92,0.15)',
+              }}>
+                <div style={{ fontSize: 11, color: 'var(--green)', fontWeight: 700, marginBottom: 4 }}>Preview with these settings</div>
+                <div style={{ fontSize: 12, color: 'var(--ink-2)' }}>
+                  BMR: <strong style={{ color: 'var(--ink)' }}>{calculateBMR(form)} kcal</strong>
+                  {'  ·  '}
+                  TDEE: <strong style={{ color: 'var(--ink)' }}>{calculateTargetCalories(form)} kcal</strong>
+                  {'  ·  '}
+                  Target: <strong style={{ color: 'var(--ink)' }}>
+                    {Math.max(1200, calculateTargetCalories(form) + (form.goalType === 'weight_loss' ? -500 : form.goalType === 'muscle_gain' ? 300 : 0))} kcal
+                  </strong>
+                </div>
+              </div>
               <label style={labelStyle}>Activity Level</label>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {/* D9-01: 2-column chip grid saves ~150px of scroll depth */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
                 {Object.entries(ACTIVITY_LABELS).map(([key, label]) => (
                   <button key={key} onClick={() => update('activityLevel', key)} style={{
                     borderRadius: 12,
-                    padding: '10px 14px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    border: `1px solid ${form.activityLevel === key ? 'var(--green)' : 'var(--line)'}`,
+                    padding: '10px 8px',
+                    border: `1.5px solid ${form.activityLevel === key ? 'var(--green)' : 'var(--line)'}`,
                     background: form.activityLevel === key ? 'rgba(30,127,92,0.08)' : 'var(--surface)',
                     cursor: 'pointer',
                     transition: 'all .2s',
                     fontFamily: '"Hanken Grotesk", system-ui, sans-serif',
+                    textAlign: 'center' as const,
                   }}>
-                    <span style={{ fontSize: 13, color: form.activityLevel === key ? 'var(--ink)' : 'var(--ink-2)', fontWeight: form.activityLevel === key ? 700 : 400 }}>
-                      {label}
+                    <span style={{ fontSize: 12, color: form.activityLevel === key ? 'var(--green)' : 'var(--ink-2)', fontWeight: form.activityLevel === key ? 700 : 500 }}>
+                      {form.activityLevel === key ? '✓ ' : ''}{label}
                     </span>
-                    {form.activityLevel === key && <span style={{ color: 'var(--green)', fontSize: 14 }}>✓</span>}
                   </button>
                 ))}
-              </div>
-            </div>
-
-            {/* BMR/TDEE preview */}
-            <div style={{
-              background: 'rgba(30,127,92,0.06)',
-              borderRadius: 16,
-              padding: '14px 16px',
-              marginBottom: 12,
-              border: '1px solid rgba(30,127,92,0.15)',
-            }}>
-              <div style={{ fontSize: 12, color: 'var(--green)', fontWeight: 700, marginBottom: 6 }}>Preview with these settings</div>
-              <div style={{ fontSize: 13, color: 'var(--ink-2)' }}>
-                BMR: <strong style={{ color: 'var(--ink)' }}>{calculateBMR(form)} kcal</strong>
-                {'  ·  '}
-                TDEE: <strong style={{ color: 'var(--ink)' }}>{calculateTargetCalories(form)} kcal</strong>
-                {'  ·  '}
-                Target: <strong style={{ color: 'var(--ink)' }}>
-                  {Math.max(1200, calculateTargetCalories(form) + (form.goalType === 'weight_loss' ? -500 : form.goalType === 'muscle_gain' ? 300 : 0))} kcal
-                </strong>
               </div>
             </div>
 
@@ -654,13 +653,37 @@ export default function MePage() {
               </div>
             </div>
 
+            {/* D10-02: Manual Calorie Targets moved BEFORE Dietary Prefs */}
+            <div style={cardStyle}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 14 }}>Manual Calorie Targets</div>
+              <div style={{ marginBottom: 12 }}>
+                <label style={labelStyle}>Daily calories (kcal)</label>
+                <input type="number" style={inputStyle} value={form.targetCalories}
+                  onChange={e => update('targetCalories', Number(e.target.value))}/>
+              </div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                {[
+                  { key: 'targetProtein' as const, label: 'Protein (g)', color: 'var(--green)' },
+                  { key: 'targetCarbs'   as const, label: 'Carbs (g)',   color: 'var(--gold)' },
+                  { key: 'targetFat'     as const, label: 'Fat (g)',     color: 'var(--coral)' },
+                ].map(f => (
+                  <div key={f.key} style={{ flex: 1 }}>
+                    <label style={{ ...labelStyle, color: f.color }}>{f.label}</label>
+                    <input type="number" style={inputStyle} value={form[f.key]}
+                      onChange={e => update(f.key, Number(e.target.value))}/>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* ── Dietary Preferences ── */}
             <div style={cardStyle}>
               <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--ink)', marginBottom: 6 }}>Dietary Preferences</div>
               <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 14, lineHeight: 1.5 }}>
                 Used to filter food recommendations on the Eat page. Select all that apply.
               </p>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
+              {/* D10-01: Inline save button removed — consolidated below */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 {DIET_OPTIONS.map(opt => {
                   const active = dietFlags.includes(opt.key);
                   return (
@@ -684,47 +707,10 @@ export default function MePage() {
                   );
                 })}
               </div>
-              <button onClick={saveDietPreferences} style={{
-                width: '100%',
-                background: dietSaved ? 'rgba(30,127,92,0.10)' : 'var(--green)',
-                color: dietSaved ? 'var(--green)' : 'var(--surface)',
-                border: dietSaved ? '1px solid rgba(30,127,92,0.20)' : 'none',
-                borderRadius: 14,
-                padding: '12px 0',
-                fontSize: 14,
-                fontWeight: 800,
-                cursor: 'pointer',
-                transition: 'all .2s',
-                boxShadow: dietSaved ? 'none' : '0 4px 14px rgba(30,127,92,0.22)',
-                fontFamily: '"Hanken Grotesk", system-ui, sans-serif',
-              }}>
-                {dietSaved ? '✓ Preferences Saved!' : 'Save Dietary Preferences'}
-              </button>
             </div>
 
-            <div style={cardStyle}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 14 }}>Manual Calorie Targets</div>
-              <div style={{ marginBottom: 12 }}>
-                <label style={labelStyle}>Daily calories (kcal)</label>
-                <input type="number" style={inputStyle} value={form.targetCalories}
-                  onChange={e => update('targetCalories', Number(e.target.value))}/>
-              </div>
-              <div style={{ display: 'flex', gap: 10 }}>
-                {[
-                  { key: 'targetProtein' as const, label: 'Protein (g)', color: 'var(--green)' },
-                  { key: 'targetCarbs'   as const, label: 'Carbs (g)',   color: 'var(--gold)' },
-                  { key: 'targetFat'     as const, label: 'Fat (g)',     color: 'var(--coral)' },
-                ].map(f => (
-                  <div key={f.key} style={{ flex: 1 }}>
-                    <label style={{ ...labelStyle, color: f.color }}>{f.label}</label>
-                    <input type="number" style={inputStyle} value={form[f.key]}
-                      onChange={e => update(f.key, Number(e.target.value))}/>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <button onClick={saveProfile} className="btn-primary" style={{
+            {/* D10-01: Single consolidated button for ALL settings */}
+            <button onClick={() => { saveDietPreferences(); saveProfile(); }} className="btn-primary" style={{
               width: '100%', height: 52,
               background: saved ? 'var(--green-tint)' : 'var(--green)',
               color: saved ? 'var(--green-deep)' : '#fff',
@@ -733,7 +719,7 @@ export default function MePage() {
               boxShadow: saved ? 'none' : 'var(--shadow-green)',
               marginBottom: 12,
             }}>
-              {saved ? '✓ Saved!' : 'Save Settings'}
+              {saved ? '✓ Saved!' : 'Save All Settings'}
             </button>
 
             <div style={cardStyle}>

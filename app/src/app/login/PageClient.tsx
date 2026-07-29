@@ -82,9 +82,12 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#F7F8FB' }}>
       <div className="w-full max-w-sm">
 
-        {/* Wordmark */}
-        <div className="flex justify-center mb-8">
+        {/* D1-01: Hero tagline above wordmark */}
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <StrideWordmark height={44} />
+          <p style={{ fontSize: 15, color: '#8B95A7', marginTop: 10, fontWeight: 500, letterSpacing: '-0.01em' }}>
+            Track what you eat. Hit your targets.
+          </p>
         </div>
 
         {/* ── Forgot password panel ── */}
@@ -163,7 +166,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => { setShowReset(true); setResetEmail(email); setResetError(''); setResetSent(false); }}
-                  style={{ background: 'none', border: 'none', padding: '6px 0 0', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#8B95A7', display: 'block' }}
+                  style={{ background: 'none', border: 'none', padding: '6px 0 0', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#8B95A7', display: 'block', textAlign: 'right', width: '100%' }}
                 >
                   Forgot password?
                 </button>
