@@ -100,8 +100,8 @@ function LogInner() {
   const store   = useStrideStore();
 
   const rawTab = params.get('tab');
-  const initialTab = rawTab === 'activity' ? 'activity' : rawTab === 'water' ? 'water' : 'food';
-  const [tab, setTab] = useState<'food' | 'activity' | 'water'>(initialTab);
+  const initialTab = rawTab === 'activity' ? 'activity' : rawTab === 'water' ? 'water' : rawTab === 'weight' ? 'weight' : 'food';
+  const [tab, setTab] = useState<'food' | 'activity' | 'water' | 'weight'>(initialTab);
 
   // ── Food tab state ──────────────────────────────────────────────────────────
   const [query,         setQuery]         = useState('');
@@ -138,6 +138,11 @@ function LogInner() {
   const [actLogged,     setActLogged]     = useState(false);
   const [actManualMode, setActManualMode] = useState(false);
   const [actManual,     setActManual]     = useState({ name: '', cal: '', duration: '' });
+
+  // ── Weight tab state ────────────────────────────────────────────────────────
+  const [weightInput,   setWeightInput]   = useState('');
+  const [bodyFatInput,  setBodyFatInput]  = useState('');
+  const [weightLogged,  setWeightLogged]  = useState(false);
 
   // Time/date picker for activity — default to now
   const [activityDate,  setActivityDate]  = useState(() => new Date().toISOString().slice(0, 10));
@@ -305,6 +310,15 @@ function LogInner() {
     setTimeout(() => { setActLogged(false); setActManual({ name: '', cal: '', duration: '' }); setActManualMode(false); }, 1600);
   };
 
+  const logWeight = () => {
+    const w = parseFloat(weightInput);
+    if (!w || w < 20 || w > 300) return;
+    const bf = bodyFatInput ? parseFloat(bodyFatInput) : undefined;
+    store.addWeightEntry(w, bf);
+    setWeightLogged(true);
+    setTimeout(() => { setWeightLogged(false); setWeightInput(''); setBodyFatInput(''); }, 1800);
+  };
+
   // ── Design tokens — now using Stride CSS variables ──
   const BG     = 'var(--bg)';
   const CARD   = 'var(--surface)';
@@ -433,6 +447,7 @@ function LogInner() {
           <button style={tabBtnStyle(tab === 'food')}     onClick={() => setTab('food')}>🍽 Food</button>
           <button style={tabBtnStyle(tab === 'activity')} onClick={() => setTab('activity')}>⚡ Activity</button>
           <button style={tabBtnStyle(tab === 'water')}    onClick={() => setTab('water')}>💧 Water</button>
+          <button style={tabBtnStyle(tab === 'weight')}   onClick={() => setTab('weight')}>⚖️ Weight</button>
         </div>
       </div>
 
@@ -951,6 +966,149 @@ function LogInner() {
             })}
           </div>
         )}
+
+        {/* ====================== WEIGHT TAB ====================== */}
+        {tab === 'weight' && (() => {
+          const trend      = store.getWeightTrend(7);
+          const latestW    = trend.length > 0 ? trend[trend.length - 1].weight : store.profile.currentWeight;
+          const targetW    = store.profile.targetWeight;
+          const goalType   = store.profile.goalType;
+          const goalEmoji  = goalType === 'muscle_gain' ? '💪' : goalType === 'weight_loss' ? '🔥' : '🎯';
+          const goalLabel  = goalType === 'muscle_gain' ? 'Muscle Gain' : goalType === 'weight_loss' ? 'Weight Loss' : 'Maintenance';
+          const wInput     = weightInput ? parseFloat(weightInput) : null;
+          const valid      = wInput !== null && wInput >= 20 && wInput <= 300;
+          const bfVal      = bodyFatInput ? parseFloat(bodyFatInput) : null;
+          const bfValid    = bfVal === null || (bfVal >= 1 && bfVal <= 60);
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+              {/* Current stats card */}
+              <div style={{ ...cardStyle, display: 'flex', gap: 0 }}>
+                {[
+                  { label: 'Current', value: latestW ? `${latestW} kg` : '—', color: 'var(--ink)' },
+                  { label: 'Target',  value: targetW ? `${targetW} kg` : '—', color: 'var(--green)' },
+                  { label: 'Goal',    value: goalLabel, emoji: goalEmoji, color: 'var(--ink-2)' },
+                ].map((s, i) => (
+                  <div key={s.label} style={{ flex: 1, borderLeft: i > 0 ? '1px solid var(--line)' : 'none', paddingLeft: i > 0 ? 16 : 0, textAlign: i > 0 ? 'center' : 'left' }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>{s.label}</div>
+                    <div style={{ fontSize: i === 2 ? 12 : 18, fontWeight: 800, color: s.color, lineHeight: 1.2 }}>
+                      {s.emoji && <span style={{ marginRight: 3 }}>{s.emoji}</span>}{s.value}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Log weight card */}
+              <div style={cardStyle}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', marginBottom: 14 }}>Log today&apos;s weight</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Weight (kg) *</div>
+                    <input
+                      style={{ ...inputStyle, fontSize: 18, fontWeight: 700, textAlign: 'center', borderColor: wInput !== null && !valid ? 'var(--coral)' : 'var(--line)' }}
+                      type="number" min="20" max="300" step="0.1"
+                      placeholder="e.g. 72.5"
+                      value={weightInput}
+                      onChange={e => setWeightInput(e.target.value)}
+                    />
+                    {wInput !== null && !valid && (
+                      <div style={{ fontSize: 11, color: 'var(--coral)', marginTop: 4 }}>Enter a value between 20–300 kg</div>
+                    )}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Body Fat % <span style={{ fontWeight: 400, textTransform: 'none' }}>— optional</span></div>
+                    <input
+                      style={{ ...inputStyle, borderColor: bodyFatInput && !bfValid ? 'var(--coral)' : 'var(--line)' }}
+                      type="number" min="1" max="60" step="0.1"
+                      placeholder="e.g. 18.5"
+                      value={bodyFatInput}
+                      onChange={e => setBodyFatInput(e.target.value)}
+                    />
+                    {bodyFatInput && !bfValid && (
+                      <div style={{ fontSize: 11, color: 'var(--coral)', marginTop: 4 }}>Enter a value between 1–60%</div>
+                    )}
+                  </div>
+                  <button
+                    onClick={logWeight}
+                    disabled={!valid || !bfValid}
+                    style={{
+                      background: weightLogged ? 'rgba(30,127,92,0.10)' : 'var(--green)',
+                      color: weightLogged ? 'var(--green)' : '#fff',
+                      border: 'none', borderRadius: 14, padding: '14px 0',
+                      fontSize: 15, fontWeight: 800, cursor: (!valid || !bfValid) ? 'not-allowed' : 'pointer',
+                      opacity: (!valid || !bfValid) ? 0.45 : 1,
+                      transition: 'all .2s',
+                      boxShadow: weightLogged ? 'none' : 'var(--shadow-green)',
+                    }}
+                  >
+                    {weightLogged ? `✓ Logged ${weightInput} kg!` : 'Log Weight'}
+                  </button>
+                </div>
+              </div>
+
+              {/* 7-day mini trend */}
+              {trend.length > 0 && (
+                <div style={cardStyle}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 12 }}>Recent trend</div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {trend.slice(-7).map((entry, i, arr) => {
+                      const mn  = Math.min(...arr.map(e => e.weight));
+                      const mx  = Math.max(...arr.map(e => e.weight));
+                      const rng = mx - mn || 1;
+                      const pct = ((entry.weight - mn) / rng);
+                      const H   = 48;
+                      const bar = Math.max(8, Math.round(pct * H));
+                      const isLast = i === arr.length - 1;
+                      const d = new Date(entry.date + 'T00:00:00');
+                      const days = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+                      return (
+                        <div key={entry.date} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: isLast ? 'var(--green)' : 'var(--muted)' }}>
+                            {entry.weight}
+                          </div>
+                          <div style={{ height: H, display: 'flex', alignItems: 'flex-end' }}>
+                            <div style={{
+                              width: 18, height: bar, borderRadius: 5,
+                              background: isLast ? 'var(--green)' : 'var(--green-tint-2)',
+                              boxShadow: isLast ? 'var(--shadow-green)' : 'none',
+                            }} />
+                          </div>
+                          <div style={{ fontSize: 10, color: isLast ? 'var(--green)' : 'var(--faint)', fontWeight: isLast ? 700 : 500 }}>
+                            {isLast ? 'Now' : days[d.getDay()]}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {targetW && latestW && (
+                    <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--line)', fontSize: 12, color: 'var(--ink-2)', display: 'flex', justifyContent: 'space-between' }}>
+                      <span>Distance to target</span>
+                      <span style={{ fontWeight: 700, color: Math.abs(latestW - targetW) < 1 ? 'var(--green)' : 'var(--ink)' }}>
+                        {Math.abs(latestW - targetW) < 0.1 ? '🎉 At goal!' : `${Math.abs(latestW - targetW).toFixed(1)} kg ${latestW > targetW ? 'to lose' : 'to gain'}`}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* CTA to full trend on Me page */}
+              <Link href="/me" style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                textDecoration: 'none', background: 'var(--surface)', border: '1px solid var(--line)',
+                borderRadius: 'var(--r-card)', padding: '14px 16px', boxShadow: 'var(--shadow-md)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 20 }}>📈</span>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)' }}>30-day weight trend</div>
+                    <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 1 }}>View full chart on your profile</div>
+                  </div>
+                </div>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </Link>
+            </div>
+          );
+        })()}
 
         {/* ====================== WATER TAB ====================== */}
         {tab === 'water' && (() => {
