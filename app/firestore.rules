@@ -2,33 +2,44 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ── Helper functions ──────────────────────────────────────
-    function isAuth()        { return request.auth != null; }
-    function isOwner(uid)    { return request.auth.uid == uid; }
-    function isVerifiedPro() {
+    // ── Helper functions ──────────────────────────────────────────────────────
+    function isAuth() {
+      return request.auth != null;
+    }
+    function isOwner(uid) {
+      return request.auth.uid == uid;
+    }
+    function isAdmin() {
+      // Hardcoded admin allowlist — matches admin.ts on the server
+      return isAuth() && (
+        request.auth.token.email == 'mchoo1990@gmail.com' ||
+        request.auth.token.email == 'deanhoshouyu@gmail.com'
+      );
+    }
+    function isVerifiedMerchant() {
       return isAuth() &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isVerifiedPro == true;
+        get(/databases/$(database)/documents/merchants/$(request.auth.uid)).data.status == 'approved';
     }
 
-    // ── Users ─────────────────────────────────────────────────
+    // ── Users ─────────────────────────────────────────────────────────────────
+    // Each user owns their own document and all subcollections.
     match /users/{uid} {
       allow read:   if isAuth();
       allow create: if isOwner(uid);
       allow update: if isOwner(uid);
-      allow delete: if false;
+      allow delete: if false;  // deletion handled server-side (account deletion route)
 
-      // Subcollections — private to owner
-      match /foodLogs/{docId}       { allow read, write: if isOwner(uid); }
-      match /activityLogs/{docId}   { allow read, write: if isOwner(uid); }
-      match /waterLogs/{docId}      { allow read, write: if isOwner(uid); }
-      match /weightLogs/{docId}     { allow read, write: if isOwner(uid); }
-      match /workoutLogs/{docId}    { allow read, write: if isOwner(uid); }
-      match /dailySummaries/{docId} { allow read, write: if isOwner(uid); }
-      match /recommendations/{docId}{ allow read, write: if isOwner(uid); }
-      match /notifications/{docId}  { allow read, write: if isOwner(uid); }
-      match /wearables/{docId}      { allow read, write: if isOwner(uid); }
+      match /foodLogs/{docId}        { allow read, write: if isOwner(uid); }
+      match /activityLogs/{docId}    { allow read, write: if isOwner(uid); }
+      match /waterLogs/{docId}       { allow read, write: if isOwner(uid); }
+      match /weightLogs/{docId}      { allow read, write: if isOwner(uid); }
+      match /workoutLogs/{docId}     { allow read, write: if isOwner(uid); }
+      match /dailySummaries/{docId}  { allow read, write: if isOwner(uid); }
+      match /recommendations/{docId} { allow read, write: if isOwner(uid); }
+      match /notifications/{docId}   { allow read, write: if isOwner(uid); }
+      match /wearables/{docId}       { allow read, write: if isOwner(uid); }
 
-      // Follow graph — readable by anyone auth'd
+      // Follow graph — readable by any authenticated user
       match /follows/{followingId} {
         allow read:  if isAuth();
         allow write: if isOwner(uid);
@@ -39,89 +50,107 @@ service cloud.firestore {
       }
     }
 
-    // ── Profiles ──────────────────────────────────────────────
+    // ── Profiles (public-facing user profile) ─────────────────────────────────
+    // Separate from /users for future public discovery. Only owner writes.
     match /profiles/{uid} {
-      allow read:   if isAuth();
-      allow write:  if isOwner(uid);
+      allow read:  if isAuth();
+      allow write: if isOwner(uid);
     }
 
-    // ── Foods database (legacy) — read by all, write by authenticated ──
+    // ── Foods (legacy community food library) ─────────────────────────────────
+    // Public read. Authenticated users can submit; only submitter or verified
+    // merchant can edit their own submission.
     match /foods/{foodId} {
       allow read:   if true;
       allow create: if isAuth();
       allow update: if isAuth() && (
-        resource.data.submittedBy == request.auth.uid || isVerifiedPro()
+        resource.data.submittedBy == request.auth.uid || isVerifiedMerchant()
       );
       allow delete: if false;
     }
 
-    // ── Restaurants — public read, no direct client writes ────────────────
-    // Populated exclusively by the seed script (server-side admin SDK).
+    // ── Restaurants ───────────────────────────────────────────────────────────
+    // Populated exclusively by the seed script via Admin SDK.
+    // Public read; no client writes.
     match /restaurants/{restaurantId} {
-      allow read:   if true;
-      allow write:  if false;   // admin/seed script only
+      allow read:  if true;
+      allow write: if false;
     }
 
-    // ── Meals — public read, no direct client writes ───────────────────────
-    // Populated exclusively by the seed script.
-    // meal_feedback writes are handled via /api/meal-feedback route.
+    // ── Meals ─────────────────────────────────────────────────────────────────
+    // Populated exclusively by the seed script via Admin SDK.
+    // Public read; no direct client writes.
     match /meals/{mealId} {
-      allow read:   if true;
-      allow write:  if false;   // admin/seed script only
+      allow read:  if true;
+      allow write: if false;
     }
 
-    // ── Meal feedback — authenticated create only ──────────────────────────
-    // Users can submit feedback. Updates (moderation) are server-side only.
+    // ── Meal feedback (community correction queue) ────────────────────────────
+    // Users submit corrections; moderation (approve/reject) is server-side only.
     match /meal_feedback/{feedbackId} {
       allow read:   if isAuth() && resource.data.userId == request.auth.uid;
       allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
-      allow update: if false;   // server-side moderation only
+      allow update: if false;  // server-side moderation only (/api/admin/meal-feedback)
       allow delete: if false;
     }
 
-    // ── Meal community stats — public read, server-side write only ─────────
-    // Updated by Cloud Function when feedback is approved.
-    // Read publicly so any user (including unauthenticated) can see community ratings.
+    // ── Meal community stats ──────────────────────────────────────────────────
+    // Written by Cloud Function (aggregateMealFeedback) when feedback is approved.
+    // Public read so unauthenticated users can see community ratings on Eat page.
     match /meal_community_stats/{mealId} {
-      allow read:   if true;
-      allow write:  if false;   // Cloud Function / admin SDK only
+      allow read:  if true;
+      allow write: if false;  // Cloud Function / Admin SDK only
     }
 
-    // ── Community posts ───────────────────────────────────────
+    // ── Merchants (provider portal) ───────────────────────────────────────────
+    // Merchant creates and reads their own application doc.
+    // Admin approves (sets status = 'approved') server-side.
+    match /merchants/{uid} {
+      allow read:   if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid);
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    // ── Community posts ───────────────────────────────────────────────────────
+    // Phase 2. Only visible posts are readable by all authenticated users.
     match /communityPosts/{postId} {
-      allow read:   if resource.data.isVisible == true;
+      allow read:   if isAuth() && resource.data.isVisible == true;
       allow create: if isAuth();
       allow update: if isAuth() && resource.data.userId == request.auth.uid;
       allow delete: if isAuth() && resource.data.userId == request.auth.uid;
 
       match /comments/{commentId} {
-        allow read:   if true;
-        allow create: if isAuth();
+        allow read:          if isAuth();
+        allow create:        if isAuth();
         allow update, delete: if isAuth() && resource.data.userId == request.auth.uid;
       }
       match /likes/{userId} {
-        allow read:   if true;
-        allow write:  if isOwner(userId);
+        allow read:  if isAuth();
+        allow write: if isOwner(userId);
       }
       match /saves/{userId} {
-        allow read:   if isOwner(userId);
-        allow write:  if isOwner(userId);
+        allow read:  if isOwner(userId);
+        allow write: if isOwner(userId);
       }
     }
 
-    // ── Workout plans ─────────────────────────────────────────
+    // ── Workout plans ─────────────────────────────────────────────────────────
+    // Phase 2. Public plans readable by all auth'd users.
     match /workoutPlans/{planId} {
-      allow read:   if resource.data.isPublic == true || (
-        isAuth() && resource.data.creatorId == request.auth.uid
+      allow read: if isAuth() && (
+        resource.data.isPublic == true ||
+        resource.data.creatorId == request.auth.uid
       );
-      allow create: if isAuth();
+      allow create:        if isAuth();
       allow update, delete: if isAuth() && resource.data.creatorId == request.auth.uid;
     }
 
-    // ── Providers ─────────────────────────────────────────────
+    // ── Providers (gym/studio partner listings) ───────────────────────────────
+    // Phase 3. Active providers are publicly readable.
     match /providers/{providerId} {
       allow read:   if resource.data.isActive == true;
-      allow create: if isVerifiedPro();
+      allow create: if isVerifiedMerchant();
       allow update: if isAuth() && resource.data.userId == request.auth.uid;
       allow delete: if false;
 
@@ -137,9 +166,10 @@ service cloud.firestore {
       }
     }
 
-    // ── Bookings ──────────────────────────────────────────────
+    // ── Bookings ──────────────────────────────────────────────────────────────
+    // Phase 3. Readable by the booking user and the provider owner.
     match /bookings/{bookingId} {
-      allow read:   if isAuth() && (
+      allow read: if isAuth() && (
         resource.data.userId == request.auth.uid ||
         get(/databases/$(database)/documents/providers/$(resource.data.providerId)).data.userId == request.auth.uid
       );
@@ -151,18 +181,5 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // ── Macro verifications ───────────────────────────────────
-    match /macroVerifications/{verificationId} {
-      allow read:   if true;
-      allow create: if isAuth();
-      allow update, delete: if isAuth() && resource.data.userId == request.auth.uid;
-    }
-
-    // Merchant applications — merchant reads/creates own doc; admin approves
-    match /merchants/{uid} {
-      allow read:   if request.auth != null && request.auth.uid == uid;
-      allow create: if request.auth != null && request.auth.uid == uid;
-      allow update: if isAdmin();
-    }
   }
 }
