@@ -363,29 +363,53 @@ export default function DashboardClient() {
             </span>
           </Link>
         ) : (
-          /* Sign-up CTA for guests */
-          <Link href="/register" style={{
-            display: 'flex', alignItems: 'center', gap: 12,
-            background: 'var(--green-tint)', borderRadius: 'var(--r-card)',
-            border: '1px solid var(--green-tint-2)', padding: '14px 16px', textDecoration: 'none',
+          /* Sign-in / Join CTA for guests */
+          <div style={{
+            background: 'var(--surface)', borderRadius: 'var(--r-card)',
+            boxShadow: 'var(--shadow-md)', border: '1px solid var(--line)',
+            padding: '20px 18px',
           }}>
-            <div style={{
-              width: 40, height: 40, borderRadius: 12, background: 'var(--green)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-              </svg>
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--green-deep)', lineHeight: 1.2 }}>
-                Start tracking calories today
+            {/* Placeholder tracker */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18 }}>
+              <div style={{
+                width: 56, height: 56, borderRadius: '50%', flexShrink: 0,
+                background: 'var(--green-tint)', border: '4px solid var(--green-tint-2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <span style={{ fontSize: 22 }}>🔒</span>
               </div>
-              <div style={{ fontSize: 12, color: 'var(--green)', fontWeight: 500, marginTop: 2 }}>
-                Create your free Stride account →
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--muted)', marginBottom: 4 }}>
+                  Your daily tracking
+                </div>
+                <div style={{ height: 10, borderRadius: 6, background: 'var(--green-tint-2)', marginBottom: 6 }} />
+                <div style={{ height: 8, borderRadius: 6, background: 'var(--green-tint)', width: '60%' }} />
               </div>
             </div>
-          </Link>
+            <div style={{ fontSize: 13, color: 'var(--ink-2)', marginBottom: 16, lineHeight: 1.5 }}>
+              Sign in to track calories, macros, and water — and pick up where you left off.
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <Link href="/login" style={{
+                flex: 1, display: 'block', textAlign: 'center',
+                padding: '12px 0', borderRadius: 12,
+                background: 'var(--green)', color: '#fff',
+                fontSize: 14, fontWeight: 700, textDecoration: 'none',
+                boxShadow: 'var(--shadow-green)',
+              }}>
+                Sign in
+              </Link>
+              <Link href="/register" style={{
+                flex: 1, display: 'block', textAlign: 'center',
+                padding: '12px 0', borderRadius: 12,
+                background: 'var(--surface-2)', color: 'var(--green)',
+                fontSize: 14, fontWeight: 700, textDecoration: 'none',
+                border: '1.5px solid var(--green-tint-2)',
+              }}>
+                Join free
+              </Link>
+            </div>
+          </div>
         )}
       </div>
 
