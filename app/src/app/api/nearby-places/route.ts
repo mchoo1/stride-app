@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_KEY = process.env.GOOGLE_PLACES_API_KEY;
+const API_KEY = process.env.FOURSQUARE_API_KEY;
 
 // ─── In-memory cache ────────────────────────────────────────────────────────
 // Rounds lat/lng to 2 decimal places (~1 km grid) so nearby requests reuse
@@ -34,51 +34,57 @@ function fmtDist(km: number) {
   return `${km.toFixed(1)} km`;
 }
 
-// Google Places "New" API types
-const FOOD_TYPES  = ['restaurant', 'cafe', 'fast_food_restaurant', 'meal_takeaway', 'bakery', 'bar_and_grill'];
-const PLACE_TYPES = ['gym', 'park', 'swimming_pool', 'yoga_studio', 'sports_club', 'stadium', 'sports_complex', 'fitness_center'];
+// Foursquare category IDs
+// Food: 13065 Restaurant, 13032 Café, 13145 Fast Food, 13338 Bakery, 13306 Food Truck
+// Activity: 18021 Gym/Fitness, 16032 Park, 18022 Yoga Studio, 18025 Swimming Pool, 18027 Sports Club
+const FOOD_CATEGORIES     = '13065,13032,13145,13338,13306';
+const ACTIVITY_CATEGORIES = '18021,16032,18022,18025,18027';
 
-const TYPE_EMOJI: Record<string, string> = {
-  restaurant: '🍽️', cafe: '☕', fast_food_restaurant: '🍔',
-  meal_takeaway: '🥡', bakery: '🥐', bar_and_grill: '🍖',
-  gym: '🏋️', park: '🌳', swimming_pool: '🏊',
-  yoga_studio: '🧘', sports_club: '⚽', stadium: '🏟️',
-  sports_complex: '🏟️', fitness_center: '🏃',
+// Map Foursquare category IDs → emoji
+const CATEGORY_EMOJI: Record<number, string> = {
+  13065: '🍽️',  // Restaurant
+  13032: '☕',   // Café
+  13145: '🍔',  // Fast Food
+  13338: '🥐',  // Bakery
+  13306: '🚚',  // Food Truck
+  18021: '🏋️', // Gym
+  16032: '🌳',  // Park
+  18022: '🧘',  // Yoga Studio
+  18025: '🏊',  // Swimming Pool
+  18027: '⚽',  // Sports Club
 };
 
-const PRICE: Record<string, string> = {
-  PRICE_LEVEL_FREE: 'Free',
-  PRICE_LEVEL_INEXPENSIVE: '$',
-  PRICE_LEVEL_MODERATE: '$$',
-  PRICE_LEVEL_EXPENSIVE: '$$$',
-  PRICE_LEVEL_VERY_EXPENSIVE: '$$$$',
-};
+const PRICE_LABEL: Record<number, string> = { 1: '$', 2: '$$', 3: '$$$', 4: '$$$$' };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function normalise(p: any, userLat: number, userLng: number, mode: string) {
-  const pLat = p.location?.latitude  ?? userLat;
-  const pLng = p.location?.longitude ?? userLng;
-  const km   = distKm(userLat, userLng, pLat, pLng);
+  const pLat = p.geocodes?.main?.latitude  ?? userLat;
+  const pLng = p.geocodes?.main?.longitude ?? userLng;
+  const km   = p.distance != null ? p.distance / 1000 : distKm(userLat, userLng, pLat, pLng);
 
-  const openNow = p.currentOpeningHours?.openNow;
+  const openNow = p.hours?.open_now;
   const hours   = openNow === true ? 'Open now' : openNow === false ? 'Closed now' : 'Hours unknown';
 
-  const primaryType = p.primaryType ?? '';
-  const emoji       = TYPE_EMOJI[primaryType] ?? (mode === 'food' ? '🍽️' : '⚡');
+  const primaryCategory = p.categories?.[0];
+  const emoji = primaryCategory ? (CATEGORY_EMOJI[primaryCategory.id] ?? (mode === 'food' ? '🍽️' : '⚡')) : (mode === 'food' ? '🍽️' : '⚡');
+  const type  = primaryCategory?.name ?? (mode === 'food' ? 'Restaurant' : 'Fitness');
+
+  // Google Maps deep link — free, works on all devices
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name + ' Singapore')}`;
 
   return {
-    id:         p.googleMapsUri ?? p.displayName?.text ?? Math.random().toString(),
-    name:       p.displayName?.text ?? 'Unknown',
-    type:       primaryType.replace(/_/g, ' '),
+    id:         p.fsq_id ?? Math.random().toString(),
+    name:       p.name   ?? 'Unknown',
+    type,
     distance:   fmtDist(km),
     distKm:     km,
     lat:        pLat,
     lng:        pLng,
-    rating:     p.rating         ?? null,
-    priceLevel: PRICE[p.priceLevel] ?? null,
+    rating:     p.rating != null ? Math.round((p.rating / 10) * 5 * 10) / 10 : null, // convert 0–10 → 0–5
+    priceLevel: p.price != null ? PRICE_LABEL[p.price] ?? null : null,
     hours,
     emoji,
-    mapsUrl:    p.googleMapsUri  ?? `https://maps.google.com/?q=${encodeURIComponent(p.displayName?.text ?? '')}`,
+    mapsUrl,
   };
 }
 
@@ -86,7 +92,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const lat  = parseFloat(searchParams.get('lat')  ?? '');
   const lng  = parseFloat(searchParams.get('lng')  ?? '');
-  const mode = searchParams.get('type') ?? 'food';   // 'food' | 'activity'
+  const mode = searchParams.get('type') ?? 'food'; // 'food' | 'activity'
 
   if (isNaN(lat) || isNaN(lng)) {
     return NextResponse.json({ error: 'lat and lng required' }, { status: 400 });
@@ -101,60 +107,40 @@ export async function GET(req: NextRequest) {
 
   if (!API_KEY) {
     return NextResponse.json(
-      { error: 'GOOGLE_PLACES_API_KEY is not configured' },
+      { error: 'FOURSQUARE_API_KEY is not configured' },
       { status: 503 },
     );
   }
 
-  const includedTypes = mode === 'activity' ? PLACE_TYPES : FOOD_TYPES;
+  const categories = mode === 'activity' ? ACTIVITY_CATEGORIES : FOOD_CATEGORIES;
+  const fields     = 'fsq_id,name,geocodes,categories,distance,rating,price,hours';
 
-  const body = {
-    includedTypes,
-    maxResultCount: 12,
-    rankPreference:  'DISTANCE',
-    locationRestriction: {
-      circle: {
-        center: { latitude: lat, longitude: lng },
-        radius: 2000,
-      },
-    },
-  };
-
-  const fieldMask = [
-    'places.displayName',
-    'places.location',
-    'places.rating',
-    'places.priceLevel',
-    'places.currentOpeningHours',
-    'places.primaryType',
-    'places.googleMapsUri',
-  ].join(',');
+  const url = new URL('https://api.foursquare.com/v3/places/search');
+  url.searchParams.set('ll',         `${lat},${lng}`);
+  url.searchParams.set('radius',     '2000');
+  url.searchParams.set('categories', categories);
+  url.searchParams.set('limit',      '12');
+  url.searchParams.set('sort',       'distance');
+  url.searchParams.set('fields',     fields);
 
   try {
-    const res = await fetch(
-      'https://places.googleapis.com/v1/places:searchNearby',
-      {
-        method:  'POST',
-        headers: {
-          'Content-Type':    'application/json',
-          'X-Goog-Api-Key':  API_KEY,
-          'X-Goog-FieldMask': fieldMask,
-        },
-        body: JSON.stringify(body),
+    const res = await fetch(url.toString(), {
+      headers: {
+        'Authorization': API_KEY,
+        'Accept':        'application/json',
       },
-    );
+    });
 
     if (!res.ok) {
       const text = await res.text();
       return NextResponse.json({ error: text }, { status: res.status });
     }
 
-    const data = await res.json();
-    const places = (data.places ?? [])
+    const data   = await res.json();
+    const places = (data.results ?? [])
       .map((p: unknown) => normalise(p, lat, lng, mode))
       .sort((a: { distKm: number }, b: { distKm: number }) => a.distKm - b.distKm);
 
-    // Store in cache before returning
     const result = { places };
     cache.set(key, { data: result, expires: Date.now() + CACHE_TTL_MS });
 

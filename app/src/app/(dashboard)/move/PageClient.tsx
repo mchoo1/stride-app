@@ -218,7 +218,7 @@ export default function MovePage() {
           }}>
             <span style={{ fontSize: 14 }}>💡</span>
             <span style={{ fontSize: 12, color: '#2E6FB8', lineHeight: 1.6 }}>
-              Add <code style={{ background: BORDER, borderRadius: 4, padding: '1px 5px', color: FG1 }}>GOOGLE_PLACES_API_KEY</code> to your environment to show real gyms, parks and studios near you.
+              Add <code style={{ background: BORDER, borderRadius: 4, padding: '1px 5px', color: FG1 }}>FOURSQUARE_API_KEY</code> to your environment to show real gyms, parks and studios near you.
             </span>
           </div>
         )}
