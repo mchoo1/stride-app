@@ -40,6 +40,79 @@ import { resolveDisplay } from '@/lib/resolveDisplay';
 import type { ConfidenceTier } from '@/lib/firestoreFoodDb';
 import { HawkerStallGrid }    from '@/components/hawker/HawkerStallGrid';
 
+/* ── Haversine distance (client-side) ── */
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLng = (lng2 - lng1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// One representative outlet per chain (nearest outlet shown when GPS granted).
+// Foursquare API results always override these with the true nearest outlet.
+const RESTAURANT_STATIC_COORDS: Record<string, [number, number]> = {
+  mcd:                 [1.3006, 103.8368], // Orchard
+  kfc:                 [1.3000, 103.8380], // Orchard
+  bk:                  [1.2906, 103.8557], // Marina Square
+  subway:              [1.3004, 103.8363], // Orchard
+  old_chang_kee:       [1.2913, 103.8524], // City Hall
+  ya_kun:              [1.2840, 103.8488], // Raffles Place
+  gong_cha:            [1.3008, 103.8355], // Orchard
+  breadtalk:           [1.3006, 103.8360], // ION Orchard
+  '7eleven':           [1.3000, 103.8500], // Central SG
+  grain:               [1.2758, 103.8435], // Tanjong Pagar
+  stuffd:              [1.3009, 103.8361], // Orchard
+  aw:                  [1.2942, 103.8579], // Suntec City
+  jollibee:            [1.3003, 103.8445], // Plaza Singapura
+  toast_box:           [1.2840, 103.8502], // Raffles Place
+  starbucks_sg:        [1.3006, 103.8373], // Orchard
+  pizza_hut:           [1.3510, 103.8490], // Bishan
+  shake_shack:         [1.3042, 103.8322], // ION Orchard
+  five_guys:           [1.3597, 103.9897], // Jewel Changi
+  popeyes:             [1.3003, 103.8445], // Plaza Singapura
+  nandos:              [1.2635, 103.8222], // VivoCity
+  dominos:             [1.3072, 103.7895], // Buona Vista
+  wingstop:            [1.3003, 103.8445], // Plaza Singapura
+  gyg:                 [1.3009, 103.8361], // Orchard
+  krispy_kreme:        [1.3336, 103.7437], // Westgate
+  auntie_annes:        [1.2635, 103.8222], // VivoCity
+  texas_chicken:       [1.3326, 103.8469], // Toa Payoh
+  carl_jr:             [1.3507, 103.8491], // Junction 8
+  mos_burger:          [1.3006, 103.8368], // Orchard
+  genki_sushi:         [1.3401, 103.7057], // Jurong Point
+  coffee_bean:         [1.3007, 103.8370], // Orchard
+  soup_spoon:          [1.2800, 103.8540], // Marina Bay
+  daily_cut:           [1.2785, 103.8436], // Tanjong Pagar
+  yoshinoya:           [1.3005, 103.8370], // Orchard
+  saizeriya:           [1.3699, 103.8459], // AMK Hub
+  mccafe:              [1.3006, 103.8368], // Orchard (same as mcd)
+  astons:              [1.3008, 103.9132], // East Coast
+  liho:                [1.3008, 103.8360], // Orchard
+  koi:                 [1.3008, 103.8360], // Orchard
+  chagee:              [1.3009, 103.8361], // Orchard
+  mixue:               [1.3009, 103.8361], // Orchard
+  dosirak:             [1.3009, 103.8361], // Orchard
+  makisan:             [1.2816, 103.8484], // CBD
+  project_acai:        [1.3009, 103.8361], // Orchard
+  nourish_bowl:        [1.2816, 103.8484], // CBD
+  superfood_kitchen:   [1.2816, 103.8484], // CBD
+  boost_juice:         [1.2635, 103.8222], // VivoCity
+  fairprice_xpress:    [1.3000, 103.8500], // Central SG
+  cheers:              [1.3000, 103.8490], // Central SG
+  saladstop:           [1.2816, 103.8484], // CBD
+  saladbox:            [1.2816, 103.8484], // CBD
+  paris_baguette:      [1.3009, 103.8361], // Orchard
+  sushi_express:       [1.3009, 103.8361], // Orchard
+  dunkin:              [1.3009, 103.8361], // Orchard
+  bonchon:             [1.3597, 103.9897], // Jewel Changi
+  llaollao:            [1.3009, 103.8361], // Orchard
+  wendys:              [1.3009, 103.8360], // Central SG
+};
+
 /* ── Design tokens — now aligned to Stride design system ── */
 const BG     = 'var(--bg)';
 const CARD   = 'var(--surface)';
@@ -1533,11 +1606,18 @@ export default function EatPage() {
 
   const distLookup = useMemo(() => {
     const m = new Map<string, number>();
+    // Base layer: static coordinates for all known chains (when GPS is available)
+    if (locState === 'granted') {
+      for (const [id, [lat, lng]] of Object.entries(RESTAURANT_STATIC_COORDS)) {
+        m.set(id, haversineKm(userLat, userLng, lat, lng));
+      }
+    }
+    // Override with precise Foursquare distances where available
     for (const ep of enrichedPlaces) {
       if (ep.dbMatch && ep.distKm !== undefined) m.set(ep.dbMatch.id, ep.distKm);
     }
     return m;
-  }, [enrichedPlaces]);
+  }, [enrichedPlaces, locState, userLat, userLng]);
 
   // ── Pooled items ────────────────────────────────────────────────────────
   const pooledItems = useMemo((): PooledItem[] => {
