@@ -3,6 +3,7 @@ import { Suspense, useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useStrideStore } from '@/lib/store';
+import { useAuth } from '@/lib/auth-context';
 import { api } from '@/lib/apiClient';
 import { SG_RESTAURANTS } from '@/lib/sgFoodDb';
 
@@ -98,6 +99,13 @@ function LogInner() {
   const router  = useRouter();
   const params  = useSearchParams();
   const store   = useStrideStore();
+  const { user } = useAuth();
+
+  // Redirect guests to login only when they try to log something
+  const requireAuth = () => {
+    if (!user) { router.push('/login?next=/log'); return false; }
+    return true;
+  };
 
   const rawTab = params.get('tab');
   const initialTab = rawTab === 'activity' ? 'activity' : rawTab === 'water' ? 'water' : rawTab === 'weight' ? 'weight' : 'food';
@@ -232,6 +240,7 @@ function LogInner() {
 
   // ── Handlers ────────────────────────────────────────────────────────────────
   const logFood = () => {
+    if (!requireAuth()) return;
     if (!selectedFood) return;
     store.addFoodEntry({
       foodItemId: selectedFood.id,
@@ -249,6 +258,7 @@ function LogInner() {
   };
 
   const logManual = () => {
+    if (!requireAuth()) return;
     if (!manual.name || !manual.cal) return;
     store.addFoodEntry({
       foodItemId: `manual_${Date.now()}`,
@@ -266,6 +276,7 @@ function LogInner() {
   };
 
   const logActivity = () => {
+    if (!requireAuth()) return;
     if (!effectiveAct) return;
     const distNote    = distance ? ` · ${distance} km` : '';
     const speedNote   = speed   ? ` · ${speed} km/h`   : '';
@@ -291,6 +302,7 @@ function LogInner() {
   };
 
   const logManualActivity = () => {
+    if (!requireAuth()) return;
     if (!actManual.name || !actManual.cal) return;
     const loggedAt = activityDate && activityTime
       ? new Date(`${activityDate}T${activityTime}:00`).toISOString()
@@ -311,6 +323,7 @@ function LogInner() {
   };
 
   const logWeight = () => {
+    if (!requireAuth()) return;
     const w = parseFloat(weightInput);
     if (!w || w < 20 || w > 300) return;
     const bf = bodyFatInput ? parseFloat(bodyFatInput) : undefined;
