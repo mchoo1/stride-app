@@ -1442,7 +1442,13 @@ export default function EatPage() {
     else if (sort === 'distance') setSortKey('distance');
     const diet = p.get('diet');
     if (diet) setFilterDietFlags([diet as DietaryFlag]);
-    // Auto-open filter sheet when open_filter=1 is set (from Dashboard chips)
+    // maxPrice from "Under $5" shortcut
+    const maxPrice = p.get('maxPrice');
+    if (maxPrice) setMaxPriceNum(Number(maxPrice));
+    // maxCal from any future shortcut
+    const maxCal = p.get('maxCal');
+    if (maxCal) setFilterMaxCalories(Number(maxCal));
+    // open_filter kept for backward compatibility
     if (p.get('open_filter') === '1') setShowFilters(true);
   }, []);
 
@@ -2068,8 +2074,9 @@ export default function EatPage() {
       )}
 
       {/* Active filter tags */}
-      {(filterRestaurantId || activeFilterCount > 0) && (
+      {(filterRestaurantId || activeFilterCount > 0 || sortKey !== 'best_match') && (
         <div style={{ padding: '4px 16px 8px', display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none' }}>
+          {/* Restaurant filter */}
           {filterRestaurantId && (() => {
             const r = SG_RESTAURANTS.find(r => r.id === filterRestaurantId);
             return r ? (
@@ -2079,13 +2086,52 @@ export default function EatPage() {
               </span>
             ) : null;
           })()}
+          {/* Sort chip — shown when not default */}
+          {sortKey !== 'best_match' && (() => {
+            const SORT_LABELS: Partial<Record<SortKey, string>> = {
+              protein_dollar: '⚡ Best Value',
+              price:          '💰 Lowest Price',
+              calories:       '🥗 Low Cal',
+              distance:       '📍 Nearest',
+            };
+            const lbl = SORT_LABELS[sortKey];
+            return lbl ? (
+              <span style={{ display:'inline-flex', alignItems:'center', gap:4, padding:'4px 10px', borderRadius:20, background:'rgba(30,127,92,0.08)', border:'1px solid rgba(30,127,92,0.2)', fontSize:11, fontWeight:700, color:GREEN, flexShrink:0 }}>
+                {lbl}
+                <button onClick={() => setSortKey('best_match')} style={{ background:'none', border:'none', cursor:'pointer', color:GREEN, fontSize:12, padding:0 }}>✕</button>
+              </span>
+            ) : null;
+          })()}
+          {/* Diet flags */}
+          {filterDietFlags.map(flag => (
+            <span key={flag} style={{ display:'inline-flex', alignItems:'center', gap:4, padding:'4px 10px', borderRadius:20, background:'rgba(30,127,92,0.08)', border:'1px solid rgba(30,127,92,0.2)', fontSize:11, fontWeight:700, color:GREEN, flexShrink:0 }}>
+              {DIET_LABEL[flag] ?? flag}
+              <button onClick={() => setFilterDietFlags(filterDietFlags.filter(f => f !== flag))} style={{ background:'none', border:'none', cursor:'pointer', color:GREEN, fontSize:12, padding:0 }}>✕</button>
+            </span>
+          ))}
+          {/* Max price */}
+          {maxPriceNum !== null && (
+            <span style={{ display:'inline-flex', alignItems:'center', gap:4, padding:'4px 10px', borderRadius:20, background:'rgba(30,127,92,0.08)', border:'1px solid rgba(30,127,92,0.2)', fontSize:11, fontWeight:700, color:GREEN, flexShrink:0 }}>
+              Under ${maxPriceNum}
+              <button onClick={() => setMaxPriceNum(null)} style={{ background:'none', border:'none', cursor:'pointer', color:GREEN, fontSize:12, padding:0 }}>✕</button>
+            </span>
+          )}
+          {/* Max calories */}
+          {filterMaxCalories > 0 && (
+            <span style={{ display:'inline-flex', alignItems:'center', gap:4, padding:'4px 10px', borderRadius:20, background:'rgba(30,127,92,0.08)', border:'1px solid rgba(30,127,92,0.2)', fontSize:11, fontWeight:700, color:GREEN, flexShrink:0 }}>
+              Under {filterMaxCalories} cal
+              <button onClick={() => setFilterMaxCalories(0)} style={{ background:'none', border:'none', cursor:'pointer', color:GREEN, fontSize:12, padding:0 }}>✕</button>
+            </span>
+          )}
+          {/* Stride approved */}
           {filterStrideApproved && (
             <span style={{ display:'inline-flex', alignItems:'center', gap:4, padding:'4px 10px', borderRadius:20, background:'rgba(30,127,92,0.08)', border:'1px solid rgba(30,127,92,0.2)', fontSize:11, fontWeight:700, color:GREEN, flexShrink:0 }}>
               Stride Approved
               <button onClick={() => setFilterStrideApproved(false)} style={{ background:'none', border:'none', cursor:'pointer', color:GREEN, fontSize:12, padding:0 }}>✕</button>
             </span>
           )}
-          {activeFilterCount > (filterStrideApproved ? 1 : 0) && (
+          {/* Clear all — only when more than one active */}
+          {(activeFilterCount > 1 || (activeFilterCount > 0 && sortKey !== 'best_match')) && (
             <button onClick={clearAllFilters} style={{ display:'inline-flex', alignItems:'center', gap:4, padding:'4px 10px', borderRadius:20, background:'rgba(208,78,54,0.06)', border:'1px solid rgba(208,78,54,0.18)', fontSize:11, fontWeight:700, color:RED, cursor:'pointer', flexShrink:0 }}>
               Clear all ✕
             </button>

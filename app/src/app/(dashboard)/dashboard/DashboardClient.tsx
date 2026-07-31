@@ -222,11 +222,12 @@ export default function DashboardClient() {
   }, [store.foodLog]);
 
   const FILTERS = [
-    { label: 'Best Value',   bolt: true,  href: '/eat?open_filter=1&sort=ppd'   },
-    { label: 'High Protein', bolt: false, href: '/eat?open_filter=1&sort=protein' },
-    { label: 'Halal',        bolt: false, href: '/eat?open_filter=1&diet=halal'  },
-    { label: 'Under $5',     bolt: false, href: '/eat?open_filter=1'             },
-    { label: 'Recipes',      bolt: false, href: '/eat?view=recipes'              },
+    { label: 'Best Value',   bolt: true,  href: '/eat?sort=ppd'      },
+    { label: 'High Protein', bolt: false, href: '/eat?sort=protein'   },
+    { label: 'Halal',        bolt: false, href: '/eat?diet=halal'     },
+    { label: 'Under $5',     bolt: false, href: '/eat?maxPrice=5'     },
+    { label: '📍 Near Me',  bolt: false, href: '/eat?sort=distance'  },
+    { label: 'Recipes',      bolt: false, href: '/eat?view=recipes'   },
   ];
 
   // Show skeleton until server data arrives (only on first load, no data yet)
