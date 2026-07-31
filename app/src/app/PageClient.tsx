@@ -178,6 +178,32 @@ export default function HomePage() {
         </Link>
       </div>
 
+      {/* Auth nudge — compact banner shown before any content */}
+      <div style={{ padding: '0 20px 16px' }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '11px 14px', borderRadius: 14,
+          background: 'rgba(30,127,92,0.07)',
+          border: '1px solid rgba(30,127,92,0.18)',
+        }}>
+          <span style={{ fontSize: 18, flexShrink: 0 }}>🎯</span>
+          <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: T.text1, lineHeight: 1.4 }}>
+            Sign in to track your calories &amp; macros
+          </span>
+          <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+            <Link href="/login" style={{
+              fontSize: 12, fontWeight: 700, color: T.text1, textDecoration: 'none',
+              padding: '5px 10px', borderRadius: 8,
+              background: '#fff', border: `1px solid ${T.border}`,
+            }}>Log in</Link>
+            <Link href="/register" style={{
+              fontSize: 12, fontWeight: 700, color: '#fff', textDecoration: 'none',
+              padding: '5px 10px', borderRadius: 8, background: T.green,
+            }}>Join free</Link>
+          </div>
+        </div>
+      </div>
+
       {/* Quick category pills */}
       <div style={{ paddingLeft: 20, paddingRight: 20, marginBottom: 24 }}>
         <div style={{ display: 'flex', gap: 8, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2 }}>
