@@ -34,47 +34,50 @@ function fmtDist(km: number) {
   return `${km.toFixed(1)} km`;
 }
 
-// Foursquare category IDs
+// Foursquare category IDs (fsq_category_ids in new Places API)
 // Food: 13065 Restaurant, 13032 Café, 13145 Fast Food, 13338 Bakery, 13306 Food Truck
 // Activity: 18021 Gym/Fitness, 16032 Park, 18022 Yoga Studio, 18025 Swimming Pool, 18027 Sports Club
 const FOOD_CATEGORIES     = '13065,13032,13145,13338,13306';
 const ACTIVITY_CATEGORIES = '18021,16032,18022,18025,18027';
 
-// Map Foursquare category IDs → emoji
-const CATEGORY_EMOJI: Record<number, string> = {
-  13065: '🍽️',  // Restaurant
-  13032: '☕',   // Café
-  13145: '🍔',  // Fast Food
-  13338: '🥐',  // Bakery
-  13306: '🚚',  // Food Truck
-  18021: '🏋️', // Gym
-  16032: '🌳',  // Park
-  18022: '🧘',  // Yoga Studio
-  18025: '🏊',  // Swimming Pool
-  18027: '⚽',  // Sports Club
+// Map Foursquare category IDs → emoji (keyed as strings to match fsq_category_id)
+const CATEGORY_EMOJI: Record<string, string> = {
+  '13065': '🍽️',  // Restaurant
+  '13032': '☕',   // Café
+  '13145': '🍔',  // Fast Food
+  '13338': '🥐',  // Bakery
+  '13306': '🚚',  // Food Truck
+  '18021': '🏋️', // Gym
+  '16032': '🌳',  // Park
+  '18022': '🧘',  // Yoga Studio
+  '18025': '🏊',  // Swimming Pool
+  '18027': '⚽',  // Sports Club
 };
 
 const PRICE_LABEL: Record<number, string> = { 1: '$', 2: '$$', 3: '$$$', 4: '$$$$' };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function normalise(p: any, userLat: number, userLng: number, mode: string) {
-  const pLat = p.geocodes?.main?.latitude  ?? userLat;
-  const pLng = p.geocodes?.main?.longitude ?? userLng;
+  // New Places API returns lat/lng directly (not nested under geocodes)
+  const pLat = p.latitude  ?? userLat;
+  const pLng = p.longitude ?? userLng;
   const km   = p.distance != null ? p.distance / 1000 : distKm(userLat, userLng, pLat, pLng);
 
   const openNow = p.hours?.open_now;
   const hours   = openNow === true ? 'Open now' : openNow === false ? 'Closed now' : 'Hours unknown';
 
   const primaryCategory = p.categories?.[0];
-  const emoji = primaryCategory ? (CATEGORY_EMOJI[primaryCategory.id] ?? (mode === 'food' ? '🍽️' : '⚡')) : (mode === 'food' ? '🍽️' : '⚡');
+  // New API uses fsq_category_id (string) instead of numeric id
+  const catId = String(primaryCategory?.fsq_category_id ?? '');
+  const emoji = catId ? (CATEGORY_EMOJI[catId] ?? (mode === 'food' ? '🍽️' : '⚡')) : (mode === 'food' ? '🍽️' : '⚡');
   const type  = primaryCategory?.name ?? (mode === 'food' ? 'Restaurant' : 'Fitness');
 
   // Google Maps deep link — free, works on all devices
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name + ' Singapore')}`;
 
   return {
-    id:         p.fsq_id ?? Math.random().toString(),
-    name:       p.name   ?? 'Unknown',
+    id:         p.fsq_place_id ?? Math.random().toString(),
+    name:       p.name         ?? 'Unknown',
     type,
     distance:   fmtDist(km),
     distKm:     km,
@@ -113,21 +116,26 @@ export async function GET(req: NextRequest) {
   }
 
   const categories = mode === 'activity' ? ACTIVITY_CATEGORIES : FOOD_CATEGORIES;
-  const fields     = 'fsq_id,name,geocodes,categories,distance,rating,price,hours';
+  // New Places API: lat/lng are direct fields; fsq_place_id replaces fsq_id
+  const fields     = 'fsq_place_id,name,latitude,longitude,categories,distance,rating,price,hours';
 
-  const url = new URL('https://api.foursquare.com/v3/places/search');
-  url.searchParams.set('ll',         `${lat},${lng}`);
-  url.searchParams.set('radius',     '5000');  // 5km to capture chains in broader area
-  url.searchParams.set('categories', categories);
-  url.searchParams.set('limit',      '50');    // more results = more DB matches
-  url.searchParams.set('sort',       'distance');
-  url.searchParams.set('fields',     fields);
+  // Migrated to new Foursquare Places API (2025)
+  // Old: https://api.foursquare.com/v3/places/search (deprecated)
+  // New: https://places-api.foursquare.com/places/search
+  const url = new URL('https://places-api.foursquare.com/places/search');
+  url.searchParams.set('ll',                `${lat},${lng}`);
+  url.searchParams.set('radius',            '5000');  // 5km to capture chains in broader area
+  url.searchParams.set('fsq_category_ids',  categories); // param renamed from 'categories'
+  url.searchParams.set('limit',             '50');    // more results = more DB matches
+  url.searchParams.set('sort',              'DISTANCE'); // uppercase in new API
+  url.searchParams.set('fields',            fields);
 
   try {
     const res = await fetch(url.toString(), {
       headers: {
-        'Authorization': API_KEY,
-        'Accept':        'application/json',
+        'Authorization':       `Bearer ${API_KEY}`, // new API uses Bearer scheme
+        'X-Places-Api-Version': '2025-06-17',        // required version header
+        'Accept':               'application/json',
       },
     });
 
