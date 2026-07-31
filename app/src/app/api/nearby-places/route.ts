@@ -117,9 +117,9 @@ export async function GET(req: NextRequest) {
 
   const url = new URL('https://api.foursquare.com/v3/places/search');
   url.searchParams.set('ll',         `${lat},${lng}`);
-  url.searchParams.set('radius',     '2000');
+  url.searchParams.set('radius',     '5000');  // 5km to capture chains in broader area
   url.searchParams.set('categories', categories);
-  url.searchParams.set('limit',      '12');
+  url.searchParams.set('limit',      '50');    // more results = more DB matches
   url.searchParams.set('sort',       'distance');
   url.searchParams.set('fields',     fields);
 
@@ -141,7 +141,12 @@ export async function GET(req: NextRequest) {
       .map((p: unknown) => normalise(p, lat, lng, mode))
       .sort((a: { distKm: number }, b: { distKm: number }) => a.distKm - b.distKm);
 
-    const result = { places };
+    // Log place names in dev so we can verify matchRestaurant() coverage
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[nearby-places] Foursquare returned:', places.map((p: { name: string; distKm: number }) => `${p.name} (${p.distKm.toFixed(2)}km)`));
+    }
+
+    const result = { places, _debug: process.env.NODE_ENV !== 'production' ? places.map((p: { name: string; distKm: number }) => `${p.name} (${p.distKm.toFixed(2)}km)`) : undefined };
     cache.set(key, { data: result, expires: Date.now() + CACHE_TTL_MS });
 
     return NextResponse.json(result);
