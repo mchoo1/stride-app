@@ -331,37 +331,81 @@ export default function DashboardClient() {
       {/* ── Today strip (logged in) / Sign-up banner (guest) ── */}
       <div style={{ padding: '0 20px', marginBottom: 22 }}>
         {user ? (
-          /* Calorie strip for authenticated users */
-          <Link href="/log" style={{
-            display: 'flex', alignItems: 'center', gap: 12,
+          /* Combined calorie + water card */
+          <div style={{
             background: 'var(--surface)', borderRadius: 'var(--r-card)',
-            boxShadow: 'var(--shadow-md)', padding: '12px 14px', textDecoration: 'none',
+            boxShadow: 'var(--shadow-md)', overflow: 'hidden',
           }}>
-            <MiniRing frac={frac} size={40} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
-                <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.02em' }}>
-                  {remaining.toLocaleString()}
-                </span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-2)' }}>kcal left today</span>
+            {/* Calorie row */}
+            <Link href="/log" style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '13px 14px', textDecoration: 'none',
+            }}>
+              <MiniRing frac={frac} size={40} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
+                  <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.02em' }}>
+                    {remaining.toLocaleString()}
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-2)' }}>kcal left today</span>
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 500, marginTop: 1 }}>
+                  {onTrack ? 'On track' : 'Over budget'} · tap to log a meal
+                </div>
+                <div style={{ fontSize: 11, marginTop: 4, display: 'flex', gap: 5, alignItems: 'center' }}>
+                  <span style={{ color: 'var(--green)', fontWeight: 700 }}>P {Math.round(totals.protein)}g</span>
+                  <span style={{ color: 'var(--line)' }}>·</span>
+                  <span style={{ color: 'var(--gold)', fontWeight: 700 }}>C {Math.round(totals.carbs)}g</span>
+                  <span style={{ color: 'var(--line)' }}>·</span>
+                  <span style={{ color: 'var(--coral)', fontWeight: 700 }}>F {Math.round(totals.fat)}g</span>
+                </div>
               </div>
-              <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 500, marginTop: 1 }}>
-                {onTrack ? 'On track' : 'Over budget'} · tap to log a meal
+              <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 13, fontWeight: 600, color: 'var(--green)', flexShrink: 0 }}>
+                Log
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+              </span>
+            </Link>
+
+            {/* Divider */}
+            <div style={{ height: 1, background: 'var(--line)', margin: '0 14px' }} />
+
+            {/* Water row */}
+            <Link href="/log?tab=water" style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '11px 14px', textDecoration: 'none',
+            }}>
+              <div style={{
+                width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                background: '#e8f4fd', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2196f3" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+                </svg>
               </div>
-              {/* D3-01: Macro breakdown row */}
-              <div style={{ fontSize: 11, marginTop: 4, display: 'flex', gap: 5, alignItems: 'center' }}>
-                <span style={{ color: 'var(--green)', fontWeight: 700 }}>P {Math.round(totals.protein)}g</span>
-                <span style={{ color: 'var(--line)' }}>·</span>
-                <span style={{ color: 'var(--gold)', fontWeight: 700 }}>C {Math.round(totals.carbs)}g</span>
-                <span style={{ color: 'var(--line)' }}>·</span>
-                <span style={{ color: 'var(--coral)', fontWeight: 700 }}>F {Math.round(totals.fat)}g</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 5 }}>
+                  <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 14, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.02em' }}>
+                    {waterMl}
+                  </span>
+                  <span style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 500 }}>/ {targetWaterMl} ml</span>
+                  <span style={{ fontSize: 11, color: waterFrac >= 1 ? '#2196f3' : 'var(--muted)', fontWeight: 600, marginLeft: 4 }}>
+                    {waterFrac >= 1 ? '💧 Goal!' : `${targetWaterMl - waterMl} ml to go`}
+                  </span>
+                </div>
+                <div style={{ height: 5, borderRadius: 999, background: '#e8f4fd', overflow: 'hidden' }}>
+                  <div style={{
+                    width: `${waterFrac * 100}%`, height: '100%', borderRadius: 999,
+                    background: 'linear-gradient(90deg, #64b5f6, #2196f3)',
+                    transition: 'width 0.6s cubic-bezier(.22,.61,.36,1)',
+                  }} />
+                </div>
               </div>
-            </div>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 13, fontWeight: 600, color: 'var(--green)', flexShrink: 0 }}>
-              Log
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
-            </span>
-          </Link>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 13, fontWeight: 600, color: '#2196f3', flexShrink: 0 }}>
+                Log
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+              </span>
+            </Link>
+          </div>
         ) : (
           /* Sign-in / Join CTA for guests */
           <div style={{
@@ -595,56 +639,8 @@ export default function DashboardClient() {
         </div>
       )}
 
-      {/* ── Water / hydration (inline with macros) ── */}
-      {user && (
-        <div style={{ padding: '0 20px' }}>
-                    <div style={{
-            background: 'var(--surface)', borderRadius: 'var(--r-card)',
-            boxShadow: 'var(--shadow-md)', padding: '14px 16px',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-              <div style={{
-                width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                background: '#e8f4fd', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2196f3" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
-                </svg>
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                  <span style={{ fontFamily: '"Space Grotesk",system-ui,sans-serif', fontSize: 16, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.02em' }}>
-                    {waterMl}
-                  </span>
-                  <span style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 500 }}>/ {targetWaterMl} ml</span>
-                </div>
-                <div style={{ fontSize: 12, color: waterFrac >= 1 ? '#2196f3' : 'var(--muted)', fontWeight: 500, marginTop: 1 }}>
-                  {waterFrac >= 1 ? '💧 Goal reached!' : `${targetWaterMl - waterMl} ml to go`}
-                </div>
-              </div>
-            </div>
-            <div style={{ height: 6, borderRadius: 999, background: '#e8f4fd', overflow: 'hidden', marginBottom: 12 }}>
-              <div style={{
-                width: `${waterFrac * 100}%`, height: '100%', borderRadius: 999,
-                background: 'linear-gradient(90deg, #64b5f6, #2196f3)',
-                transition: 'width 0.6s cubic-bezier(.22,.61,.36,1)',
-              }} />
-            </div>
-            <Link href="/log?tab=water" style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-              height: 34, borderRadius: 10, border: '1.5px solid #bbdefb',
-              background: '#e8f4fd', color: '#1565c0', fontSize: 13, fontWeight: 700,
-              textDecoration: 'none', letterSpacing: '-0.01em',
-            }}>
-              Log water
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {/* Extra breathing room at bottom for guests */}
-      {!user && <div style={{ height: 8 }} />}
+      {/* Extra breathing room at bottom */}
+      <div style={{ height: 8 }} />
     </div>
   );
 }
