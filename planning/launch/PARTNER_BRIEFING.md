@@ -1,140 +1,147 @@
-# Stride — Partner Briefing & Handoff Prompt
-
-> **Copy and paste the section below into any new chat to give a collaborator full context.**  
-> Updated: 2026-05-29
-
----
-
-## 🔁 PASTE THIS INTO A NEW CHAT
+# Stride — Partner Briefing
+> **Last updated:** 2026-08-02
+> Use this doc to onboard collaborators, developers, or agency partners cold.
 
 ---
 
-We are building **Stride** — a dark-themed, gamified fitness and nutrition tracking app for Singapore users. The core differentiator is GPS-based nearby restaurant discovery with verified Singapore macros and a Protein/$ (protein per dollar) value score.
+## What is Stride?
 
-**Live app:** https://stride-app-rosy.vercel.app  
-**Stack:** Next.js 14 · Firebase Auth + Firestore · Zustand · TypeScript · Tailwind CSS · Vercel  
-**Working directory:** `C:\Users\user\OneDrive\Fitness App` — this is a shared collaborative OneDrive folder. ALL code work must happen here. Never use the Desktop Stribe folder.
+**Stride is Singapore's macro food search engine** — and a comprehensive health tracker built around it.
 
----
+Users search verified nutrition data across 30+ restaurant chains, hawker centres, and grab-and-go outlets, then find the best meals for their health goals before they order. Stride also tracks calories, weight, water, and activity — all personalised to the user's daily goal. Free.
 
-### What's Already Built ✅
-
-The app is ~MVP-ready. All core features work on mobile:
-
-- Firebase auth (register, login, sign out) with 4-step onboarding (goal → diet → body → done)
-- Dashboard: calorie ring, macro bars, water ring, streak badges, daily challenges
-- **Eat tab** (hero feature): GPS nearby restaurants → matched to Singapore food database → shows full menus with Protein/$ scores, diet fit badges, calorie/protein filters
-- Food log: manual entry + search (wired to local sgFoodDb, not empty Firestore)
-- Activity log with MET-based calorie estimates
-- Water tracking, weight log with 30-day trend
-- Move tab: nearby gyms + parks above activity log
-- Singapore food database (`src/lib/sgFoodDb.ts`): 40+ outlets, 520+ menu items, SG_MACRO_FOODS (HPB hawker dishes), SG_INGREDIENTS, SG_RECIPES
-- All API routes with Firestore subcollections
-- Rules-based recommendations engine (8 rules, SGT timezone-aware)
-- Google Places API cache (10-min TTL, 1km grid)
+**Live app:** https://stride-app-rosy.vercel.app
+**Contact:** stride.singapore@gmail.com
+**Company:** Fix Hero Pte. Ltd.
 
 ---
 
-### Recent Fixes Applied (2026-05-29) — NOT YET PUSHED TO GIT
+## The Core Angle — Eat Smart
 
-Three code fixes are written to the OneDrive codebase but need to be committed and pushed:
+Existing calorie trackers are built on US food databases. A Singapore user searching for "Chicken Rice" or "Zinger Burger" gets generic global approximations that don't reflect what they actually ordered.
 
-```bash
-cd "C:\Users\user\OneDrive\Fitness App"
-git add -A
-git commit -m "fix: wire log search to sgFoodDb, protein/$ 10g floor, post-onboarding route to /eat, mcd cone price $1"
-git push origin main
-```
-
-**Fix 1 — Food search was returning "No results"** (`src/app/(dashboard)/log/food/page.tsx`)  
-Was calling `api.foods.search()` which queries an empty Firestore collection. Fixed to search `searchAll()` (restaurant menus) + `SG_MACRO_FOODS` (hawker dishes) directly from the local sgFoodDb TypeScript file, with Firestore as a silent fallback.
-
-**Fix 2 — Protein/$ sort was ranking Vanilla Soft Serve #1** (`src/app/(dashboard)/eat/page.tsx`)  
-Applied a `MIN_PPD_PROTEIN = 10g` floor — items under 10g protein score 0 in Protein/$ ranking. Fixed in both the individual item sort and the restaurant-level sort.
-
-**Fix 3 — Post-onboarding sent users to empty dashboard** (`src/app/register/page.tsx`)  
-Changed redirect from `/dashboard` → `/eat`. New users now land on the Eat tab immediately — first impression of value is the GPS food discovery feature, not an empty ring chart.
-
-**Fix 4 — McDonald's Vanilla Soft Serve Cone price** (`src/lib/sgFoodDb.ts`)  
-Was $0.50 (old price). Corrected to $1.00. `lastVerified` updated to 2026-05-29.
+Stride solves this by being Singapore-first: every item is a real SG menu item, sourced from official brand nutrition PDFs, with real local prices. Users don't change how they eat — they just eat smarter by knowing the numbers before they order.
 
 ---
 
-### Outstanding Work 🔲
+## Stack
 
-#### 🔴 Must Do Before Sharing With Users
+| Layer | Technology |
+|-------|-----------|
+| Frontend | Next.js 14, TypeScript, Tailwind CSS, Zustand |
+| Backend | Next.js API routes, Firebase Admin SDK |
+| Database | Firestore + custom SG food database (12,700+ lines) |
+| Auth | Firebase Authentication (email/password + verification) |
+| AI | Claude Haiku (food scan), USDA FoodData Central |
+| Maps | Leaflet + Google Places API |
+| Email | Resend API |
+| Hosting | Vercel — auto-deploy on push to main |
 
-| Task | File | Notes |
-|------|------|-------|
-| **Push code fixes to git** | Terminal | Run the git command above |
-| **Wire dashboard to API on mount** | `src/app/(dashboard)/dashboard/page.tsx` | Add `store.loadTodayFromServer()` in useEffect |
-| **Wire Me/profile page** | `src/app/(dashboard)/me/page.tsx` | Add `store.syncProfileFromServer()` on mount |
-| **"Open Now" filter** | `src/app/(dashboard)/eat/page.tsx` | Not backed by real business hours — hide the toggle or remove it |
-| **Scan feature — add "Coming Soon" state** | `src/app/(dashboard)/scan/page.tsx` | Disable the button, add tooltip. Scan accuracy for SG food is too low to ship. |
-
-#### 🟡 High Value, Soon
-
-| Task | Notes |
-|------|-------|
-| **Price audit** | A spreadsheet `Stride_Price_Audit.xlsx` has been generated with all 522 menu items. Verify prices against GrabFood outlet by outlet, then send back for Claude to apply corrections to sgFoodDb.ts in one pass. |
-| **Dashboard empty state** | First-time users see an empty ring chart. Improve with onboarding tips or a prompt to log their first meal. |
-| **Daily summary refresh** | After any log action, re-fetch the daily summary so progress bars update immediately. |
-| **Skeleton loaders** | Add across all pages to prevent blank screens on slow connections. |
-| **Profile edit page** | `src/app/(dashboard)/profile/page.tsx` exists but doesn't call `PUT /api/profile`. Wire it up. |
-
-#### 🔵 Later (Phase 2)
-
-- Push notifications, streak celebrations, weekly recap (retention)
-- Barcode scan using Open Food Facts API
-- Community feed (`/community` is a stub)
-- Workout library (`/workouts` is a stub)
-- Service provider portal (`/provider` is a stub)
-- Wearable sync (Apple Health, Google Fit)
+**Repo:** `C:\stride-app` · **Vercel root dir:** `app/`
 
 ---
 
-### Deliberately Deferred
+## What's Built (August 2026)
 
-**Scan feature:** The AI food scan (camera → Claude Haiku vision → USDA) is too inaccurate for Singapore food identification. It exists in the codebase but should be shown as "Coming Soon" until we can get SG-specific accuracy right.
+### Food Search Engine (primary feature)
+- 1,000+ SG-verified food items across 30+ restaurant chains, 6 hawker centres, 6 grab-and-go chains
+- Filter by calories, protein, price, dietary need simultaneously
+- Confidence badges: Stride Approved / Community / Estimated
+- Diet fit badges per item based on user's dietary flags
+
+### Tracking
+- Calories & macros — daily rings, real-time progress
+- AI food scan — camera → Claude Haiku → USDA → one-tap log
+- Weight — 30-day trend chart, auto-recalculates macro targets
+- Water — quick-add buttons, hydration ring
+- Activity — MET-based calorie estimates
+
+### Platform
+- 5-step onboarding with TDEE/macro auto-calculation
+- PDPA-compliant consent flow
+- Firebase Auth with email verification
+- Daily streaks (SGT timezone-aware)
+- Partner portal — restaurants/gyms can apply to list
+- Email notifications via Resend: feedback, partner applications, admin alerts
 
 ---
 
-### Key Files
+## Key Files
 
 | File | Purpose |
 |------|---------|
-| `CLAUDE.md` | Full developer handoff guide — read this first |
-| `CHANGELOG.md` | Log of all fixes and decisions made across sessions |
-| `PARTNER_BRIEFING.md` | This file — paste into new chats for context |
-| `src/lib/sgFoodDb.ts` | Singapore food database (~13,000 lines, 40+ outlets) |
-| `src/app/(dashboard)/eat/page.tsx` | Eat tab — GPS food discovery, Protein/$ sort |
-| `src/app/(dashboard)/log/food/page.tsx` | Food log search — wired to sgFoodDb |
-| `src/lib/store.ts` | Zustand store — all client state + server sync |
-| `src/lib/apiClient.ts` | Typed API wrapper — use this, never raw fetch |
+| `CLAUDE.md` | Full developer handoff — read this first |
+| `planning/README.md` | Planning folder index |
+| `planning/strategy/stride-app-brief.md` | Product positioning and full brief |
+| `planning/product/goals.md` | Product goals and success metrics |
+| `planning/product/enhancements.md` | Future feature ideas |
+| `planning/roadmap/stride-product-spec.md` | Screen specs and full roadmap |
+| `app/src/lib/sgFoodDb.ts` | SG food database (~12,700 lines) |
+| `app/src/lib/store.ts` | Zustand state management |
+| `app/src/lib/apiClient.ts` | Typed API client — use this, never raw fetch |
 
 ---
 
-### Food Database Rules
+## Food Database Rules
 
-When adding food data to `sgFoodDb.ts`:
-- Source from brand's official Singapore nutrition PDF first → `source: 'official_sg'`, `verified: true`
-- HPB Nutrition Information Centre (folio.hpb.gov.sg) → `source: 'hpb'`
+When adding food data:
+- Source from brand's official SG nutrition PDF → `source: 'official_sg'`, `verified: true`
+- HPB Nutrition Information Centre → `source: 'hpb'`, `verified: true`
 - Community estimates → `source: 'community'`, `verified: false`
 - Always set `lastVerified: 'YYYY-MM-DD'`
-- Minimum protein floor for Protein/$ ranking is 10g (enforced in eat/page.tsx sort logic)
-- Prices should be verified against GrabFood or official SG website — not assumed
+- Prices verified against GrabFood or official SG website
 
 ---
 
-### Price Verification Process
+## Env Vars Required
 
-We discovered pricing data in sgFoodDb can go stale. The agreed process:
-1. Use `Stride_Price_Audit.xlsx` (generated 2026-05-29) — 522 items from all outlets
-2. Check prices outlet by outlet on GrabFood (fastest) or official SG websites
-3. Mark corrections in the spreadsheet
-4. Share back — Claude applies all corrections to sgFoodDb.ts in one pass
-5. Cadence: quarterly for fast-food chains, every 6 months for hawker/grab-go
+```env
+NEXT_PUBLIC_FIREBASE_API_KEY
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+NEXT_PUBLIC_FIREBASE_PROJECT_ID
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+NEXT_PUBLIC_FIREBASE_APP_ID
+FIREBASE_PROJECT_ID
+FIREBASE_CLIENT_EMAIL
+FIREBASE_PRIVATE_KEY          # include -----BEGIN/END PRIVATE KEY----- lines
+ANTHROPIC_API_KEY             # Claude Haiku for food scan
+NEXT_PUBLIC_GOOGLE_PLACES_API_KEY
+USDA_API_KEY                  # DEMO_KEY works for dev
+RESEND_API_KEY                # Email notifications
+ADMIN_NOTIFY_TOKEN            # Shared secret for /api/admin/notify endpoint
+```
 
 ---
 
-*For full developer detail: read `CLAUDE.md`. For session-by-session changes: read `CHANGELOG.md`.*
+## Git Workflow
+
+Always run as one block:
+```bash
+cd "C:\stride-app"
+git pull
+git add -A
+git commit -m "short description"
+git push
+```
+
+---
+
+## Outstanding Priorities
+
+### High
+- Expand hawker centre and restaurant database coverage
+- Add barcode scan (Open Food Facts API)
+- Community food submission flow with verification
+
+### Medium
+- Wearable sync (Apple HealthKit / Google Fit)
+- GrabFood / Foodpanda macro lookup integration
+- SEO — landing page optimisation for Singapore food calories keywords
+
+### Phase 2
+- Social feed, community macro verification, delivery deep-links
+
+---
+
+*Full developer detail: `CLAUDE.md` · Changes log: `CHANGELOG.md`*
