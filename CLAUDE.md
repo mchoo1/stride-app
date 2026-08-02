@@ -50,8 +50,7 @@ FIREBASE_PRIVATE_KEY=          # include the -----BEGIN/END PRIVATE KEY----- lin
 ANTHROPIC_API_KEY=             # Vision AI food scan (claude-3-5-haiku)
 NEXT_PUBLIC_GOOGLE_PLACES_API_KEY=   # Nearby restaurants/gyms (NEXT_PUBLIC — used client-side)
 USDA_API_KEY=                  # Nutrition lookup (DEMO_KEY works for dev)
-EMAIL_USER=                    # stride.singapore@gmail.com (feedback notifications)
-EMAIL_APP_PASSWORD=            # Gmail App Password (Google Account → Security → 2-Step → App passwords)
+RESEND_API_KEY=                # resend.com API key — email notifications for feedback submissions
 ```
 
 ---
