@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 const EFFECTIVE_DATE = 'July 2026';
 const COMPANY        = 'FIX HERO PTE. LTD. (UEN 202550423N)';
-const CONTACT        = 'hello@strideapp.sg';
+const CONTACT        = 'stride.singapore@gmail.com';
 const DPO_NAME       = 'Dean';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

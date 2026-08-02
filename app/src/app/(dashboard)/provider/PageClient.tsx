@@ -200,8 +200,8 @@ export default function ProviderPageClient() {
 
         <div style={{ fontSize: 12, color: '#8B95A7' }}>
           Questions?{' '}
-          <a href="mailto:hello@strideapp.sg" style={{ color: '#1E7F5C' }}>
-            hello@strideapp.sg
+          <a href="mailto:stride.singapore@gmail.com" style={{ color: '#1E7F5C' }}>
+            stride.singapore@gmail.com
           </a>
         </div>
       </div>
@@ -222,8 +222,8 @@ export default function ProviderPageClient() {
         </p>
         <p style={{ fontSize: 12, color: '#8B95A7', marginTop: 16 }}>
           Questions?{' '}
-          <a href="mailto:hello@strideapp.sg" style={{ color: '#1E7F5C' }}>
-            hello@strideapp.sg
+          <a href="mailto:stride.singapore@gmail.com" style={{ color: '#1E7F5C' }}>
+            stride.singapore@gmail.com
           </a>
         </p>
       </div>
@@ -240,8 +240,8 @@ export default function ProviderPageClient() {
         </div>
         <p style={{ fontSize: 14, color: '#5B6576', lineHeight: 1.6 }}>
           We couldn&apos;t verify your business at this time. Please contact us at{' '}
-          <a href="mailto:hello@strideapp.sg" style={{ color: '#1E7F5C' }}>
-            hello@strideapp.sg
+          <a href="mailto:stride.singapore@gmail.com" style={{ color: '#1E7F5C' }}>
+            stride.singapore@gmail.com
           </a>{' '}
           and we&apos;ll help resolve it.
         </p>

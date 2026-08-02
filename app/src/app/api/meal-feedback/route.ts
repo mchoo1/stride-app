@@ -21,6 +21,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb }                   from '@/lib/firebase-admin';
 import { verifyToken }               from '@/lib/api-auth';
 import { FieldValue, Timestamp }     from 'firebase-admin/firestore';
+import { sendEmail, feedbackEmailHtml } from '@/lib/email';
 import type {
   FirestoreMealFeedback,
   FeedbackType,
@@ -116,6 +117,25 @@ export async function POST(req: NextRequest) {
   // Write to Firestore
   const docRef = adminDb.collection('meal_feedback').doc();
   await docRef.set({ id: docRef.id, ...feedback });
+
+  // Send admin notification email (non-blocking — failures are logged, never thrown)
+  void sendEmail({
+    subject: `[Stride] New ${feedbackType} feedback on meal ${mealId}`,
+    html: feedbackEmailHtml({
+      feedbackType:       feedbackType as string,
+      mealId:             mealId as string,
+      userId:             uid,
+      comment:            feedback.comment,
+      submittedCalories:  feedback.submittedCalories,
+      submittedProteinG:  feedback.submittedProteinG,
+      submittedCarbsG:    feedback.submittedCarbsG,
+      submittedFatG:      feedback.submittedFatG,
+      submittedPriceSgd:  feedback.submittedPriceSgd,
+      accuracyRating:     feedback.accuracyRating,
+      submittedName:      feedback.submittedName,
+      duplicateOfMealId:  feedback.duplicateOfMealId,
+    }),
+  });
 
   return NextResponse.json({ id: docRef.id, status: 'pending' }, { status: 201 });
 }
