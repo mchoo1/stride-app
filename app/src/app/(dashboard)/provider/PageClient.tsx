@@ -24,7 +24,8 @@ import { useState, useEffect } from 'react';
 import Link                     from 'next/link';
 import { useAuth }              from '@/lib/auth-context';
 import { db }                   from '@/lib/firebase';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc }          from 'firebase/firestore';
+import { auth }                 from '@/lib/firebase';
 
 /* ── Types ───────────────────────────────────────────────────────────────────── */
 type MerchantStatus = 'none' | 'pending' | 'approved' | 'rejected';
@@ -103,16 +104,19 @@ export default function ProviderPageClient() {
 
     setSubmitting(true);
     try {
-      await setDoc(doc(db, 'merchants', user.uid), {
-        businessName:  bizName.trim(),
-        uen:           uen.trim().toUpperCase(),
-        outletType,
-        contactEmail:  contactEmail.toLowerCase().trim(),
-        userId:        user.uid,
-        userEmail:     user.email ?? '',
-        status:        'pending',
-        createdAt:     serverTimestamp(),
+      const token = await auth?.currentUser?.getIdToken();
+      const res = await fetch('/api/merchants', {
+        method:  'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessName: bizName.trim(),
+          uen:          uen.trim().toUpperCase(),
+          outletType,
+          contactEmail: contactEmail.toLowerCase().trim(),
+          userEmail:    user.email ?? '',
+        }),
       });
+      if (!res.ok) throw new Error('API error');
       setSubmitted(true);
       setStatus('pending');
     } catch {
