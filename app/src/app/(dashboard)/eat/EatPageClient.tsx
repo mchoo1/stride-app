@@ -143,8 +143,9 @@ type MealType     = 'breakfast' | 'lunch' | 'snack' | 'dinner';
 type SortKey      = 'best_match' | 'protein_dollar' | 'price' | 'distance' | 'calories';
 type DietFit      = 'great' | 'check' | 'warn' | 'neutral';
 type ViewType     = 'meals' | 'restaurants' | 'recipes';
-type DiningOption = 'all' | 'dine_in' | 'grab_go' | 'delivery';
-type PriceFilter  = 'all' | '$' | '$$' | '$$$';
+type DiningOption    = 'all' | 'dine_in' | 'grab_go' | 'delivery';
+type PriceFilter     = 'all' | '$' | '$$' | '$$$';
+type OutletTypeFilter = 'all' | 'restaurant' | 'hawker' | 'food_court' | 'supermarket' | 'grab_go' | 'ready_to_eat';
 type DistFilter   = 0 | 0.5 | 1 | 2 | 5;
 
 interface PooledItem {
@@ -1028,6 +1029,7 @@ function RecipeCard({ recipe, onLog, onUnlog, logged, isExpanded, onToggle }: {
 function FilterSheet({
   open, onClose,
   diningOption, setDiningOption,
+  outletFilter, setOutletFilter,
   priceFilter, setPriceFilter,
   dietFlags, setDietFlags,
   filterMinProtein, setFilterMinProtein,
@@ -1042,6 +1044,7 @@ function FilterSheet({
 }: {
   open: boolean; onClose: () => void;
   diningOption: DiningOption; setDiningOption: (v: DiningOption) => void;
+  outletFilter: OutletTypeFilter; setOutletFilter: (v: OutletTypeFilter) => void;
   priceFilter: PriceFilter; setPriceFilter: (v: PriceFilter) => void;
   dietFlags: DietaryFlag[]; setDietFlags: (v: DietaryFlag[]) => void;
   filterMinProtein: number; setFilterMinProtein: (v: number) => void;
@@ -1285,6 +1288,39 @@ function FilterSheet({
             )}
           </div>
 
+          {/* Venue type */}
+          <div style={{ borderBottom: `1px solid ${BORDER}` }}>
+            <button style={secBtn} onClick={() => toggleSection('venue')}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: FG1 }}>Venue type</span>
+                {outletFilter !== 'all' && (
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, color: '#fff', background: GREEN,
+                    borderRadius: 999, padding: '1px 6px', lineHeight: 1.7,
+                  }}>1</span>
+                )}
+              </span>
+              <svg style={chevron('venue')} viewBox="0 0 14 14" fill="none">
+                <path d="M3 5l4 4 4-4" stroke={FG3} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            {openSections.has('venue') && (
+              <div style={{ padding: '0 20px 14px', display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+                {([
+                  { val: 'all'         as OutletTypeFilter, label: 'All'          },
+                  { val: 'restaurant'  as OutletTypeFilter, label: '🍽️ Restaurant' },
+                  { val: 'hawker'      as OutletTypeFilter, label: '🏠 Hawker'     },
+                  { val: 'food_court'  as OutletTypeFilter, label: '🍚 Food Court' },
+                  { val: 'supermarket' as OutletTypeFilter, label: '🛒 Supermarket'},
+                  { val: 'grab_go'     as OutletTypeFilter, label: '🥡 Takeaway'  },
+                  { val: 'ready_to_eat'as OutletTypeFilter, label: '🏪 Convenience'},
+                ]).map(o => (
+                  <button key={o.val} onClick={() => setOutletFilter(o.val)} style={chip(outletFilter === o.val)}>{o.label}</button>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Diet type — badge shows count of active flags */}
           <div style={{ borderBottom: `1px solid ${BORDER}` }}>
             <button style={secBtn} onClick={() => toggleSection('diet')}>
@@ -1481,6 +1517,7 @@ export default function EatPage() {
   const [distFilter,          setDistFilter]          = useState<DistFilter>(0);
   const [filterStrideApproved,setFilterStrideApproved]= useState(false); // #10
   const [filterIncludeSetMeals,setFilterIncludeSetMeals]= useState(false); // ala carte only by default
+  const [outletFilter,        setOutletFilter]        = useState<OutletTypeFilter>('all');
 
   // ── Location state ──────────────────────────────────────────────────────
   const [locState,            setLocState]            = useState<'idle'|'loading'|'granted'|'denied'|'no_key'>('idle');
@@ -1660,6 +1697,7 @@ export default function EatPage() {
     // Daypart: hide items not served now (breakfast vs regular). Browse only — search is unaffected.
     f = f.filter(p => isAvailableNow(p.item, new Date(), p.restaurant.dayparts));
     if (filterRestaurantId) f = f.filter(p => p.restaurant.id === filterRestaurantId);
+    if (outletFilter !== 'all') f = f.filter(p => p.restaurant.outletType === outletFilter);
     if (diningOption !== 'all') {
       const svcMap: Record<DiningOption, ServiceType> = { dine_in:'dine_in', grab_go:'grab_go', delivery:'delivery', all:'dine_in' };
       f = f.filter(p => (p.restaurant.serviceTypes ?? []).includes(svcMap[diningOption]));
@@ -1689,7 +1727,7 @@ export default function EatPage() {
       return proteinPerDollar(b.item.protein, b.item.price ?? 0) - proteinPerDollar(a.item.protein, a.item.price ?? 0);
     });
     return f;
-  }, [pooledItems, filterRestaurantId, diningOption, priceFilter, filterDietFlags, filterMinProtein, filterMaxCalories, distFilter, sortKey, filterStrideApproved, filterIncludeSetMeals]);
+  }, [pooledItems, filterRestaurantId, outletFilter, diningOption, priceFilter, filterDietFlags, filterMinProtein, filterMaxCalories, distFilter, sortKey, filterStrideApproved, filterIncludeSetMeals]);
 
   // ── Search results (item names + restaurant names) ──────────────────────
   const searchResults = useMemo(() => {
@@ -1733,8 +1771,9 @@ export default function EatPage() {
     }
     if (priceFilter !== 'all') list = list.filter(r => r.priceRange === priceFilter);
     if (filterDietFlags.length) list = list.filter(r => filterDietFlags.some(f => (r.dietTags ?? []).includes(f)));
+    if (outletFilter !== 'all') list = list.filter(r => r.outletType === outletFilter);
     return list;
-  }, [query, diningOption, priceFilter, filterDietFlags]);
+  }, [query, diningOption, priceFilter, filterDietFlags, outletFilter]);
 
   // #5 GPS-only places (no DB match)
   const gpsOnlyPlaces = useMemo(() =>
@@ -1791,13 +1830,14 @@ export default function EatPage() {
   const activeFilterCount = [
     diningOption !== 'all', priceFilter !== 'all', maxPriceNum !== null, filterDietFlags.length > 0,
     filterMinProtein > 0, filterMaxCalories > 0, distFilter > 0, filterStrideApproved,
+    outletFilter !== 'all',
   ].filter(Boolean).length;
 
   const clearAllFilters = useCallback(() => {
     setDiningOption('all'); setPriceFilter('all'); setMaxPriceNum(null); setFilterDietFlags([]);
     setFilterMinProtein(0); setFilterMaxCalories(0); setDistFilter(0);
     setSortKey('best_match'); setFilterRestaurantId(null); setFilterStrideApproved(false);
-    setFilterIncludeSetMeals(false);
+    setFilterIncludeSetMeals(false); setOutletFilter('all');
   }, []);
 
   const handleQueryChange = (v: string) => {
@@ -2397,6 +2437,7 @@ export default function EatPage() {
       <FilterSheet
         open={showFilters} onClose={() => setShowFilters(false)}
         diningOption={diningOption} setDiningOption={setDiningOption}
+        outletFilter={outletFilter} setOutletFilter={setOutletFilter}
         priceFilter={priceFilter} setPriceFilter={setPriceFilter}
         dietFlags={filterDietFlags} setDietFlags={setFilterDietFlags}
         filterMinProtein={filterMinProtein} setFilterMinProtein={setFilterMinProtein}
