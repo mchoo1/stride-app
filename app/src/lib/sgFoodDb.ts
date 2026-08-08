@@ -26,6 +26,7 @@
 import type { DietaryFlag, OutletType } from '@/types';
 import { SG_HAWKER_CENTRES_AUTO } from './sgHawkerCentresAuto';
 import { SG_HAWKER_PLACES } from './sgHawkerPlaces';
+import { SG_FOOD_COURT_PLACES } from './sgFoodCourtPlaces';
 
 // ─── Enums & literals ────────────────────────────────────────────────────────
 
@@ -12952,110 +12953,7 @@ export const SG_RESTAURANTS: SGRestaurant[] = [
     ],
   },
 
-  // ─── Food Court Operators (SFA Food Shop Licence) ────────────────────────────
-
-  {
-    id: 'koufu',
-    name: 'Koufu',
-    emoji: '🍚',
-    cuisine: 'Food Court',
-    serviceTypes: ['dine_in', 'grab_go'],
-    tier: 'estimated_menu',
-    outletType: 'food_court',
-    sfaLicenceType: 'food_shop',
-    aliases: ['koufu', 'koufu food court'],
-    dietTags: ['halal'],
-    priceRange: '$',
-    lastUpdated: '2026-08-07',
-    menu: [
-      { id: 'koufu_chicken_rice',       name: 'Hainanese Chicken Rice',     emoji: '🍗', price: 4.00, calories: 607, protein: 35, carbs: 74, fat: 17, category: 'Rice', compatibleWith: ['lactose_free'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-      { id: 'koufu_wonton_mee',         name: 'Wonton Mee (Dry)',           emoji: '🍜', price: 4.00, calories: 480, protein: 20, carbs: 68, fat: 14, category: 'Noodles', compatibleWith: [], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-      { id: 'koufu_laksa',              name: 'Laksa',                      emoji: '🍲', price: 4.50, calories: 550, protein: 25, carbs: 60, fat: 22, category: 'Noodles', compatibleWith: ['halal'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-      { id: 'koufu_mixed_veg_rice',     name: 'Mixed Veg Rice (3 dishes)', emoji: '🍱', price: 4.50, calories: 480, protein: 18, carbs: 65, fat: 16, category: 'Rice', compatibleWith: ['vegetarian'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-      { id: 'koufu_char_kway_teow',     name: 'Char Kway Teow',            emoji: '🍜', price: 4.50, calories: 540, protein: 18, carbs: 70, fat: 22, category: 'Noodles', compatibleWith: [], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-      { id: 'koufu_nasi_lemak',         name: 'Nasi Lemak (basic)',         emoji: '🍚', price: 4.00, calories: 640, protein: 20, carbs: 75, fat: 28, category: 'Rice', compatibleWith: ['halal'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-      { id: 'koufu_ban_mian',           name: 'Ban Mian (Handmade Noodle)', emoji: '🍜', price: 4.50, calories: 460, protein: 22, carbs: 64, fat: 12, category: 'Noodles', compatibleWith: [], isPopular: false, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-      { id: 'koufu_fish_ball_noodle',   name: 'Fish Ball Noodle Soup',     emoji: '🍲', price: 4.00, calories: 380, protein: 18, carbs: 62, fat: 7,  category: 'Noodles', compatibleWith: [], isPopular: false, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-      { id: 'koufu_roast_pork_rice',    name: 'Roast Pork / BBQ Rice',     emoji: '🍖', price: 5.00, calories: 650, protein: 32, carbs: 65, fat: 26, category: 'Rice', compatibleWith: [], isPopular: false, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-      { id: 'koufu_hokkien_mee',        name: 'Hokkien Mee',               emoji: '🍜', price: 5.00, calories: 570, protein: 24, carbs: 68, fat: 20, category: 'Noodles', compatibleWith: [], isPopular: false, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-      { id: 'koufu_kopi_o',             name: 'Kopi O (Black Coffee)',      emoji: '☕', price: 1.20, calories: 15,  protein: 0,  carbs: 3,  fat: 0,  category: 'Drinks', compatibleWith: ['vegan', 'halal', 'gluten_free', 'lactose_free'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-      { id: 'koufu_kopi_c',             name: 'Kopi C (Coffee with Evap Milk)', emoji: '☕', price: 1.40, calories: 80, protein: 3, carbs: 11, fat: 2, category: 'Drinks', compatibleWith: ['halal', 'gluten_free'], isPopular: false, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-    ],
-  },
-
-  {
-    id: 'kopitiam',
-    name: 'Kopitiam',
-    emoji: '🍚',
-    cuisine: 'Food Court',
-    serviceTypes: ['dine_in', 'grab_go'],
-    tier: 'estimated_menu',
-    outletType: 'food_court',
-    sfaLicenceType: 'food_shop',
-    aliases: ['kopitiam', 'ntuc kopitiam', 'kopitiam food court'],
-    dietTags: ['halal'],
-    priceRange: '$',
-    lastUpdated: '2026-08-07',
-    menu: [
-      { id: 'kopi_chicken_rice',     name: 'Hainanese Chicken Rice',   emoji: '🍗', price: 4.00, calories: 607, protein: 35, carbs: 74, fat: 17, category: 'Rice', compatibleWith: ['lactose_free'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-      { id: 'kopi_mixed_veg_rice',   name: 'Mixed Veg Rice (3 dishes)', emoji: '🍱', price: 4.50, calories: 480, protein: 18, carbs: 65, fat: 16, category: 'Rice', compatibleWith: ['vegetarian'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-      { id: 'kopi_laksa',            name: 'Laksa',                    emoji: '🍲', price: 4.50, calories: 550, protein: 25, carbs: 60, fat: 22, category: 'Noodles', compatibleWith: ['halal'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-      { id: 'kopi_wonton_mee',       name: 'Wonton Mee (Dry)',         emoji: '🍜', price: 4.00, calories: 480, protein: 20, carbs: 68, fat: 14, category: 'Noodles', compatibleWith: [], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-      { id: 'kopi_nasi_lemak',       name: 'Nasi Lemak (basic)',       emoji: '🍚', price: 4.00, calories: 640, protein: 20, carbs: 75, fat: 28, category: 'Rice', compatibleWith: ['halal'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-      { id: 'kopi_ban_mian',         name: 'Ban Mian',                 emoji: '🍜', price: 4.50, calories: 460, protein: 22, carbs: 64, fat: 12, category: 'Noodles', compatibleWith: [], isPopular: false, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-      { id: 'kopi_fish_soup_noodle', name: 'Fish Soup Noodle',         emoji: '🍲', price: 5.00, calories: 390, protein: 28, carbs: 48, fat: 8,  category: 'Noodles', compatibleWith: [], isPopular: false, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-      { id: 'kopi_kopi_o',           name: 'Kopi O',                   emoji: '☕', price: 1.20, calories: 15,  protein: 0,  carbs: 3,  fat: 0,  category: 'Drinks', compatibleWith: ['vegan', 'halal', 'gluten_free', 'lactose_free'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-    ],
-  },
-
-  {
-    id: 'ntuc_foodfare',
-    name: 'NTUC Foodfare',
-    emoji: '🍚',
-    cuisine: 'Food Court',
-    serviceTypes: ['dine_in', 'grab_go'],
-    tier: 'estimated_menu',
-    outletType: 'food_court',
-    sfaLicenceType: 'food_shop',
-    aliases: ['foodfare', 'ntuc foodfare', 'food fare'],
-    dietTags: ['halal'],
-    priceRange: '$',
-    lastUpdated: '2026-08-07',
-    menu: [
-      { id: 'ff_chicken_rice',     name: 'Hainanese Chicken Rice',   emoji: '🍗', price: 4.00, calories: 607, protein: 35, carbs: 74, fat: 17, category: 'Rice', compatibleWith: ['lactose_free'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-      { id: 'ff_mixed_veg_rice',   name: 'Mixed Veg Rice (3 dishes)', emoji: '🍱', price: 4.50, calories: 480, protein: 18, carbs: 65, fat: 16, category: 'Rice', compatibleWith: ['vegetarian'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-      { id: 'ff_laksa',            name: 'Laksa',                    emoji: '🍲', price: 4.50, calories: 550, protein: 25, carbs: 60, fat: 22, category: 'Noodles', compatibleWith: ['halal'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-      { id: 'ff_nasi_lemak',       name: 'Nasi Lemak (basic)',       emoji: '🍚', price: 4.00, calories: 640, protein: 20, carbs: 75, fat: 28, category: 'Rice', compatibleWith: ['halal'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-      { id: 'ff_char_kway_teow',   name: 'Char Kway Teow',          emoji: '🍜', price: 4.50, calories: 540, protein: 18, carbs: 70, fat: 22, category: 'Noodles', compatibleWith: [], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-      { id: 'ff_wonton_mee',       name: 'Wonton Mee (Dry)',         emoji: '🍜', price: 4.00, calories: 480, protein: 20, carbs: 68, fat: 14, category: 'Noodles', compatibleWith: [], isPopular: false, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-      { id: 'ff_mee_rebus',        name: 'Mee Rebus',                emoji: '🍲', price: 4.50, calories: 480, protein: 18, carbs: 72, fat: 14, category: 'Noodles', compatibleWith: ['halal'], isPopular: false, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-      { id: 'ff_kopi_o',           name: 'Kopi O',                   emoji: '☕', price: 1.20, calories: 15,  protein: 0,  carbs: 3,  fat: 0,  category: 'Drinks', compatibleWith: ['vegan', 'halal', 'gluten_free', 'lactose_free'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-    ],
-  },
-
-  {
-    id: 'banquet',
-    name: 'Banquet',
-    emoji: '🍚',
-    cuisine: 'Food Court',
-    serviceTypes: ['dine_in', 'grab_go'],
-    tier: 'estimated_menu',
-    outletType: 'food_court',
-    sfaLicenceType: 'food_shop',
-    aliases: ['banquet', 'banquet food court'],
-    dietTags: ['halal'],
-    priceRange: '$',
-    lastUpdated: '2026-08-07',
-    menu: [
-      { id: 'banq_chicken_rice',    name: 'Hainanese Chicken Rice',   emoji: '🍗', price: 4.00, calories: 607, protein: 35, carbs: 74, fat: 17, category: 'Rice', compatibleWith: ['lactose_free'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-      { id: 'banq_mixed_veg_rice',  name: 'Mixed Veg Rice (3 dishes)', emoji: '🍱', price: 4.50, calories: 480, protein: 18, carbs: 65, fat: 16, category: 'Rice', compatibleWith: ['vegetarian'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-      { id: 'banq_laksa',           name: 'Laksa',                    emoji: '🍲', price: 4.50, calories: 550, protein: 25, carbs: 60, fat: 22, category: 'Noodles', compatibleWith: ['halal'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-      { id: 'banq_wonton_mee',      name: 'Wonton Mee (Dry)',         emoji: '🍜', price: 4.00, calories: 480, protein: 20, carbs: 68, fat: 14, category: 'Noodles', compatibleWith: [], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-      { id: 'banq_char_kway_teow',  name: 'Char Kway Teow',          emoji: '🍜', price: 4.50, calories: 540, protein: 18, carbs: 70, fat: 22, category: 'Noodles', compatibleWith: [], isPopular: false, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-      { id: 'banq_nasi_lemak',      name: 'Nasi Lemak (basic)',       emoji: '🍚', price: 4.00, calories: 640, protein: 20, carbs: 75, fat: 28, category: 'Rice', compatibleWith: ['halal'], isPopular: false, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-      { id: 'banq_kopi_o',          name: 'Kopi O',                   emoji: '☕', price: 1.20, calories: 15,  protein: 0,  carbs: 3,  fat: 0,  category: 'Drinks', compatibleWith: ['vegan', 'halal', 'gluten_free', 'lactose_free'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
-    ],
-  },
+  ...SG_FOOD_COURT_PLACES,
 
   ...SG_HAWKER_CENTRES_AUTO,
   ...SG_HAWKER_PLACES,
