@@ -1,7 +1,80 @@
 {
   "_readme": "MASTER TRACKER — Check this file before starting any research task. Claim a restaurant by changing status to 'in_progress' and adding your name to 'assignee'. This prevents duplicate work across parallel Cowork sessions.",
-  "_lastUpdated": "2026-08-01T00:00:00+08:00",
+  "_lastUpdated": "2026-08-07T00:00:00+08:00",
   "restaurants": [
+    {
+      "id": "gardenia",
+      "name": "Gardenia",
+      "cuisine": "Grocery — Packaged Bread & Bakery",
+      "emoji": "🍞",
+      "track": "grocery",
+      "nutritionUrl": "https://www.gardenia.com.sg/products/",
+      "status": "pending_upload",
+      "assignee": null,
+      "outputFile": "_sessions/2026-08-06-gardenia.md",
+      "notes": "18 items across White Bread, Wholemeal Bread, Specialty Bread, Wraps, Bakery Snacks and Beverages categories. All macros T1 official_sg, sourced directly from per-product Nutritional Information panels on gardenia.com.sg (Singapore's largest bread manufacturer). Prices matched to live fairprice.com.sg listings where an exact SKU exists (8 of 18 items); remaining items use approximate SG retail price estimates, flagged in nutritionNote. Halal tag applied only to the 8 items with an unambiguous exact-match FairPrice SKU showing the official Halal badge — deliberately left off 2 items (Nutri Multi-Grain Loaf, California Raisin Loaf) that FairPrice lists without the badge, and left unconfirmed on items not sold on FairPrice. Sambal Ikan Bilis Bun excluded from vegetarian (contains anchovy/shrimp). No admin approval needed. Four product pages (Ciabatta, Hamburger Buns, Hotdog Buns, Wholemeal Hamburger Buns) returned blank on fetch and were skipped — candidates for a future session.",
+      "itemCount": 18,
+      "macroCompleteness": "high",
+      "priceAvailable": true,
+      "dataSource": "official_sg",
+      "sourceUrl": "https://www.gardenia.com.sg/products/",
+      "lastChecked": "2026-08-06",
+      "tier": "full_menu",
+      "approvalRequired": 0,
+      "serviceTypes": [
+        "grab_go",
+        "delivery"
+      ]
+    },
+    {
+      "id": "mr_bean",
+      "name": "Mr Bean",
+      "cuisine": "Soya Bean Food & Beverage",
+      "emoji": "🫘",
+      "track": "grab_and_go",
+      "nutritionUrl": "https://www.mrbean.com.sg/productinfos",
+      "status": "pending_upload",
+      "assignee": null,
+      "outputFile": "_sessions/2026-08-05-mr_bean.md",
+      "notes": "23 items across Soya Milk, Grass Jelly, Soya Ice Cream, Beancurd, Eggwich, Pancakes, Riceball, Millet Grains Soy Porridge and Wholegrain Mixed Rice Bowl categories. All macros T1 official_sg, sourced directly from per-product Nutrition Information panels on mrbean.com.sg/product-info/*. Outlet-level halal tag applied (MUIS-certified since June 2022, confirmed via multiple independent SG news sources) except the Mr Bean x Udders soy ice cream collab item, where halal status was not separately confirmed. Prices are estimates from third-party SG menu-price trackers (sgfoodprice.org, menu-sg.com) since mrbean.com.sg product-info pages do not list prices — flagged in nutritionNote on items without a directly matched price. No admin approval needed.",
+      "itemCount": 23,
+      "macroCompleteness": "high",
+      "priceAvailable": true,
+      "dataSource": "official_sg",
+      "sourceUrl": "https://www.mrbean.com.sg/productinfos",
+      "lastChecked": "2026-08-05",
+      "tier": "full_menu",
+      "approvalRequired": 0,
+      "serviceTypes": [
+        "dine_in",
+        "grab_go",
+        "delivery"
+      ]
+    },
+    {
+      "id": "fairprice_grocery",
+      "name": "FairPrice Grocery",
+      "cuisine": "Grocery — Frozen Ready Meals & Canned Fish",
+      "emoji": "🛒",
+      "track": "grocery",
+      "nutritionUrl": "https://www.fairprice.com.sg/category/ready-meals",
+      "status": "pending_upload",
+      "assignee": null,
+      "outputFile": "_sessions/2026-08-03-fairprice_grocery.md",
+      "notes": "10 items: CP frozen ready meals/wonton bowls + Home Flavours sweet & sour fish (official_sg, fairprice.com.sg label panels) and 5 Ayam Brand canned tuna/sardines (official_sg + open_food_facts SG-scanned labels). All T1, no admin approval needed. Several other Ready Meals/Instant Meals items had no published nutrition panel and were skipped (see session file).",
+      "itemCount": 10,
+      "macroCompleteness": "high",
+      "priceAvailable": true,
+      "dataSource": "official_sg/open_food_facts",
+      "sourceUrl": "https://www.fairprice.com.sg/category/ready-meals",
+      "lastChecked": "2026-08-03",
+      "tier": "full_menu",
+      "approvalRequired": 0,
+      "serviceTypes": [
+        "grab_go",
+        "delivery"
+      ]
+    },
     {
       "id": "mcd",
       "name": "McDonald's",
@@ -1436,19 +1509,23 @@
       "cuisine": "Organic / Cafe",
       "emoji": "🌿",
       "nutritionUrl": "https://littlefarms.com",
-      "status": "todo",
+      "status": "pending_upload",
       "assignee": null,
-      "outputFile": "grab-and-go/little_farms_sg.json",
-      "notes": "Organic grocery and cafe. Premium healthy options. Community estimates likely.",
-      "itemCount": null,
-      "macroCompleteness": "unknown",
-      "priceAvailable": false,
-      "lastChecked": null,
-      "tier": "full_menu",
+      "outputFile": "_sessions/2026-08-04-little_farms.md",
+      "notes": "6 items from the Ready-to-Heat Homestyle range (Beef Lasagne, Fish Pie, Mac & Cheese, Shepherd's Pie, Vegetable Korma, Spinach Paneer) with full official SG nutrition labels (littlefarms.com product pages). All T1, no admin approval needed. Salads, Lamb Rogan Josh, Spaghetti Bolognese, soups, pizzas and hummus range on the site had no published nutrition panel and were skipped (see session file).",
+      "itemCount": 6,
+      "macroCompleteness": "high",
+      "priceAvailable": true,
+      "lastChecked": "2026-08-04",
+      "tier": "T1",
       "serviceTypes": [
-        "dine_in",
-        "grab_go"
-      ]
+        "grab_go",
+        "delivery"
+      ],
+      "dataSource": "official_sg",
+      "sourceUrl": "https://littlefarms.com/shop-groceries/little-farms/little-farms-ready-made-meals",
+      "approvalRequired": 0,
+      "track": "grocery"
     },
     {
       "id": "dosirak",
@@ -1469,6 +1546,107 @@
         "dine_in",
         "grab_go",
         "delivery"
+      ]
+    },
+    {
+      "id": "koufu",
+      "name": "Koufu",
+      "track": "restaurants",
+      "status": "pending_upload",
+      "tier": "T4",
+      "sessionDate": "2026-08-03",
+      "itemCount": 12,
+      "approvalRequired": 0,
+      "notes": "Hawker/food court operator chain (SGX: Koufu Group). All 12 items use existing macroDbRef keys into SG_MACRO_FOODS (source: hpb) -- no new macro entries created, no approval required. estimated_menu tier, outletType hawker. Session report: database/_sessions/2026-08-03-koufu.md"
+    },
+    {
+      "id": "foodfare",
+      "name": "Foodfare",
+      "track": "restaurants",
+      "status": "pending_upload",
+      "tier": "T4",
+      "sessionDate": "2026-08-05",
+      "itemCount": 12,
+      "approvalRequired": 0,
+      "notes": "Hawker/food court operator chain, flagged priority:high in SG_UNRESEARCHED_CHAINS. All 12 items use existing macroDbRef keys into SG_MACRO_FOODS (10 hpb, 2 usda) -- no new macro entries created, no approval required. Checked Each-A-Cup and Kenangan Coffee (Kopi Kenangan) first; neither publishes official SG nutrition data, so Foodfare (Koufu-style zero-approval path) was chosen instead. estimated_menu tier, outletType hawker. Session report: database/_sessions/2026-08-05-foodfare.md"
+    },
+    {
+      "id": "playmade",
+      "name": "PlayMade",
+      "cuisine": "Bubble Tea",
+      "emoji": "🧋",
+      "track": "restaurants",
+      "nutritionUrl": "https://www.playmade.com/nutritional-facts",
+      "status": "needs_approval",
+      "assignee": null,
+      "outputFile": "_sessions/2026-08-04-playmade.md",
+      "notes": "15 items, macros sourced from PlayMade SG's own Nutri-Grade nutrition PDF (genuinely official_sg tier). Filed as needs_approval solely because the PDF reports per-100ml and PlayMade doesn't publish cup volume — a third-party-reported 484ml medium-cup figure was used to scale to per-cup totals. Admin should confirm actual cup ml, then this can move to pending_upload (just rescale by actual_ml/484 if different).",
+      "itemCount": 15,
+      "macroCompleteness": "high",
+      "priceAvailable": true,
+      "dataSource": "official_sg",
+      "sourceUrl": "https://www.playmade.com/_files/ugd/b8185a_58ccdc1aa1b84b28a2e3b238754e4986.pdf",
+      "lastChecked": "2026-08-04",
+      "tier": "T1",
+      "approvalRequired": 15,
+      "serviceTypes": [
+        "dine_in",
+        "grab_go"
+      ]
+    },
+    {
+      "id": "kopitiam",
+      "name": "Kopitiam",
+      "track": "restaurants",
+      "status": "pending_upload",
+      "tier": "T4",
+      "sessionDate": "2026-08-06",
+      "itemCount": 12,
+      "approvalRequired": 0,
+      "notes": "Hawker/food court & coffeeshop operator chain, flagged priority:high in SG_UNRESEARCHED_CHAINS (same tier as Koufu/Foodfare/Banquet). All 12 items use existing macroDbRef keys into SG_MACRO_FOODS (all hpb) -- no new macro entries created, no approval required. Selected dishes not overlapping Koufu/Foodfare (rice, noodles/soup, snacks, dessert, classic Kopi/Teh drinks). estimated_menu tier, outletType hawker. Session report: database/_sessions/2026-08-06-kopitiam.md"
+    },
+    {
+      "id": "banquet",
+      "name": "Banquet",
+      "track": "restaurants",
+      "status": "pending_upload",
+      "tier": "T4",
+      "sessionDate": "2026-08-07",
+      "itemCount": 12,
+      "approvalRequired": 0,
+      "notes": "Food-court/hawker operator, Singapore's first all-halal food court (Jurong Point, 1999; VivoCity outlet #B2-39 still operating per Yelp Apr 2026). Last of the 4 priority food-court operators (Kopitiam/Koufu/Foodfare/Banquet) flagged in SG_UNRESEARCHED_CHAINS for the HPB-macroDbRef approach. All 12 items map to existing SG_MACRO_FOODS macroDbRef keys not used by the prior 3 sessions -- zero new estimates, zero admin approval. Outlet-level dietTags: ['halal'] applied (unlike Kopitiam/Koufu/Foodfare which left it empty) because halal certification is Banquet's documented core identity, not an inference. No active official website found -- nutritionUrl omitted. Session file: _sessions/2026-08-07-banquet.md",
+      "macroCompleteness": "high",
+      "priceAvailable": true,
+      "dataSource": "hpb",
+      "sourceUrl": null,
+      "lastChecked": "2026-08-07",
+      "outputFile": "_sessions/2026-08-07-banquet.md",
+      "serviceTypes": [
+        "dine_in",
+        "grab_go"
+      ]
+    },
+    {
+      "id": "seven_eleven_sg",
+      "name": "7-Eleven",
+      "cuisine": "Convenience Store — Snacks & Drinks",
+      "emoji": "🏪",
+      "track": "grocery",
+      "nutritionUrl": "https://www.7-eleven.com.sg/products",
+      "status": "needs_approval",
+      "assignee": null,
+      "outputFile": "_sessions/2026-08-07-seven_eleven_sg.md",
+      "notes": "Themed 'Snacks & Drinks Range' session (7-Eleven SG publishes no official nutrition data for its own 7-Café hot food). 18 items: 8 T1 official_sg (Munchy's Lexus Cheese sachet, Pokka Ice Lemon Tea, Vitasoy Choc, Tao Kae Noi Original, Nissin Cup Noodles Seafood, Calbee Jagabee Original, Want Want Senbei, Julie's Peanut Butter) sourced from FairPrice/Open Food Facts official label panels for the same branded SKUs sold at 7-Eleven — safe to upload. 10 T3/T5 items need admin approval: Calobye Perfect Power Shake, Smarter Snack Protein Pancake, Betagro Classic + Hot&Spicy Chicken Breast, Yakult Light, Meiji Bulgaria Yogurt, 100PLUS Original, 2x 7-Café onigiri, and the Big Bite hotdog (T5, US-menu placeholder only) — all sourced from aggregator/press/social content, not a direct SG label. Admin recommended to verify approval-needed items in-store per session notes.",
+      "itemCount": 18,
+      "macroCompleteness": "medium",
+      "priceAvailable": true,
+      "dataSource": "official_sg/ai_estimate",
+      "sourceUrl": "https://www.7-eleven.com.sg/products",
+      "lastChecked": "2026-08-07",
+      "tier": "T1",
+      "approvalRequired": 10,
+      "serviceTypes": [
+        "grab_go"
       ]
     }
   ],

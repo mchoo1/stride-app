@@ -900,6 +900,9 @@ function RestaurantBrowseCard({ restaurant, distKm, onSelect }: {
     <div onClick={onSelect} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 0', borderBottom: `1px solid ${BORDER}`, cursor: 'pointer' }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: FG1, marginBottom: 2 }}>{restaurant.name}</div>
+        {restaurant.hawkerLocation && (
+          <div style={{ fontSize: 11, color: FG3, marginBottom: 2 }}>📍 {restaurant.hawkerLocation}</div>
+        )}
         <div style={{ fontSize: 12, color: FG2, marginBottom: 5 }}>
           {restaurant.cuisine}{restaurant.priceRange ? ` · ${restaurant.priceRange}` : ''}
           {distKm !== undefined
