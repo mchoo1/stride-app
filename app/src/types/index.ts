@@ -2,12 +2,22 @@
 /** How a food outlet serves food */
 export type ServiceType = 'dine_in' | 'grab_go' | 'delivery';
 
-/** Category of food outlet */
+/** Category of food outlet — aligned with SFA food retail licence types */
 export type OutletType =
-  | 'restaurant'   // sit-down restaurant
-  | 'hawker'       // hawker centre / food court
-  | 'grab_go'      // takeaway counter (BreadTalk, Old Chang Kee, Gong Cha)
-  | 'ready_to_eat';// convenience store or packaged ready meals (7-Eleven, Cheers, FairPrice Xpress)
+  // ── SFA Food Shop Licence ────────────────────────────────────────────────────
+  | 'restaurant'       // sit-down restaurant / caterer (McDonald's, Subway, etc.)
+  | 'food_court'       // food court operator entry — Koufu, Kopitiam, Banquet, Foodfare
+  | 'coffeeshop'       // traditional kopitiam / coffeeshop operator
+  | 'canteen'          // school or office canteen (third-party operated)
+  | 'grab_go'          // takeaway kiosk / snack counter (BreadTalk, Old Chang Kee, Gong Cha)
+  // ── SFA Food Stall Licence ───────────────────────────────────────────────────
+  | 'food_court_stall' // individual stall inside a food court / coffeeshop / canteen
+  // ── SFA Hawker Stall (via NEA) ───────────────────────────────────────────────
+  | 'hawker'           // individual stall in an NEA-managed hawker centre or market
+  // ── SFA Supermarket Licence ──────────────────────────────────────────────────
+  | 'supermarket'      // FairPrice, Cold Storage, Giant, Sheng Siong, Don Don Donki
+  // ── No SFA Licence required ──────────────────────────────────────────────────
+  | 'ready_to_eat';    // convenience store, pre-packed only (7-Eleven, Cheers, FairPrice Xpress)
 
 // ── Profile ───────────────────────────────────────────────────────────────────
 export type GoalType = 'weight_loss' | 'muscle_gain' | 'maintenance';

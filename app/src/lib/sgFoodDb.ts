@@ -417,11 +417,16 @@ export interface SGRestaurant {
   tier: RestaurantTier;
 
   /**
-   * What kind of outlet this is. Used for the Ready-to-Eat filter chip and UI grouping.
-   *   restaurant   — sit-down restaurant (McDonald's, Subway, etc.)
-   *   hawker       — hawker centre / food court (Maxwell FC, Lau Pa Sat, etc.)
-   *   grab_go      — takeaway counter / kiosk (BreadTalk, Old Chang Kee, Gong Cha)
-   *   ready_to_eat — convenience store or packaged ready meals (7-Eleven, Cheers, FairPrice Xpress)
+   * What kind of outlet this is. Aligned with SFA food retail licence types.
+   *   restaurant       — sit-down restaurant / caterer (Food Shop Licence)
+   *   food_court       — food court operator: Koufu, Kopitiam, Banquet, Foodfare (Food Shop Licence)
+   *   food_court_stall — individual stall inside a food court / coffeeshop / canteen (Food Stall Licence)
+   *   coffeeshop       — traditional kopitiam / coffeeshop operator (Food Shop Licence)
+   *   canteen          — school or office canteen, third-party operated (Food Shop Licence)
+   *   grab_go          — takeaway kiosk / snack counter (Food Shop Licence)
+   *   hawker           — stall in an NEA-managed hawker centre or market (Hawker Stall via NEA)
+   *   supermarket      — full grocery store with food prep: FairPrice, Cold Storage (Supermarket Licence)
+   *   ready_to_eat     — convenience store, pre-packed only, no SFA licence: 7-Eleven, Cheers
    */
   outletType: OutletType;
 
@@ -453,6 +458,41 @@ export interface SGRestaurant {
    * Optional — used to link stalls to their parent centre for future grouping features.
    */
   hawkerLocationId?: string;
+
+  // ── SFA Licence metadata ──────────────────────────────────────────────────────
+
+  /**
+   * SFA licence type held by this outlet.
+   *   food_shop    — Food Shop Licence (restaurants, food courts, kiosks, caterers)
+   *   food_stall   — Food Stall Licence (stall inside food court / canteen / coffeeshop)
+   *   hawker_stall — Hawker Stall Licence (stall in NEA-managed hawker centre, issued via NEA)
+   *   supermarket  — Supermarket Licence (FairPrice, Cold Storage, Giant, Sheng Siong)
+   *   none         — No SFA food retail licence required (convenience stores, pre-packed only)
+   */
+  sfaLicenceType?: 'food_shop' | 'food_stall' | 'hawker_stall' | 'supermarket' | 'none';
+
+  /** SFA licence number (from SFA track records). Format varies, e.g. 'FS/12345/2026'. */
+  sfaLicenceNo?: string;
+
+  /**
+   * SFA hygiene inspection grade from the Points Demerit System (PDS).
+   * Only A and B are shown to users; C/D indicate serious hygiene concerns.
+   * Leave absent if not yet looked up.
+   */
+  hygieneGrade?: 'A' | 'B' | 'C' | 'D';
+
+  /**
+   * For food_court_stall or hawker entries: display name of the parent venue
+   * (food court / hawker centre / coffeeshop). Shown as a subtitle in the Eat page.
+   * Use hawkerLocation instead for NEA hawker centre stalls.
+   */
+  venueName?: string;
+
+  /**
+   * ID of the parent venue entry in SG_RESTAURANTS (food court, hawker centre).
+   * Links stall entries back to their operator/venue for future grouping features.
+   */
+  venueId?: string;
 }
 
 // ─── Grocery ingredient ───────────────────────────────────────────────────────
@@ -12771,6 +12811,252 @@ export const SG_RESTAURANTS: SGRestaurant[] = [
         source: 'official_sg', verified: false, confidence: 'estimated', lastVerified: '2026-04-19' },
     ],
   },
+  // ─── Supermarkets (SFA Supermarket Licence) ─────────────────────────────────
+
+  {
+    id: 'fairprice',
+    name: 'FairPrice',
+    emoji: '🛒',
+    cuisine: 'Supermarket',
+    serviceTypes: ['grab_go'],
+    tier: 'estimated_menu',
+    outletType: 'supermarket',
+    sfaLicenceType: 'supermarket',
+    aliases: ['fairprice', 'ntuc fairprice', 'ntuc', 'fair price', 'fp'],
+    dietTags: ['halal', 'vegetarian'],
+    priceRange: '$',
+    nutritionUrl: 'https://www.fairprice.com.sg/category/ready-to-eat',
+    lastUpdated: '2026-08-07',
+    menu: [
+      { id: 'fp_rotisserie_quarter', name: 'Rotisserie Chicken (Quarter)', emoji: '🍗', price: 3.90, calories: 290, protein: 27, carbs: 0, fat: 19, category: 'Hot Food', compatibleWith: ['halal', 'gluten_free', 'lactose_free'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'fp_rotisserie_half',    name: 'Rotisserie Chicken (Half)',    emoji: '🍗', price: 7.50, calories: 580, protein: 54, carbs: 0, fat: 38, category: 'Hot Food', compatibleWith: ['halal', 'gluten_free', 'lactose_free'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'fp_sushi_6pc',          name: 'Freshly Made Sushi (6pc)',     emoji: '🍱', price: 5.50, calories: 350, protein: 12, carbs: 60, fat: 5,  category: 'Sushi', compatibleWith: [], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'fp_bento',              name: 'Ready Bento Box',              emoji: '🍱', price: 4.90, calories: 480, protein: 22, carbs: 55, fat: 18, category: 'Bento', compatibleWith: ['halal'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'fp_salad_pack',         name: 'Pre-packed Salad',             emoji: '🥗', price: 3.50, calories: 180, protein: 5,  carbs: 18, fat: 10, category: 'Salads', compatibleWith: ['vegetarian', 'vegan', 'gluten_free'], isPopular: false, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'fp_sandwich',           name: 'Sandwich (Chicken / Egg)',     emoji: '🥪', price: 2.80, calories: 280, protein: 12, carbs: 30, fat: 10, category: 'Sandwiches', compatibleWith: ['halal'], isPopular: false, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'fp_inari_sushi',        name: 'Inari Sushi (2pc)',            emoji: '🍱', price: 1.80, calories: 200, protein: 5,  carbs: 38, fat: 4,  category: 'Sushi', compatibleWith: ['vegetarian'], isPopular: false, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'fp_onigiri',            name: 'Onigiri (Rice Ball)',          emoji: '🍙', price: 1.50, calories: 185, protein: 5,  carbs: 38, fat: 2,  category: 'Snacks', compatibleWith: ['halal'], isPopular: false, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+    ],
+  },
+
+  {
+    id: 'fairprice_finest',
+    name: 'FairPrice Finest',
+    emoji: '🛒',
+    cuisine: 'Supermarket',
+    serviceTypes: ['grab_go'],
+    tier: 'estimated_menu',
+    outletType: 'supermarket',
+    sfaLicenceType: 'supermarket',
+    aliases: ['fairprice finest', 'ntuc finest', 'fp finest'],
+    dietTags: ['halal', 'vegetarian'],
+    priceRange: '$$',
+    nutritionUrl: 'https://www.fairprice.com.sg/',
+    lastUpdated: '2026-08-07',
+    menu: [
+      { id: 'fpf_rotisserie_quarter', name: 'Rotisserie Chicken (Quarter)', emoji: '🍗', price: 4.50, calories: 290, protein: 27, carbs: 0, fat: 19, category: 'Hot Food', compatibleWith: ['halal', 'gluten_free', 'lactose_free'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'fpf_salad_bar_200g',     name: 'Salad Bar (200g)',             emoji: '🥗', price: 4.00, calories: 200, protein: 6,  carbs: 18, fat: 12, category: 'Salads', compatibleWith: ['vegetarian', 'vegan', 'gluten_free'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'fpf_bento',              name: 'Ready Bento Box (Premium)',    emoji: '🍱', price: 7.90, calories: 520, protein: 26, carbs: 58, fat: 20, category: 'Bento', compatibleWith: ['halal'], isPopular: false, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'fpf_sushi_set',          name: 'Freshly Made Sushi Set (8pc)',emoji: '🍣', price: 8.90, calories: 460, protein: 16, carbs: 80, fat: 8,  category: 'Sushi', compatibleWith: [], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+    ],
+  },
+
+  {
+    id: 'cold_storage',
+    name: 'Cold Storage',
+    emoji: '🛒',
+    cuisine: 'Supermarket',
+    serviceTypes: ['grab_go'],
+    tier: 'estimated_menu',
+    outletType: 'supermarket',
+    sfaLicenceType: 'supermarket',
+    aliases: ['cold storage', 'cs fresh', 'cold storage supermarket'],
+    dietTags: ['halal', 'vegetarian'],
+    priceRange: '$$',
+    nutritionUrl: 'https://coldstorage.com.sg/',
+    lastUpdated: '2026-08-07',
+    menu: [
+      { id: 'cs_rotisserie_quarter', name: 'Rotisserie Chicken (Quarter)', emoji: '🍗', price: 4.50, calories: 290, protein: 27, carbs: 0, fat: 19, category: 'Hot Food', compatibleWith: ['halal', 'gluten_free', 'lactose_free'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'cs_deli_salad_200g',    name: 'Deli Salad Bar (200g)',        emoji: '🥗', price: 5.00, calories: 200, protein: 8,  carbs: 15, fat: 12, category: 'Salads', compatibleWith: ['vegetarian', 'gluten_free'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'cs_ready_meal',         name: 'Ready Meal Bento',            emoji: '🍱', price: 7.00, calories: 520, protein: 24, carbs: 60, fat: 18, category: 'Bento', compatibleWith: [], isPopular: false, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'cs_sandwich',           name: 'Gourmet Sandwich',            emoji: '🥪', price: 4.50, calories: 340, protein: 15, carbs: 36, fat: 13, category: 'Sandwiches', compatibleWith: [], isPopular: false, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'cs_sushi_8pc',          name: 'Freshly Made Sushi (8pc)',    emoji: '🍣', price: 9.90, calories: 460, protein: 16, carbs: 80, fat: 8,  category: 'Sushi', compatibleWith: [], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+    ],
+  },
+
+  {
+    id: 'giant',
+    name: 'Giant',
+    emoji: '🛒',
+    cuisine: 'Supermarket',
+    serviceTypes: ['grab_go'],
+    tier: 'estimated_menu',
+    outletType: 'supermarket',
+    sfaLicenceType: 'supermarket',
+    aliases: ['giant', 'giant supermarket', 'giant hypermart', 'giant hyper'],
+    dietTags: ['halal', 'vegetarian'],
+    priceRange: '$',
+    nutritionUrl: 'https://giant.sg/',
+    lastUpdated: '2026-08-07',
+    menu: [
+      { id: 'giant_rotisserie_quarter', name: 'Rotisserie Chicken (Quarter)', emoji: '🍗', price: 3.80, calories: 290, protein: 27, carbs: 0, fat: 19, category: 'Hot Food', compatibleWith: ['halal', 'gluten_free', 'lactose_free'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'giant_bento',              name: 'Ready Bento Box',             emoji: '🍱', price: 4.50, calories: 480, protein: 22, carbs: 55, fat: 16, category: 'Bento', compatibleWith: ['halal'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'giant_sandwich',           name: 'Sandwich',                    emoji: '🥪', price: 2.50, calories: 270, protein: 11, carbs: 28, fat: 10, category: 'Sandwiches', compatibleWith: ['halal'], isPopular: false, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+    ],
+  },
+
+  {
+    id: 'sheng_siong',
+    name: 'Sheng Siong',
+    emoji: '🛒',
+    cuisine: 'Supermarket',
+    serviceTypes: ['grab_go'],
+    tier: 'estimated_menu',
+    outletType: 'supermarket',
+    sfaLicenceType: 'supermarket',
+    aliases: ['sheng siong', 'shengsiong', 'sheng siong supermarket'],
+    dietTags: ['halal', 'vegetarian'],
+    priceRange: '$',
+    nutritionUrl: 'https://www.shengsiong.com.sg/',
+    lastUpdated: '2026-08-07',
+    menu: [
+      { id: 'ss_roast_chicken_quarter', name: 'Roast Chicken (Quarter)',    emoji: '🍗', price: 3.50, calories: 290, protein: 27, carbs: 0, fat: 19, category: 'Hot Food', compatibleWith: ['gluten_free', 'lactose_free'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'ss_bento',                 name: 'Ready Bento Box',            emoji: '🍱', price: 4.20, calories: 460, protein: 20, carbs: 55, fat: 16, category: 'Bento', compatibleWith: [], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'ss_roast_pork',            name: 'Char Siu / Roast Pork Slice', emoji: '🍖', price: 4.00, calories: 340, protein: 22, carbs: 8, fat: 24, category: 'Hot Food', compatibleWith: ['gluten_free', 'lactose_free'], isPopular: false, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+    ],
+  },
+
+  {
+    id: 'don_don_donki',
+    name: 'Don Don Donki',
+    emoji: '🐧',
+    cuisine: 'Japanese Supermarket',
+    serviceTypes: ['grab_go'],
+    tier: 'estimated_menu',
+    outletType: 'supermarket',
+    sfaLicenceType: 'supermarket',
+    aliases: ['don don donki', 'donki', 'don quijote', 'ppih', 'dqe'],
+    dietTags: [],
+    priceRange: '$$',
+    nutritionUrl: 'https://www.dondondonki.com/sg/',
+    lastUpdated: '2026-08-07',
+    menu: [
+      { id: 'ddk_takoyaki_6pc',   name: 'Takoyaki (6 pieces)',        emoji: '🐙', price: 4.90, calories: 265, protein: 10, carbs: 28, fat: 12, category: 'Hot Food', compatibleWith: [], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'ddk_karaage_5pc',    name: 'Karaage Chicken (5 pieces)', emoji: '🍗', price: 5.90, calories: 345, protein: 22, carbs: 20, fat: 18, category: 'Hot Food', compatibleWith: [], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'ddk_gyoza_5pc',      name: 'Gyoza (5 pieces)',           emoji: '🥟', price: 4.90, calories: 220, protein: 10, carbs: 24, fat: 8,  category: 'Hot Food', compatibleWith: [], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'ddk_onigiri',        name: 'Onigiri',                    emoji: '🍙', price: 2.20, calories: 185, protein: 5,  carbs: 38, fat: 2,  category: 'Snacks', compatibleWith: [], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'ddk_sushi_8pc',      name: 'Sushi Set (8 pieces)',       emoji: '🍣', price: 8.90, calories: 420, protein: 15, carbs: 72, fat: 8,  category: 'Sushi', compatibleWith: [], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'ddk_melon_bread',    name: 'Melon Bread',                emoji: '🍞', price: 2.50, calories: 280, protein: 6,  carbs: 48, fat: 7,  category: 'Bakery', compatibleWith: ['vegetarian'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'ddk_soft_serve',     name: 'Soft Serve Ice Cream',       emoji: '🍦', price: 2.00, calories: 130, protein: 3,  carbs: 22, fat: 4,  category: 'Desserts', compatibleWith: ['vegetarian'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'ddk_ramen_cup',      name: 'Hot Ramen Cup',              emoji: '🍜', price: 3.90, calories: 380, protein: 12, carbs: 55, fat: 10, category: 'Noodles', compatibleWith: [], isPopular: false, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+    ],
+  },
+
+  // ─── Food Court Operators (SFA Food Shop Licence) ────────────────────────────
+
+  {
+    id: 'koufu',
+    name: 'Koufu',
+    emoji: '🍚',
+    cuisine: 'Food Court',
+    serviceTypes: ['dine_in', 'grab_go'],
+    tier: 'estimated_menu',
+    outletType: 'food_court',
+    sfaLicenceType: 'food_shop',
+    aliases: ['koufu', 'koufu food court'],
+    dietTags: ['halal'],
+    priceRange: '$',
+    lastUpdated: '2026-08-07',
+    menu: [
+      { id: 'koufu_chicken_rice',       name: 'Hainanese Chicken Rice',     emoji: '🍗', price: 4.00, calories: 607, protein: 35, carbs: 74, fat: 17, category: 'Rice', compatibleWith: ['lactose_free'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'koufu_wonton_mee',         name: 'Wonton Mee (Dry)',           emoji: '🍜', price: 4.00, calories: 480, protein: 20, carbs: 68, fat: 14, category: 'Noodles', compatibleWith: [], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'koufu_laksa',              name: 'Laksa',                      emoji: '🍲', price: 4.50, calories: 550, protein: 25, carbs: 60, fat: 22, category: 'Noodles', compatibleWith: ['halal'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'koufu_mixed_veg_rice',     name: 'Mixed Veg Rice (3 dishes)', emoji: '🍱', price: 4.50, calories: 480, protein: 18, carbs: 65, fat: 16, category: 'Rice', compatibleWith: ['vegetarian'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'koufu_char_kway_teow',     name: 'Char Kway Teow',            emoji: '🍜', price: 4.50, calories: 540, protein: 18, carbs: 70, fat: 22, category: 'Noodles', compatibleWith: [], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'koufu_nasi_lemak',         name: 'Nasi Lemak (basic)',         emoji: '🍚', price: 4.00, calories: 640, protein: 20, carbs: 75, fat: 28, category: 'Rice', compatibleWith: ['halal'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'koufu_ban_mian',           name: 'Ban Mian (Handmade Noodle)', emoji: '🍜', price: 4.50, calories: 460, protein: 22, carbs: 64, fat: 12, category: 'Noodles', compatibleWith: [], isPopular: false, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'koufu_fish_ball_noodle',   name: 'Fish Ball Noodle Soup',     emoji: '🍲', price: 4.00, calories: 380, protein: 18, carbs: 62, fat: 7,  category: 'Noodles', compatibleWith: [], isPopular: false, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'koufu_roast_pork_rice',    name: 'Roast Pork / BBQ Rice',     emoji: '🍖', price: 5.00, calories: 650, protein: 32, carbs: 65, fat: 26, category: 'Rice', compatibleWith: [], isPopular: false, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'koufu_hokkien_mee',        name: 'Hokkien Mee',               emoji: '🍜', price: 5.00, calories: 570, protein: 24, carbs: 68, fat: 20, category: 'Noodles', compatibleWith: [], isPopular: false, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'koufu_kopi_o',             name: 'Kopi O (Black Coffee)',      emoji: '☕', price: 1.20, calories: 15,  protein: 0,  carbs: 3,  fat: 0,  category: 'Drinks', compatibleWith: ['vegan', 'halal', 'gluten_free', 'lactose_free'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'koufu_kopi_c',             name: 'Kopi C (Coffee with Evap Milk)', emoji: '☕', price: 1.40, calories: 80, protein: 3, carbs: 11, fat: 2, category: 'Drinks', compatibleWith: ['halal', 'gluten_free'], isPopular: false, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+    ],
+  },
+
+  {
+    id: 'kopitiam',
+    name: 'Kopitiam',
+    emoji: '🍚',
+    cuisine: 'Food Court',
+    serviceTypes: ['dine_in', 'grab_go'],
+    tier: 'estimated_menu',
+    outletType: 'food_court',
+    sfaLicenceType: 'food_shop',
+    aliases: ['kopitiam', 'ntuc kopitiam', 'kopitiam food court'],
+    dietTags: ['halal'],
+    priceRange: '$',
+    lastUpdated: '2026-08-07',
+    menu: [
+      { id: 'kopi_chicken_rice',     name: 'Hainanese Chicken Rice',   emoji: '🍗', price: 4.00, calories: 607, protein: 35, carbs: 74, fat: 17, category: 'Rice', compatibleWith: ['lactose_free'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'kopi_mixed_veg_rice',   name: 'Mixed Veg Rice (3 dishes)', emoji: '🍱', price: 4.50, calories: 480, protein: 18, carbs: 65, fat: 16, category: 'Rice', compatibleWith: ['vegetarian'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'kopi_laksa',            name: 'Laksa',                    emoji: '🍲', price: 4.50, calories: 550, protein: 25, carbs: 60, fat: 22, category: 'Noodles', compatibleWith: ['halal'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'kopi_wonton_mee',       name: 'Wonton Mee (Dry)',         emoji: '🍜', price: 4.00, calories: 480, protein: 20, carbs: 68, fat: 14, category: 'Noodles', compatibleWith: [], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'kopi_nasi_lemak',       name: 'Nasi Lemak (basic)',       emoji: '🍚', price: 4.00, calories: 640, protein: 20, carbs: 75, fat: 28, category: 'Rice', compatibleWith: ['halal'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'kopi_ban_mian',         name: 'Ban Mian',                 emoji: '🍜', price: 4.50, calories: 460, protein: 22, carbs: 64, fat: 12, category: 'Noodles', compatibleWith: [], isPopular: false, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'kopi_fish_soup_noodle', name: 'Fish Soup Noodle',         emoji: '🍲', price: 5.00, calories: 390, protein: 28, carbs: 48, fat: 8,  category: 'Noodles', compatibleWith: [], isPopular: false, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'kopi_kopi_o',           name: 'Kopi O',                   emoji: '☕', price: 1.20, calories: 15,  protein: 0,  carbs: 3,  fat: 0,  category: 'Drinks', compatibleWith: ['vegan', 'halal', 'gluten_free', 'lactose_free'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+    ],
+  },
+
+  {
+    id: 'ntuc_foodfare',
+    name: 'NTUC Foodfare',
+    emoji: '🍚',
+    cuisine: 'Food Court',
+    serviceTypes: ['dine_in', 'grab_go'],
+    tier: 'estimated_menu',
+    outletType: 'food_court',
+    sfaLicenceType: 'food_shop',
+    aliases: ['foodfare', 'ntuc foodfare', 'food fare'],
+    dietTags: ['halal'],
+    priceRange: '$',
+    lastUpdated: '2026-08-07',
+    menu: [
+      { id: 'ff_chicken_rice',     name: 'Hainanese Chicken Rice',   emoji: '🍗', price: 4.00, calories: 607, protein: 35, carbs: 74, fat: 17, category: 'Rice', compatibleWith: ['lactose_free'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'ff_mixed_veg_rice',   name: 'Mixed Veg Rice (3 dishes)', emoji: '🍱', price: 4.50, calories: 480, protein: 18, carbs: 65, fat: 16, category: 'Rice', compatibleWith: ['vegetarian'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'ff_laksa',            name: 'Laksa',                    emoji: '🍲', price: 4.50, calories: 550, protein: 25, carbs: 60, fat: 22, category: 'Noodles', compatibleWith: ['halal'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'ff_nasi_lemak',       name: 'Nasi Lemak (basic)',       emoji: '🍚', price: 4.00, calories: 640, protein: 20, carbs: 75, fat: 28, category: 'Rice', compatibleWith: ['halal'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'ff_char_kway_teow',   name: 'Char Kway Teow',          emoji: '🍜', price: 4.50, calories: 540, protein: 18, carbs: 70, fat: 22, category: 'Noodles', compatibleWith: [], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'ff_wonton_mee',       name: 'Wonton Mee (Dry)',         emoji: '🍜', price: 4.00, calories: 480, protein: 20, carbs: 68, fat: 14, category: 'Noodles', compatibleWith: [], isPopular: false, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'ff_mee_rebus',        name: 'Mee Rebus',                emoji: '🍲', price: 4.50, calories: 480, protein: 18, carbs: 72, fat: 14, category: 'Noodles', compatibleWith: ['halal'], isPopular: false, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'ff_kopi_o',           name: 'Kopi O',                   emoji: '☕', price: 1.20, calories: 15,  protein: 0,  carbs: 3,  fat: 0,  category: 'Drinks', compatibleWith: ['vegan', 'halal', 'gluten_free', 'lactose_free'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+    ],
+  },
+
+  {
+    id: 'banquet',
+    name: 'Banquet',
+    emoji: '🍚',
+    cuisine: 'Food Court',
+    serviceTypes: ['dine_in', 'grab_go'],
+    tier: 'estimated_menu',
+    outletType: 'food_court',
+    sfaLicenceType: 'food_shop',
+    aliases: ['banquet', 'banquet food court'],
+    dietTags: ['halal'],
+    priceRange: '$',
+    lastUpdated: '2026-08-07',
+    menu: [
+      { id: 'banq_chicken_rice',    name: 'Hainanese Chicken Rice',   emoji: '🍗', price: 4.00, calories: 607, protein: 35, carbs: 74, fat: 17, category: 'Rice', compatibleWith: ['lactose_free'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'banq_mixed_veg_rice',  name: 'Mixed Veg Rice (3 dishes)', emoji: '🍱', price: 4.50, calories: 480, protein: 18, carbs: 65, fat: 16, category: 'Rice', compatibleWith: ['vegetarian'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'banq_laksa',           name: 'Laksa',                    emoji: '🍲', price: 4.50, calories: 550, protein: 25, carbs: 60, fat: 22, category: 'Noodles', compatibleWith: ['halal'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'banq_wonton_mee',      name: 'Wonton Mee (Dry)',         emoji: '🍜', price: 4.00, calories: 480, protein: 20, carbs: 68, fat: 14, category: 'Noodles', compatibleWith: [], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'banq_char_kway_teow',  name: 'Char Kway Teow',          emoji: '🍜', price: 4.50, calories: 540, protein: 18, carbs: 70, fat: 22, category: 'Noodles', compatibleWith: [], isPopular: false, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'banq_nasi_lemak',      name: 'Nasi Lemak (basic)',       emoji: '🍚', price: 4.00, calories: 640, protein: 20, carbs: 75, fat: 28, category: 'Rice', compatibleWith: ['halal'], isPopular: false, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+      { id: 'banq_kopi_o',          name: 'Kopi O',                   emoji: '☕', price: 1.20, calories: 15,  protein: 0,  carbs: 3,  fat: 0,  category: 'Drinks', compatibleWith: ['vegan', 'halal', 'gluten_free', 'lactose_free'], isPopular: true, source: 'hpb', confidence: 'estimated', verified: false, lastVerified: '2026-08-07' },
+    ],
+  },
+
   ...SG_HAWKER_CENTRES_AUTO,
   ...SG_HAWKER_PLACES,
 ];
@@ -14381,10 +14667,10 @@ export const SG_UNRESEARCHED_CHAINS: UnresearchedChain[] = [
   { name: 'Swensen\'s',            aliases: ["swensen's", 'swensens'],                  outletType: 'restaurant', cuisine: 'Ice Cream / Western', priority: 'low' },
 
   // ── Hawker / local ─────────────────────────────────────────────────────────
-  { name: 'Kopitiam',              aliases: ['kopitiam'],                               outletType: 'hawker',     cuisine: 'Hawker',            priority: 'high',   notes: 'Use HPB nutrient data for generic hawker dishes' },
-  { name: 'Koufu',                 aliases: ['koufu'],                                  outletType: 'hawker',     cuisine: 'Hawker',            priority: 'high',   notes: 'Use HPB nutrient data for generic hawker dishes' },
-  { name: 'Foodfare',              aliases: ['foodfare'],                               outletType: 'hawker',     cuisine: 'Hawker',            priority: 'high',   notes: 'Use HPB nutrient data for generic hawker dishes' },
-  { name: 'Banquet',               aliases: ['banquet'],                                outletType: 'hawker',     cuisine: 'Hawker',            priority: 'medium', notes: 'Use HPB nutrient data for generic hawker dishes' },
+  { name: 'Kopitiam',              aliases: ['kopitiam'],                               outletType: 'food_court', cuisine: 'Food Court',        priority: 'high',   notes: 'Food Shop Licence (food court). Use HPB nutrient data for stall dishes.' },
+  { name: 'Koufu',                 aliases: ['koufu'],                                  outletType: 'food_court', cuisine: 'Food Court',        priority: 'high',   notes: 'Food Shop Licence (food court). Use HPB nutrient data for stall dishes.' },
+  { name: 'Foodfare',              aliases: ['foodfare', 'ntuc foodfare'],              outletType: 'food_court', cuisine: 'Food Court',        priority: 'high',   notes: 'NTUC operator. Food Shop Licence (food court). Use HPB nutrient data.' },
+  { name: 'Banquet',               aliases: ['banquet'],                                outletType: 'food_court', cuisine: 'Food Court',        priority: 'high',   notes: 'Food Shop Licence (food court). Use HPB nutrient data for stall dishes.' },
 
   // ── Convenience / ready-to-eat ─────────────────────────────────────────────
   { name: 'OK Convenience',        aliases: ['ok convenience', 'ok store'],             outletType: 'ready_to_eat', cuisine: 'Convenience',     priority: 'low' },
