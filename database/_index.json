@@ -1,7 +1,57 @@
 {
   "_readme": "MASTER TRACKER — Check this file before starting any research task. Claim a restaurant by changing status to 'in_progress' and adding your name to 'assignee'. This prevents duplicate work across parallel Cowork sessions.",
-  "_lastUpdated": "2026-08-07T00:00:00+08:00",
+  "_lastUpdated": "2026-08-09T00:00:00+08:00",
   "restaurants": [
+    {
+      "id": "supergreen",
+      "name": "Supergreen",
+      "cuisine": "Healthy Salads & Grain Bowls",
+      "emoji": "🥗",
+      "track": "grab_and_go",
+      "nutritionUrl": "https://www.supergreen.sg/_files/ugd/8c8601_522a18ba53d449058d2536eafbd76ba2.pdf",
+      "status": "pending_upload",
+      "sessionDate": "2026-08-09",
+      "itemCount": 14,
+      "approvalRequired": 0,
+      "outputFile": "_sessions/2026-08-09-supergreen.md",
+      "notes": "7 Signature Bowls + 7 Build-Your-Own add-on proteins. All T1 official_sg, sourced directly from Supergreen's official 'Nutritional & Allergen Information' PDF (Jul 2026 version, linked from supergreen.sg site nav + FAQ), cross-confirmed against live calorie/protein figures on supergreen.sg/menu. Not halal-certified (suppliers only) so no halal tag applied. Vegetarian/vegan tags applied only to Vegan Power Bowl (name + ingredient list confirm plant-based); other items left untagged for diet flags since per-item allergen ticks in the PDF did not extract as clean booleans. Dressings, bases, and generic toppings from the same PDF were left for a future session. No admin approval needed.",
+      "macroCompleteness": "high",
+      "priceAvailable": true,
+      "dataSource": "official_sg",
+      "tier": "full_menu",
+      "serviceTypes": ["dine_in", "grab_go", "delivery"]
+    },
+    {
+      "id": "don_don_donki",
+      "name": "Don Don Donki",
+      "cuisine": "Japanese Supermarket",
+      "track": "grocery",
+      "status": "in_app",
+      "notes": "Discovered during 2026-08-09 session research: already has 7 menu items live in sgFoodDb.ts (added 2026-08-07) but had no _index.json entry until now. Backfilling entry so future sessions don't re-research this outlet. Items are source: 'hpb', confidence: 'estimated' — could be a candidate for a future upgrade pass if better official data is found.",
+      "itemCount": 7,
+      "tier": "estimated_menu"
+    },
+    {
+      "id": "sheng_siong",
+      "name": "Sheng Siong",
+      "cuisine": "Supermarket",
+      "track": "grocery",
+      "status": "in_app",
+      "notes": "Discovered during 2026-08-09 session research: already has 3 menu items live in sgFoodDb.ts (added 2026-08-07) but had no _index.json entry until now. Backfilling entry so future sessions don't re-research this outlet.",
+      "itemCount": 3,
+      "tier": "estimated_menu"
+    },
+    {
+      "id": "grains_co",
+      "name": "Grains & Co.",
+      "track": "restaurants",
+      "status": "pending_upload",
+      "tier": "T1",
+      "sessionDate": "2026-08-09",
+      "itemCount": 6,
+      "approvalRequired": 0,
+      "notes": "Fast-casual grain bowl chain (One Raffles Place / CIMB Plaza / Fusionopolis). Distinct brand from existing 'grain' entry (Grain, grain.com.sg) -- no id collision. All 6 items are the official Signature Bowls, each with a fixed recipe, published price, and full macros pulled directly from grainsandco.sg/nutritional-information (T1 official_sg). No admin approval needed. 30+ individual create-your-own-bowl components (bases/proteins/dressings) also have published macros on the same page but were left for a future session. Session report: database/_sessions/2026-08-09-grains_co.md"
+    },
     {
       "id": "gardenia",
       "name": "Gardenia",

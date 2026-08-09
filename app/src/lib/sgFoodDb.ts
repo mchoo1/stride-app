@@ -14612,22 +14612,96 @@ export function searchAll(
   const q = query.toLowerCase().trim();
   if (!q) return { restaurants: [], items: [] };
 
-  // Category match: only on whole-word boundaries so "chick" doesn't match "Chicken & Sides"
-  // but "chicken" or "rice" would still match their respective categories.
-  const categoryMatch = (category: string) => {
-    const words = category.toLowerCase().split(/[\s&,/\-]+/);
-    return words.some(w => w === q || w.startsWith(q + ' ') || (q.length >= 4 && w.startsWith(q)));
+  // ── Intent detection: dietary flags and macro thresholds ──────────────────
+  // Detect phrases like "halal", "vegetarian", "high protein", "under 500 cal"
+  // and convert them into filters applied on top of the normal substring search.
+  type MacroFilter = { field: 'protein' | 'calories' | 'fat' | 'carbs'; op: '>=' | '<='; value: number };
+  const dietIntents: string[] = [];
+  const macroFilters: MacroFilter[] = [];
+
+  const DIET_KEYWORDS: Record<string, string> = {
+    'halal': 'halal', 'vegetarian': 'vegetarian', 'vegan': 'vegan',
+    'keto': 'keto', 'lactose free': 'lactose_free', 'lactose_free': 'lactose_free',
+    'low carb': 'low_carb', 'low_carb': 'low_carb', 'gluten free': 'gluten_free',
+    'no pork': 'no_pork', 'high protein': 'high_protein',
   };
+  for (const [kw, flag] of Object.entries(DIET_KEYWORDS)) {
+    if (q.includes(kw)) dietIntents.push(flag);
+  }
+  // "under Xcal" / "below Xcal" / "< Xcal"
+  const calUnder = q.match(/(?:under|below|<)\s*(\d+)\s*cal/);
+  if (calUnder) macroFilters.push({ field: 'calories', op: '<=', value: parseInt(calUnder[1]) });
+  // "protein X+" / "over X protein"
+  const proteinOver = q.match(/(?:protein\s+(\d+)\+?|over\s+(\d+)\s*g?\s*protein)/);
+  if (proteinOver) macroFilters.push({ field: 'protein', op: '>=', value: parseInt(proteinOver[1] ?? proteinOver[2]) });
+
+  // Build a stripped query that removes recognised intent phrases so the
+  // remainder can still do substring matching on item/restaurant names.
+  let strippedQ = q;
+  for (const kw of Object.keys(DIET_KEYWORDS)) strippedQ = strippedQ.replace(kw, '').trim();
+  strippedQ = strippedQ.replace(/(?:under|below|<)\s*\d+\s*cal/, '').trim();
+  strippedQ = strippedQ.replace(/(?:protein\s+\d+\+?|over\s+\d+\s*g?\s*protein)/, '').trim();
+
+  // ── Token-based name matching ─────────────────────────────────────────────
+  // Split query into tokens so "grilled chicken" matches "Grilled Chicken Rice"
+  // even when neither token appears as a full substring of the full name alone.
+  const tokens = strippedQ ? strippedQ.split(/\s+/).filter(t => t.length > 1) : [];
+  const pureSubstring = strippedQ.length > 0;
+
+  const nameMatchesItem = (itemName: string): boolean => {
+    const lower = itemName.toLowerCase();
+    if (pureSubstring && lower.includes(strippedQ)) return true;
+    // All tokens must match somewhere in the item name (each as a word-start or substring)
+    if (tokens.length >= 2) {
+      const words = lower.split(/\s+/);
+      return tokens.every(t => words.some(w => w.startsWith(t)) || lower.includes(t));
+    }
+    return false;
+  };
+
+  // Category match: whole-word boundaries
+  const categoryMatch = (category: string) => {
+    if (!strippedQ) return false;
+    const words = category.toLowerCase().split(/[\s&,/\-]+/);
+    return words.some(w => w === strippedQ || (strippedQ.length >= 4 && w.startsWith(strippedQ)));
+  };
+
+  const passesFilters = (item: SGMenuItem): boolean => {
+    const compat = (item.compatibleWith ?? []) as string[];
+    if (dietIntents.length && !dietIntents.every(d => compat.includes(d))) return false;
+    for (const f of macroFilters) {
+      const v = item[f.field] as number;
+      if (f.op === '>=' && v < f.value) return false;
+      if (f.op === '<=' && v > f.value) return false;
+    }
+    return true;
+  };
+
+  // ── Pure intent-only mode: no remaining text, just filter by flags/macros ──
+  const intentOnlyMode = (dietIntents.length > 0 || macroFilters.length > 0) && !strippedQ;
 
   const restaurants: SGRestaurant[] = [];
   const items: { item: SGMenuItem; restaurant: SGRestaurant }[] = [];
 
   for (const r of SG_RESTAURANTS) {
     if (serviceFilter && r.tab !== serviceFilter) continue;
-    const nameMatch = r.name.toLowerCase().includes(q) || r.aliases.some(a => a.includes(q));
+
+    if (intentOnlyMode) {
+      // Return all items that pass the filter regardless of name
+      for (const item of r.menu) {
+        if (passesFilters(item)) items.push({ item, restaurant: r });
+      }
+      continue;
+    }
+
+    const rName = r.name.toLowerCase();
+    const nameMatch = (pureSubstring && (rName.includes(strippedQ) || r.aliases.some(a => a.includes(strippedQ))))
+      || (tokens.length >= 2 && tokens.every(t => rName.includes(t)));
+
     const matchingItems = r.menu.filter(
-      i => i.name.toLowerCase().includes(q) || categoryMatch(i.category ?? '')
+      i => (nameMatchesItem(i.name) || categoryMatch(i.category ?? '')) && passesFilters(i)
     );
+
     if (nameMatch) restaurants.push(r);
     for (const item of matchingItems) {
       items.push({ item, restaurant: r });
