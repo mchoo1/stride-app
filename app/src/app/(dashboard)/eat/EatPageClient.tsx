@@ -8,6 +8,7 @@ import loadable from 'next/dynamic';
 import { useStrideStore } from '@/lib/store';
 import { track, Events } from '@/lib/analytics';
 import type { MapPin } from '@/components/MapView';
+import FoodIcon, { categoryToIcon } from '@/components/FoodIcon';
 
 // Separate component avoids inline-JSX closure issues in the SSR bundle
 function MapLoadingPlaceholder() {
@@ -915,6 +916,15 @@ function MenuItemCard({
   return (
     <div style={{ background: CARD, borderRadius: 16, border: `1px solid ${BORDER}`, marginBottom: 10, boxShadow: SHADOW, overflow: 'hidden' }}>
       <div onClick={onToggle} style={{ display: 'flex', alignItems: 'center', padding: '13px 14px', cursor: 'pointer' }}>
+        <div
+          style={{
+            width: 34, height: 34, borderRadius: 10, background: 'rgba(30,127,92,0.08)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0, marginRight: 10, color: GREEN,
+          }}
+        >
+          <FoodIcon name={categoryToIcon(item.category, item.name)} size={18} />
+        </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: FG1, display: 'flex', alignItems: 'center', gap: 5 }}>
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
