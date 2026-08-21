@@ -19,7 +19,11 @@
       "priceAvailable": true,
       "dataSource": "official_sg",
       "tier": "full_menu",
-      "serviceTypes": ["dine_in", "grab_go", "delivery"]
+      "serviceTypes": [
+        "dine_in",
+        "grab_go",
+        "delivery"
+      ]
     },
     {
       "id": "don_don_donki",
@@ -874,7 +878,7 @@
       "cuisine": "Local & Hawker",
       "emoji": "🍞",
       "nutritionUrl": "https://funtoast.com.sg",
-      "status": "needs_approval",
+      "status": "ready",
       "assignee": null,
       "outputFile": "grab-and-go/fun_toast_sg.json",
       "notes": "Local toast chain. Similar to Ya Kun. Community estimates likely.",
@@ -888,7 +892,12 @@
         "grab_go"
       ],
       "lastResearched": "2026-08-01",
-      "note": "No official nutrition page found (site has menu/pricing only, no macros). Drafted 5 items with AI-estimated macros calibrated against existing Ya Kun/Toast Box/Cheers entries in planning/db-update-2026-08-01.md. Needs admin approval before upload."
+      "note": "No official nutrition page found (site has menu/pricing only, no macros). Drafted 5 items with AI-estimated macros calibrated against existing Ya Kun/Toast Box/Cheers entries in planning/db-update-2026-08-01.md. Needs admin approval before upload.",
+      "deanApproval": {
+        "decision": "approved_as_estimated",
+        "date": "2026-08-21",
+        "note": "Dean approved: ship as source='community', verified=false, confidence='estimated'. Clearly disclose as AI-calibrated estimates, not official."
+      }
     },
     {
       "id": "bengawan_solo",
@@ -896,7 +905,7 @@
       "cuisine": "Bakery",
       "emoji": "🎂",
       "nutritionUrl": "https://bengawansolo.com.sg",
-      "status": "needs_approval",
+      "status": "ready",
       "assignee": null,
       "outputFile": "grab-and-go/bengawan_solo_sg.json",
       "notes": "Traditional Peranakan cakes and pastries. Focus on popular items like Pandan Layer Cake, ondeh ondeh.",
@@ -909,7 +918,12 @@
         "grab_go"
       ],
       "lastResearched": "2026-08-01",
-      "note": "No official SG nutrition page (site is e-commerce only, no macros published). No HPB entry for Nyonya kueh SKUs. Drafted 5 items with AI-estimated macros (2 cross-checked against third-party calorie DBs for Kueh Lapis/Kueh Dardar) in planning/db-update-2026-08-01.md. Needs admin approval before upload."
+      "note": "No official SG nutrition page (site is e-commerce only, no macros published). No HPB entry for Nyonya kueh SKUs. Drafted 5 items with AI-estimated macros (2 cross-checked against third-party calorie DBs for Kueh Lapis/Kueh Dardar) in planning/db-update-2026-08-01.md. Needs admin approval before upload.",
+      "deanApproval": {
+        "decision": "approved_as_estimated",
+        "date": "2026-08-21",
+        "note": "Dean approved: ship as source='community', verified=false, confidence='estimated'. The 2/5 cross-checked items can carry a slightly higher-confidence note."
+      }
     },
     {
       "id": "polar_puffs",
@@ -1627,7 +1641,7 @@
       "emoji": "🧋",
       "track": "restaurants",
       "nutritionUrl": "https://www.playmade.com/nutritional-facts",
-      "status": "needs_approval",
+      "status": "ready",
       "assignee": null,
       "outputFile": "_sessions/2026-08-04-playmade.md",
       "notes": "15 items, macros sourced from PlayMade SG's own Nutri-Grade nutrition PDF (genuinely official_sg tier). Filed as needs_approval solely because the PDF reports per-100ml and PlayMade doesn't publish cup volume — a third-party-reported 484ml medium-cup figure was used to scale to per-cup totals. Admin should confirm actual cup ml, then this can move to pending_upload (just rescale by actual_ml/484 if different).",
@@ -1642,7 +1656,12 @@
       "serviceTypes": [
         "dine_in",
         "grab_go"
-      ]
+      ],
+      "deanApproval": {
+        "decision": "approved_with_caveat",
+        "date": "2026-08-21",
+        "note": "Dean approved: ship as official_sg/verified (real Nutri-Grade PDF). Add nutritionNote flagging the 484ml cup volume as a third-party assumption pending PlayMade's own confirmation."
+      }
     },
     {
       "id": "kopitiam",
@@ -1683,7 +1702,7 @@
       "emoji": "🏪",
       "track": "grocery",
       "nutritionUrl": "https://www.7-eleven.com.sg/products",
-      "status": "needs_approval",
+      "status": "partial",
       "assignee": null,
       "outputFile": "_sessions/2026-08-07-seven_eleven_sg.md",
       "notes": "Themed 'Snacks & Drinks Range' session (7-Eleven SG publishes no official nutrition data for its own 7-Café hot food). 18 items: 8 T1 official_sg (Munchy's Lexus Cheese sachet, Pokka Ice Lemon Tea, Vitasoy Choc, Tao Kae Noi Original, Nissin Cup Noodles Seafood, Calbee Jagabee Original, Want Want Senbei, Julie's Peanut Butter) sourced from FairPrice/Open Food Facts official label panels for the same branded SKUs sold at 7-Eleven — safe to upload. 10 T3/T5 items need admin approval: Calobye Perfect Power Shake, Smarter Snack Protein Pancake, Betagro Classic + Hot&Spicy Chicken Breast, Yakult Light, Meiji Bulgaria Yogurt, 100PLUS Original, 2x 7-Café onigiri, and the Big Bite hotdog (T5, US-menu placeholder only) — all sourced from aggregator/press/social content, not a direct SG label. Admin recommended to verify approval-needed items in-store per session notes.",
@@ -1697,7 +1716,17 @@
       "approvalRequired": 10,
       "serviceTypes": [
         "grab_go"
-      ]
+      ],
+      "deanApproval": {
+        "decision": "split_approval",
+        "date": "2026-08-21",
+        "note": "Dean approved the split: the 8 label-backed items (Munchy's Lexus Cheese, Pokka Ice Lemon Tea, Vitasoy Choc, Tao Kae Noi Original, Nissin Cup Noodles Seafood, Calbee Jagabee Original, Want Want Senbei, Julie's Peanut Butter) are ready to merge as official_sg/verified. The other 10 (Calobye shake, Smarter Snack pancake, Betagro chicken breast x2, Yakult Light, Meiji Bulgaria Yogurt, 100PLUS Original, 2x 7-Cafe onigiri) go in as community/estimated pending in-store confirmation. The Big Bite hotdog is REJECTED outright — flagged as a likely US-menu placeholder not sold in SG; do not add to sgFoodDb.ts.",
+        "approvedItemCount": 8,
+        "holdItemCount": 9,
+        "rejectedItems": [
+          "Big Bite hotdog"
+        ]
+      }
     }
   ],
   "statusLegend": {
