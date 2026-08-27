@@ -601,7 +601,7 @@ function LogConfirmSheet({
   const [servings, setServings] = useState(1);
 
   const name    = pending.item?.name ?? pending.recipe?.name ?? '';
-  const emoji   = pending.item?.emoji ?? pending.recipe?.emoji ?? '🍽️';
+  const category = pending.item?.category ?? pending.recipe?.category ?? '';
   const cal     = pending.item?.calories ?? pending.recipe?.macrosPerServing?.calories ?? 0;
   const protein = pending.item?.protein  ?? pending.recipe?.macrosPerServing?.protein  ?? 0;
   const price   = pending.item?.price;
@@ -623,7 +623,15 @@ function LogConfirmSheet({
         <div style={{ padding: '0 20px' }}>
           {/* Item summary */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '0 0 16px', borderBottom: `1px solid ${BORDER}`, marginBottom: 18 }}>
-            <span style={{ fontSize: 36 }}>{emoji}</span>
+            <div
+              style={{
+                width: 48, height: 48, borderRadius: 14, background: 'rgba(30,127,92,0.08)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0, color: GREEN,
+              }}
+            >
+              <FoodIcon name={categoryToIcon(category, name)} size={26} />
+            </div>
             <div>
               <div style={{ fontSize: 16, fontWeight: 700, color: FG1 }}>{name}</div>
               <div style={{ fontSize: 12, color: FG3, marginTop: 2 }}>

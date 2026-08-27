@@ -21,6 +21,8 @@ export type FoodIconName =
   | 'coffee'
   | 'dessert'
   | 'salad'
+  | 'pizza'
+  | 'sushi'
   | 'default';
 
 interface FoodIconProps {
@@ -121,8 +123,24 @@ const ICONS: Record<FoodIconName, JSX.Element> = {
       <path d="M24 34 q-8 -18 6 -22 M40 32 q0 -22 0 -24 M56 34 q8 -18 -6 -22" fill="none" />
     </g>
   ),
+  pizza: (
+    <g>
+      <path d="M40 10 L72 68 A36 20 0 0 1 8 68 Z" fill="#fff" />
+      <path d="M14 62 A30 15 0 0 0 66 62" fillOpacity={0.15} fill="currentColor" />
+      <circle cx="34" cy="42" r="3" fill="currentColor" stroke="none" />
+      <circle cx="48" cy="50" r="3" fill="currentColor" stroke="none" />
+      <circle cx="38" cy="58" r="3" fill="currentColor" stroke="none" />
+    </g>
+  ),
+  sushi: (
+    <g>
+      <path d="M10 62 q0 -14 30 -14 q30 0 30 14 q0 10 -30 10 q-30 0 -30 -10 Z" fill="#fff" />
+      <ellipse cx="40" cy="44" rx="24" ry="10" fillOpacity={0.15} fill="currentColor" />
+      <path d="M16 50 v14 M64 50 v14" />
+    </g>
+  ),
   // Generic plate + fork/knife — fallback for categories with no clean visual match
-  // (Sides, Sets, Combos, Pizza, Sushi, and anything keyword matching misses).
+  // (Sides, Sets, Combos, and anything keyword matching misses).
   default: (
     <g>
       <circle cx="40" cy="40" r="26" fillOpacity={0.15} fill="currentColor" />
@@ -156,6 +174,8 @@ export function categoryToIcon(category: string, name?: string): FoodIconName {
       ],
     ],
     ['chicken', ['chicken', 'wing', 'nugget', 'chickenjoy', 'drumstick']],
+    ['pizza', ['pizza']],
+    ['sushi', ['sushi', 'nigiri', 'maki', 'sashimi', 'temaki', 'onigiri']],
     ['noodles', ['noodle', 'pasta', 'spaghetti', 'ramen', 'mee ', 'mee)', 'lo mein']],
     ['rice', ['rice', 'bento', 'biryani', 'nasi', 'bowl set']],
     ['salad', ['salad', 'greens']],
